@@ -18,14 +18,38 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
 - Supported development operating systems:
 - C++ standard and compiler baseline:
 - Build tool:
+
 - Team input fields:
+    - Team Name
+    - Offensive Pass Rating
+    - Offensive Run Rating
+    - Defensive Pass Rating
+    - Defensive Run Rating
+    - Turnover Rate
+    - Field Goal Rating
+
 - Game state fields:
+
 - Simulation result fields:
+    - Home Team Score
+    - Away Team Score
+    - Winner 
+    - Seed
+
+    -Example: BAL vs SEA, 
+             Final Score
+             BAL - 27
+             SEA - 21
+
+             Winner: BAL
+             Seed: 1000
+
 - Play-level or drive-level initial simulation:
 - Clock and game-end simplifications:
 - Downs, turnovers, scoring, and possession rules:
 - Special teams, penalties, ties, and overtime simplifications:
 - Fixed-seed reproducibility scope:
+
 - First terminal demo and acceptance criteria:
 
 Prefer play-level simulation if both developers are comfortable with its scope. If choosing drive-level initially, plan to add down-and-distance state before strategy analysis.
