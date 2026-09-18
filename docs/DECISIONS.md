@@ -35,14 +35,14 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
     - Down (1-4)
     - Distance (yards needed for a first down)
     - Ball Position (yard line, 0-100, expressed as distance from possessing team's own goal line)
-    - Home Score
-    - Away Score
+    - Home Team Score
+    - Away Team Score
     - Game Over (bool)
 
 - Simulation result fields:
     - Home Team Score
     - Away Team Score
-    - Winner 
+    - Winner (Can be Tie)
     - Seed
 
     -Example: BAL vs SEA, 
@@ -66,7 +66,7 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
     - Standard 4 downs to gain 10 yards for a first down; failing to convert on 4th down turns the ball over on downs at the current spot.
     - Turnovers (interception/fumble, sampled via each team's Turnover Rate) immediately flip possession at the spot of the turnover; down resets to 1st and distance to 10.
     - Touchdown when Ball Position reaches the opponent's goal line (yard 100 from the scoring team's perspective): +6 points, followed by an automatic extra point (+1), no 2-point attempts in V1.
-    - Field goal is not auto-attempted; V1 assumes a simple heuristic (e.g. attempt on 4th down inside opponent's ~35) using Field Goal Rating to sample success; make = +3 and possession flips (kickoff simplification below), miss = turnover on downs at the spot.
+    - Field goal decision on 4th down is a fixed rule: if the ball is within 40 yards of the opponent's goal line (i.e. distance-to-goal <= 40), attempt a field goal; otherwise, go for it on 4th down. Field Goal Rating is used to sample success; make = +3 and possession flips (kickoff simplification below), miss = turnover on downs at the spot.
     - Safety (offense tackled behind their own goal line): +2 to the defense, possession flips to that defense via a simplified kickoff.
     - After any score, possession flips via a fixed-field-position kickoff simplification (e.g. receiving team starts at their own 25) rather than simulating the kick itself.
 
