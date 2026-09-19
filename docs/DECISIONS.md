@@ -13,11 +13,15 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
 
 ## Decide before V1
 
-- Developer A and Developer B names (roles rotate by round):
-- Each person's initial learning interests:
 - Supported development operating systems:
+    - macOS (both developers currently on macOS). Not yet verified on Linux/Windows; revisit if either becomes needed (e.g. CI or a future collaborator).
+
 - C++ standard and compiler baseline:
+    - C++20 (already set in CMakeLists.txt via CMAKE_CXX_STANDARD 20).
+    - Apple Clang 14+ (Xcode 14+ command line tools). GCC 11+/Clang 14+ would also work if Linux support is added later.
+
 - Build tool:
+    - CMake (3.20+, already set up in CMakeLists.txt). Sufficient for this project's scope long-term: multiple targets (engine library, CLI, tests, later batch runner/API) without switching tools; FetchContent covers adding a test framework (e.g. GoogleTest/Catch2) or other small dependencies when needed.
 
 - Team input fields:
     - Team Name
@@ -81,8 +85,22 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
 
 - First terminal demo and acceptance criteria:
     - Command: `simulate BAL SEA --seed 1000`
-    - Output: a play-by-play event log (down, distance, ball position, play result) followed by a final line with the final score and winner, e.g.:
+
+    - Sample terminal interaction (illustrative excerpt, not a measured result):
       ```
+      $ simulate BAL SEA --seed 1000
+      Q1 15:00 - BAL ball on BAL 25, 1st & 10
+      Q1 14:32 - BAL run for 6 yards. 2nd & 4 on BAL 31.
+      Q1 13:58 - BAL pass complete for 12 yards. 1st & 10 on BAL 43.
+      Q1 13:20 - BAL pass intercepted by SEA at SEA 48. Turnover.
+      Q1 13:20 - SEA ball on SEA 48, 1st & 10
+      ...
+      Q1 09:47 - BAL run for 3 yards. 4th & 1 on SEA 8.
+      Q1 09:12 - BAL field goal attempt from SEA 8: GOOD. BAL +3.
+      Q1 09:12 - SEA ball on SEA 25, 1st & 10 (kickoff)
+      ...
+      Q4 00:00 - End of game.
+
       Final Score
       BAL - 27
       SEA - 21
@@ -90,7 +108,16 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
       Winner: BAL
       Seed: 1000
       ```
-    - Acceptance: running the same command twice with the same seed produces an identical log and score; running with a different seed can produce a different result; the game always terminates after 4 quarters.
+
+    - Acceptance criteria:
+        1. **Determinism:** running `simulate BAL SEA --seed 1000` twice produces byte-identical output (full log and final score), given unchanged TeamProfiles.
+        2. **Seed sensitivity:** running with a different seed (same teams) can produce a different log and/or final score; it is not required to differ, but the engine must not silently ignore the seed.
+        3. **Legal state only:** the log never shows a down outside 1-4, a negative Distance, or a Ball Position outside 0-100.
+        4. **Score consistency:** `Home Team Score` and `Away Team Score` are each expressible as a non-negative combination of scoring plays worth 2, 3, 6, or 7 points (safety, field goal, touchdown-no-XP, touchdown-with-XP); the printed final score matches the sum of scoring events shown in the log.
+        5. **Termination:** the simulation always ends by the end of Q4 (`Game Over` becomes true); it never loops indefinitely and never simulates a 5th quarter.
+        6. **Winner correctness:** `Winner` matches whichever team has the higher final score, or is `Tie` when scores are equal.
+        7. **Rule fidelity:** the log is inspectable enough to manually verify against the agreed rules above — e.g. a fan reading the log can confirm a field goal was only attempted on 4th down with distance-to-goal <= 40, and that a turnover immediately reset the down/distance and flipped possession.
+        8. **Fresh-checkout run:** a developer who has not touched the code can build and run the exact command above from a clean checkout and get output matching this format, with no manual setup beyond the documented build steps.
 
 Prefer play-level simulation if both developers are comfortable with its scope. If choosing drive-level initially, plan to add down-and-distance state before strategy analysis.
 
