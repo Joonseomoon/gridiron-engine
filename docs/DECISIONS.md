@@ -121,6 +121,104 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
 
 Prefer play-level simulation if both developers are comfortable with its scope. If choosing drive-level initially, plan to add down-and-distance state before strategy analysis.
 
+
+## M0.2 State-transition cases
+
+### Normal pass/run play
+- Sample play resylt using the possessing team's offese pass/run rating and opponent's pass/run deafense rating
+- Subtract the sampled play time from the time remaining in the quarter
+- Add sample play yards gained to ball position
+- Subtract yards gained from distance
+- If Distance <= 0:
+    - Down = 1
+    - Distance = min(10, 100 - ball position)
+- Otherwise 
+    - Down += 1
+
+### Turnover
+- Possession flips to the other team. 
+- Because the position is always measure from teh possessing team's own goal line
+    - New ball position = 100 - old ball position
+- Down = 1
+- Distance (for new first down) = min(10, 100 - ball position)
+
+### Turnover on downs
+- If 4th down fails to reach the first down marker:
+    - Possession flips
+    - New ball position = 100 - old ball position
+    - Down = 1
+    - Distance (for new first down) = min(10, 100 - ball position)
+
+### Touchdown 
+- If ball position >= 100:
+    - Add 7 points to possessing team (+6 for TD, automatic +1 for PAT)
+    - Flip possession
+    - Set receiving team's ball position = 35
+    - Down = 1
+    - Distance = 10
+
+### Field goal attempt 
+- Use team field goal rating to simulate a field goal
+- On 4th down, if ditance to oppodent goal <= 40:
+    - Attempt field goal
+- If it was made:
+    - Add 3 points to possessiong team
+    - Flip possession 
+    - Set receiving team's ball position = 35
+    - Down = 1
+    - Distance = 10
+- If missed:
+    - Flip ball position from current spot
+    - New ball position = 100 - old ball position
+    - Down = 1
+    - Distance (for new first down) = min(10, 100 - ball position)
+
+### Safety
+- If a play moves the ball position < 0:
+    - Add 2 points to the defensive team
+    - Possession flipps to that team
+    - New offesnse starts on 35 yard line
+    - Down = 1
+    - Distance = 10
+
+### End of quarter
+- If time remaining in quarter <= 0
+    - If quarter < 4: 
+        - Quarter += 1
+        - Time Remaining in quarter = 900
+    - If the new quarter is quarter 3:
+        - Possession goes to the team that did not start the game with the ball
+        - Ball position = 35
+        - Down = 1 
+        - Distance = 10
+    - If quarter 4 ends:
+        - Game over = true
+
+### End of game
+- After quarter 4 reaches 0:
+    - Game over = true
+    - Compare home team score with away team score 
+    - Winner = (home team, away team, or tie)
+
+## M0.2 Edge cases to test
+
+- Gain exactly the yards for a first down
+- Gain more yeards than needed for a first down
+- First down inside the oppodents 10 yard line
+- Touchdown from exactly ball position 100
+- Play moves ball position beyond 100
+- Negative yardage play
+- Safety caused by negative yardage
+- Turnover close to either goal line
+- Turnover at midfield
+- Failed 4th down at midfield
+- Made field goal
+- Missed field goal
+- Score on final play of a quarter
+- Score on the final play of a game
+- Q4 ends in a tie
+- Same seed reproduces the idential transactions
+
 ## Decision log
 
 For later decisions, add a date, decision, reason, and practical consequence. Add detail only when it will help future development.
