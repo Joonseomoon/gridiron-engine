@@ -153,7 +153,7 @@ Prefer play-level simulation if both developers are comfortable with its scope. 
 - If ball position >= 100:
     - Add 7 points to possessing team (+6 for TD, automatic +1 for PAT)
     - Flip possession
-    - Set receiving team's ball position = 35
+    - Set receiving team's ball position = 25
     - Down = 1
     - Distance = 10
 
@@ -164,7 +164,7 @@ Prefer play-level simulation if both developers are comfortable with its scope. 
 - If it was made:
     - Add 3 points to possessiong team
     - Flip possession 
-    - Set receiving team's ball position = 35
+    - Set receiving team's ball position = 25
     - Down = 1
     - Distance = 10
 - If missed:
@@ -177,7 +177,7 @@ Prefer play-level simulation if both developers are comfortable with its scope. 
 - If a play moves the ball position < 0:
     - Add 2 points to the defensive team
     - Possession flipps to that team
-    - New offesnse starts on 35 yard line
+    - New offesnse starts on 25 yard line
     - Down = 1
     - Distance = 10
 
@@ -188,7 +188,7 @@ Prefer play-level simulation if both developers are comfortable with its scope. 
         - Time Remaining in quarter = 900
     - If the new quarter is quarter 3:
         - Possession goes to the team that did not start the game with the ball
-        - Ball position = 35
+        - Ball position = 25
         - Down = 1 
         - Distance = 10
     - If quarter 4 ends:
