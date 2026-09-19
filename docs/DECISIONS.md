@@ -29,7 +29,7 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
     - Offensive Run Rating
     - Defensive Pass Rating
     - Defensive Run Rating
-    - Turnover Rate
+    - Turnover Rate (Offense)
     - Field Goal Rating
 
 - Game state fields:
