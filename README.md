@@ -10,7 +10,25 @@ The project gives two developers practical experience with C++, stateful simulat
 
 ## Current status
 
-Planning only. No simulator has been implemented. Build and run instructions will be added with the first executable.
+Engine skeleton in progress. `applyOutcome` (M1.1) is implemented and tested; the CLI simulator itself is not yet built.
+
+## Building and testing
+
+Requires CMake 3.20+ and a C++20 compiler (Apple Clang 14+ / GCC 11+). GoogleTest is fetched automatically.
+
+```
+cmake -S . -B build          # configure (re-run if CMakeLists.txt changes)
+cmake --build build          # compile
+ctest --test-dir build --output-on-failure   # run all tests
+```
+
+Run the test binary directly for faster iteration or to filter to one test:
+```
+./build/gridiron_tests
+./build/gridiron_tests --gtest_filter=ApplyOutcomeTest.SomeTestName
+```
+
+Tests also run automatically in CI on every push/PR to `main` (see `.github/workflows/ci.yml`).
 
 ## First milestone
 

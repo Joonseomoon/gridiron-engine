@@ -181,11 +181,10 @@ Prefer play-level simulation if both developers are comfortable with its scope. 
     - Down = 1
     - Distance = 10
 
-### Opening possession (OPEN DECISION - not yet resolved)
-- Who receives the ball at the start of the game is not yet decided. Current code default (GameState.h) has Home possess first, but this was an implementation placeholder, not an agreed rule.
-- Options considered: (1) always Home receives first (simple, but not realistic and structurally favors one team), (2) seeded coin toss at game start using the same RNG stream as play sampling (realistic, still fully deterministic under the seed policy), (3) caller-specified via CLI flag.
-- Leaning: option 2, but needs agreement with Developer B, since it touches the shared RNG design (single RNG stream feeding both the coin toss and samplePlay).
-- Blocking issue: GameState currently has no field recording "who received the opening kickoff," which the End of quarter rule below depends on (see note there).
+### Opening possession (DECIDED)
+- Decision: seeded coin toss at game start, drawn from the same RNG stream used for all play sampling. A 50/50 draw (e.g. `std::bernoulli_distribution(0.5)`) determines who receives first; same seed always reproduces the same result, preserving the fixed-seed reproducibility rule.
+- Reason: more realistic than always defaulting to Home, and doesn't cost anything in terms of determinism since it draws from the same seeded stream as everything else.
+- GameState.opening_possession field already added (default Home, used only as a placeholder until the coin-toss draw is wired in). Records who received the opening kickoff; the End of quarter/halftime rule depends on this field (see below).
 
 ### End of quarter
 - If time remaining in quarter <= 0
