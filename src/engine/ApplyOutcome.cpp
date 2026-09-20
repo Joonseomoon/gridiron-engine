@@ -31,13 +31,12 @@ namespace gridiron {
     }
 
     GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome) {
-        GameState newState= gameState;
+        GameState newState = gameState;
 
         bool wasScoringPlay = false;
 
-        switch (playOutcome.type) {
-            case PlayType::Run:
-            case PlayType::Pass:
+        switch (playOutcome.outcome_type) {
+            case OutcomeType::Normal:
                 newState.ball_position += playOutcome.yards_gained;
                 if (newState.ball_position >= 100) {
                     // A gain that reaches or crosses the goal line scores,
@@ -45,6 +44,7 @@ namespace gridiron {
                     awardScoreAndKickoff(newState, newState.possession, 7, opponentOf(newState.possession));
                     wasScoringPlay = true;
                 } else if (newState.ball_position < 0) {
+                    // Tackled behind the goal line: safety.
                     awardScoreAndKickoff(newState, opponentOf(newState.possession), 2, opponentOf(newState.possession));
                     wasScoringPlay = true;
                 } else if (playOutcome.yards_gained >= newState.distance) {
@@ -58,22 +58,24 @@ namespace gridiron {
                     newState.down++;
                 }
                 break;
-            case PlayType::Turnover:
-                newState.ball_position += playOutcome.yards_gained;
+            case OutcomeType::Turnover:
+                if (playOutcome.play_type != PlayType::FieldGoalAttempt) {
+                    // Interception/fumble: the offense gained yards before
+                    // losing the ball. A missed field goal has no return
+                    // yardage, so ball_position stays at the spot of the kick.
+                    newState.ball_position += playOutcome.yards_gained;
+                }
                 turnoverAtSpot(newState);
                 break;
-            case PlayType::Touchdown:
+            case OutcomeType::Touchdown:
                 awardScoreAndKickoff(newState, newState.possession, 7, opponentOf(newState.possession));
                 wasScoringPlay = true;
                 break;
-            case PlayType::FieldGoalMade:
+            case OutcomeType::FieldGoalMade:
                 awardScoreAndKickoff(newState, newState.possession, 3, opponentOf(newState.possession));
                 wasScoringPlay = true;
                 break;
-            case PlayType::FieldGoalMissed:
-                turnoverAtSpot(newState);
-                break;
-            case PlayType::Safety:
+            case OutcomeType::Safety:
                 awardScoreAndKickoff(newState, opponentOf(newState.possession), 2, opponentOf(newState.possession));
                 wasScoringPlay = true;
                 break;
