@@ -13,6 +13,7 @@ struct GameState {
     int quarter = 1;
     int time_remaining_seconds = 15 * 60;
 
+    Possession opening_possession = Possession::Home;
     Possession possession = Possession::Home;
     int down = 1;
     int distance = 10;

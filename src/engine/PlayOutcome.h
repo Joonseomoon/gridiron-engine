@@ -6,7 +6,8 @@ enum class PlayType {
     Run,
     Pass,
     Turnover,
-    FieldGoalAttempt,
+    FieldGoalMade,
+    FieldGoalMissed,
     Touchdown,
     Safety,
 };
