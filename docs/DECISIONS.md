@@ -181,6 +181,11 @@ Prefer play-level simulation if both developers are comfortable with its scope. 
     - Down = 1
     - Distance = 10
 
+### Opening possession (DECIDED)
+- Decision: seeded coin toss at game start, drawn from the same RNG stream used for all play sampling. A 50/50 draw (e.g. `std::bernoulli_distribution(0.5)`) determines who receives first; same seed always reproduces the same result, preserving the fixed-seed reproducibility rule.
+- Reason: more realistic than always defaulting to Home, and doesn't cost anything in terms of determinism since it draws from the same seeded stream as everything else.
+- GameState.opening_possession field already added (default Home, used only as a placeholder until the coin-toss draw is wired in). Records who received the opening kickoff; the End of quarter/halftime rule depends on this field (see below).
+
 ### End of quarter
 - If time remaining in quarter <= 0
     - If quarter < 4: 
