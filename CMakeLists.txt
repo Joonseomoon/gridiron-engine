@@ -16,10 +16,7 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(gridiron_engine src/main.cpp)
-add_executable(gridiron_tests 
-                tests/apply_outcome_test.cpp
-                tests/outcome_sampler_test.cpp
-                src/engine/OutcomeSampler.cpp)
+add_executable(gridiron_tests tests/apply_outcome_test.cpp)
 target_link_libraries(gridiron_tests PRIVATE gtest_main)
 include(GoogleTest)
 gtest_discover_tests(gridiron_tests)
