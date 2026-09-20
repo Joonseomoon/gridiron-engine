@@ -5,7 +5,7 @@
 
 #include <random> 
 
-namespeace gridiron{
+namespace gridiron{
 
     PlayOutcome samplePlayOutcome(
         const TeamProfile& offense,
