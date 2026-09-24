@@ -36,11 +36,13 @@ The tables are task groups, not instructions to create a single large pull reque
 
 | Round | Developer A | Developer B | Shared checkpoint |
 | --- | --- | --- | --- |
-| 1.1 One event | Build state transitions for applying an outcome, using fixed example outcomes. | Build the initial pass/run outcome sampler and team ratings, using fixed example states. | Sample one event, apply it, and inspect the new state. |
-| 1.2 Complete the game and switch areas | Extend the probability model with the agreed turnover or scoring-related outcomes and checks of sampled behavior. | Extend game progression with possession changes, scoring, clock behavior, and termination under the agreed rules. | Run complete games using both extensions; check impossible transitions and termination. |
+| 1.1 One event (done) | Build state transitions for applying an outcome, using fixed example outcomes. | Build the initial pass/run outcome sampler and team ratings, using fixed example states. | Sample one event, apply it, and inspect the new state. |
+| 1.2 Complete the game and switch areas | Extend the probability model: 4th-down field goal decision and make/miss sampling from the field goal rating, plus checks that sampled turnover and field goal rates hold in aggregate. | Extend game progression: the game loop driving plays to termination, the seeded opening coin toss, and a termination test. | Run complete games using both extensions; sweep many seeds and assert every intermediate state is legal (down 1-4, distance >= 0, ball position 0-100, no 5th quarter). |
 | 1.3 Make it usable | Build terminal input handling, team selection, and seed options. | Build the readable event log and final result presentation. | Connect both to the already working game and run from a fresh checkout. |
 
-**Parallel starting point:** Round 1.1 uses agreed state/outcome examples. Round 1.2 uses the merged one-event implementation and an outcome vocabulary agreed before splitting. Round 1.3 uses the completed engine and fixed result format.
+**Parallel starting point:** Round 1.1 uses agreed state/outcome examples. Round 1.2 uses the merged one-event implementation and an outcome vocabulary agreed before splitting; its own shared prerequisite is giving the sampler access to game state and agreeing who maps possession to team profiles, since both halves depend on that interface. Round 1.3 uses the completed engine and fixed result format.
+
+The turnover-past-the-goal-line fix (see docs/KNOWN_ISSUES.md) is unassigned and must land in 1.2, since the checkpoint's legality sweep covers exactly that bug. Task-level detail for the current round lives in [docs/TASKS.md](docs/TASKS.md).
 
 **Done:** Both run a complete seeded game, have implemented rules and probability behavior, and can explain simplifications. Each adds meaningful tests for their changes.
 

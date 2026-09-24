@@ -2,7 +2,9 @@
 
 Open problems found but not yet fixed. Remove entries as they are resolved.
 
-## Turnover can put the ball outside 0-100 (open)
+## Turnover can put the ball outside 0-100 (rule agreed, fix scheduled in M1.2)
+
+Agreed resolution is in DECISIONS.md under "Turnover past either goal line": touchback one way, defensive touchdown the other. Task 7 in TASKS.md.
 
 `applyOutcome`'s `OutcomeType::Turnover` case applies `yards_gained` and flips the field with no bounds guard, unlike the `Normal` case which checks for `>= 100` (touchdown) and `< 0` (safety). Both directions break:
 

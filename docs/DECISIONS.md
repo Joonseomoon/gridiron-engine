@@ -184,6 +184,11 @@ These are modeling choices baked into OutcomeSampler that were not decided in M0
     - Down = 1
     - Distance (for new first down) = min(10, 100 - ball position)
 
+### Turnover past either goal line
+- If a turnover spot would be at or past the opponent's goal line (ball position >= 100): touchback. Possession flips, ball at the receiving team's own 25, down 1, distance 10, no score. (25 rather than the real-NFL 20, to match the kickoff simplification used everywhere else.)
+- If a turnover spot would be behind the offense's own goal line (ball position < 0): the defense recovers in the end zone for a touchdown. +7 to the defense, then a kickoff to the original offense.
+- Mirror of the safety rule: same spot on the field, different ball outcome. Tackled with the ball is 2 points to the defense; fumbled away is 7.
+
 ### Safety
 - If a play moves the ball position < 0:
     - Add 2 points to the defensive team
