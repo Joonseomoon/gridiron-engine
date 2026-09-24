@@ -122,6 +122,17 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
 Prefer play-level simulation if both developers are comfortable with its scope. If choosing drive-level initially, plan to add down-and-distance state before strategy analysis.
 
 
+## M1.1 Sampling assumptions (as implemented)
+
+These are modeling choices baked into OutcomeSampler that were not decided in M0. Recorded here so they are deliberate and reviewable, not accidental. Revise as evidence changes.
+
+- **Run/pass split is a fixed 50/50 coin flip**, independent of team ratings, down, distance, field position, or clock. Situational play calling is out of scope for V1.
+- **Yardage is sampled from a normal distribution** around `base + k * (offense rating - defense rating)` — base 2 yards / k=10 / sd 3.0 for runs, base 4 yards / k=15 / sd 5.0 for passes. These constants are hand-tuned guesses, not fitted to data; replacing them with real estimates is the point of M5.
+- **Yardage is never clipped to the field.** A sampled gain may push the ball past 100 or below 0; applyOutcome converts those into a touchdown or safety respectively. This is intended behavior, not an accident — the sampler stays ignorant of field geometry.
+- **Turnover yardage is the yardage the play would have gained.** On a turnover, the sampler reports the same `yards_gained` it would have on a normal play, and applyOutcome advances the ball that far before flipping possession. This stands in for "the spot of the turnover" without modeling returns separately.
+- **Turnover probability is a flat per-play rate** (`offense.turnover_rate`), identical for runs and passes, and unaffected by situation.
+- **Play duration is sampled independently of the play's result**: ~N(30, 5) with a 15s floor for gains over 20 yards, ~N(20, 5) with a 10s floor otherwise. The clock does not distinguish in-bounds from out-of-bounds or incomplete passes, per the running-clock simplification above.
+
 ## M0.2 State-transition cases
 
 ### Normal pass/run play

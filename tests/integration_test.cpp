@@ -21,8 +21,6 @@ namespace {
         switch (type) {
             case gridiron::OutcomeType::Normal: return "Normal";
             case gridiron::OutcomeType::Turnover: return "Turnover";
-            case gridiron::OutcomeType::Touchdown: return "Touchdown";
-            case gridiron::OutcomeType::Safety: return "Safety";
             case gridiron::OutcomeType::FieldGoalMade: return "FieldGoalMade";
         }
         return "Unknown";

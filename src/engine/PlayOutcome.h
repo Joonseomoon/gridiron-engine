@@ -11,8 +11,6 @@ enum class PlayType {
 enum class OutcomeType {
     Normal,
     Turnover,
-    Touchdown,
-    Safety,
     FieldGoalMade
 };
 

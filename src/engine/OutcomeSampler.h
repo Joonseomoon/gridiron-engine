@@ -12,7 +12,7 @@ namespace gridiron{
         const TeamProfile& defense, 
         std::mt19937& rng);
 
-    PlayType playOutcome(std::mt19937& rng);
+    PlayType choosePlayType(std::mt19937& rng);
 
     PlayOutcome sampleRunOutcome(
         const TeamProfile& offense,

@@ -67,16 +67,8 @@ namespace gridiron {
                 }
                 turnoverAtSpot(newState);
                 break;
-            case OutcomeType::Touchdown:
-                awardScoreAndKickoff(newState, newState.possession, 7, opponentOf(newState.possession));
-                wasScoringPlay = true;
-                break;
             case OutcomeType::FieldGoalMade:
                 awardScoreAndKickoff(newState, newState.possession, 3, opponentOf(newState.possession));
-                wasScoringPlay = true;
-                break;
-            case OutcomeType::Safety:
-                awardScoreAndKickoff(newState, opponentOf(newState.possession), 2, opponentOf(newState.possession));
                 wasScoringPlay = true;
                 break;
         }
