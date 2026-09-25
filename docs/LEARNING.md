@@ -4,8 +4,8 @@ Update this briefly at each milestone boundary. Record actual implementation wor
 
 | Area | A implemented | B implemented | Useful next crossover |
 | --- | --- | --- | --- |
-| Game state and football rules | | | |
-| Probability sampling and team models | | | |
+| Game state and football rules | M1.1: `applyOutcome` — down/distance, turnovers, scoring, goal-line and safety detection, quarter/halftime/game-over transitions (PR #7, #9) | Reviewed only | B takes the game loop that drives plays to `game_over`, plus the seeded opening coin toss |
+| Probability sampling and team models | Reviewed only | M1.1: `OutcomeSampler` — run/pass yardage from team ratings, per-play turnover sampling, seeded RNG, play duration (PR #9) | A takes the 4th-down field-goal decision and make/miss sampling from `field_goal_rating` |
 | Batch execution and reproducibility | | | |
 | Statistics and uncertainty | | | |
 | Profiling and engine optimization | | | |
@@ -18,7 +18,7 @@ Update this briefly at each milestone boundary. Record actual implementation wor
 | API and service behavior | | | |
 | Frontend and result presentation | | | |
 | Market calculations and backtesting | | | |
-| Build, tests, documentation, and releases | | | |
+| Build, tests, documentation, and releases | M0/M1: GoogleTest via CMake FetchContent, GitHub Actions CI, README build/test instructions, M1.1 integration test (PR #6) | M1.1: CMake target wiring for the sampler and its tests (PR #9) | B owns the next build/docs task so this area is not A-only |
 
 ## How to use this
 

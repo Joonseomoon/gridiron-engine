@@ -122,6 +122,17 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
 Prefer play-level simulation if both developers are comfortable with its scope. If choosing drive-level initially, plan to add down-and-distance state before strategy analysis.
 
 
+## M1.1 Sampling assumptions (as implemented)
+
+These are modeling choices baked into OutcomeSampler that were not decided in M0. Recorded here so they are deliberate and reviewable, not accidental. Revise as evidence changes.
+
+- **Run/pass split is a fixed 50/50 coin flip**, independent of team ratings, down, distance, field position, or clock. Situational play calling is out of scope for V1.
+- **Yardage is sampled from a normal distribution** around `base + k * (offense rating - defense rating)` — base 2 yards / k=10 / sd 3.0 for runs, base 4 yards / k=15 / sd 5.0 for passes. These constants are hand-tuned guesses, not fitted to data; replacing them with real estimates is the point of M5.
+- **Yardage is never clipped to the field.** A sampled gain may push the ball past 100 or below 0; applyOutcome converts those into a touchdown or safety respectively. This is intended behavior, not an accident — the sampler stays ignorant of field geometry.
+- **Turnover yardage is the yardage the play would have gained.** On a turnover, the sampler reports the same `yards_gained` it would have on a normal play, and applyOutcome advances the ball that far before flipping possession. This stands in for "the spot of the turnover" without modeling returns separately.
+- **Turnover probability is a flat per-play rate** (`offense.turnover_rate`), identical for runs and passes, and unaffected by situation.
+- **Play duration is sampled independently of the play's result**: ~N(30, 5) with a 15s floor for gains over 20 yards, ~N(20, 5) with a 10s floor otherwise. The clock does not distinguish in-bounds from out-of-bounds or incomplete passes, per the running-clock simplification above.
+
 ## M0.2 State-transition cases
 
 ### Normal pass/run play
@@ -172,6 +183,23 @@ Prefer play-level simulation if both developers are comfortable with its scope. 
     - New ball position = 100 - old ball position
     - Down = 1
     - Distance (for new first down) = min(10, 100 - ball position)
+
+### Turnover past either goal line
+
+Derive these by flipping first, then judging the new position by the ordinary end-zone rules. After a turnover `newPos = 100 - oldPos`, so:
+
+- `newPos >= 100` (recovering team is in the end zone it is attacking) means `oldPos <= 0` → **defensive touchdown**. +7 to the defense, then a kickoff to the original offense.
+- `newPos < 0` (recovering team is behind its own goal line) means `oldPos > 100` → **touchback**. Possession flips, ball at the receiving team's own 25, down 1, distance 10, no score. (25 rather than the real-NFL 20, to match the kickoff simplification used everywhere else.)
+- Anything between is an ordinary turnover at the spot.
+
+| Case | Possession flips? | Far goal line | Own goal line |
+| --- | --- | --- | --- |
+| Normal play | No | `>= 100` touchdown | `< 0` safety |
+| Turnover | Yes | `> 100` touchback | `<= 0` defensive touchdown |
+
+The inequalities invert between the rows because the turnover row is the flip-image of the normal row. Do not "correct" them to match each other — derive from the flip instead. Worked examples: a turnover at exactly 0 is a defensive touchdown (the defense recovers in the end zone it attacks); a turnover at exactly 100 is an ordinary turnover giving the defense the ball at its own goal line, not a touchback, for the same reason a runner stopped at his own goal line is not a safety.
+
+Note the defensive touchdown is the mirror of the safety rule, not a duplicate of it: same spot on the field, different ball outcome. Tackled with the ball is 2 points to the defense; fumbled away is 7.
 
 ### Safety
 - If a play moves the ball position < 0:

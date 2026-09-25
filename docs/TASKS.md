@@ -1,0 +1,39 @@
+# Current round: M1.2 — Complete the game and switch areas
+
+Goal: run complete seeded games end to end. Checkpoint requires checking impossible transitions and termination, not just that a game finishes.
+
+## Shared prerequisite — do together, before splitting
+
+**Give the sampler game context.** `samplePlayOutcome` / `choosePlayType` currently take only `(offense, defense, rng)`, so they cannot see down, distance, field position, or clock. Every task below depends on this signature, so agree it first or both halves will be built against a moving target.
+
+Also agree who maps possession to profiles: `offense = (possession == Home) ? state.home : state.away`. Nothing owns this today — the M1.1 integration test passes the profiles in by hand, which hides the gap.
+
+## Probability model
+
+1. **4th-down field goal decision.** Per DECISIONS.md: on 4th down, if distance-to-goal <= 40, attempt a field goal; otherwise go for it. Belongs in `choosePlayType` once it can see `GameState`.
+2. **Field goal make/miss sampling** from `field_goal_rating`, emitting `PlayType::FieldGoalAttempt` with `OutcomeType::FieldGoalMade` or `OutcomeType::Turnover` (miss). This is the first code to read `field_goal_rating`, and the first thing able to produce `FieldGoalAttempt` — both are currently unreachable in production.
+3. **Checks of sampled behavior.** Over many samples, confirm the turnover rate and field goal success rate land near their configured values.
+
+## Game progression
+
+4. **Game loop.** Repeat sample → apply until `game_over`, using the possession-to-profile mapping above.
+5. **Seeded opening coin toss** setting `opening_possession`. Already decided in DECISIONS.md, implemented nowhere — it currently sits at its `Home` default, and the halftime rule depends on it being real.
+6. **Termination test.** Every play burns at least 10 seconds, so a game is bounded at roughly 360 plays. Assert it terminates rather than assuming it.
+
+## Also on the probability model side
+
+7. ~~**Fix turnovers past either goal line.**~~ Done. Touchback and defensive touchdown implemented per DECISIONS.md "Turnover past either goal line", with boundary tests at exactly 0 and exactly 100 and a defensive-touchdown-at-halftime test.
+
+## Checkpoint
+
+- Run complete seeded games and inspect the play sequence together.
+- Same seed, same teams reproduces an identical game.
+- **Invariant sweep:** run many games across different seeds and assert every intermediate state is legal — down 1-4, distance >= 0, ball position 0-100, no 5th quarter, final scores reachable from 2/3/7-point plays. This is what would have caught the turnover bug.
+
+## Deferred to M1.3
+
+Readable event log and final result presentation, including `SimulationResult` and computing `Winner` (both defined and used by nothing today).
+
+`applyOutcome` works out whether a play scored, turned the ball over, or converted a first down, then returns only a `GameState` — discarding it. The log will need that back, likely as a small result struct rather than a bare `GameState`.
+
+Diffing before/after states is not enough: an interception, a turnover on downs, and a missed field goal all look like "possession flipped, score unchanged," but they are three different sentences in a log. (`OutcomeType::Touchdown` and `Safety` were dropped from the sampler's enum for the same reason — they are derived from field position, so no sampler could emit them. Those concepts belong in this output type instead.)
