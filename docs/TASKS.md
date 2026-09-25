@@ -20,7 +20,7 @@ Also agree who maps possession to profiles: `offense = (possession == Home) ? st
 5. **Seeded opening coin toss** setting `opening_possession`. Already decided in DECISIONS.md, implemented nowhere — it currently sits at its `Home` default, and the halftime rule depends on it being real.
 6. **Termination test.** Every play burns at least 10 seconds, so a game is bounded at roughly 360 plays. Assert it terminates rather than assuming it.
 
-## Unassigned — either person
+## Also on the probability model side
 
 7. **Fix turnovers past either goal line.** See DECISIONS.md "Turnover past either goal line" for the agreed rule, and KNOWN_ISSUES.md for the failing tests. Currently `applyOutcome`'s `Turnover` case has no bounds guard, so it can produce a ball position of -5 or 105 and a negative `distance`. Must land before the checkpoint — "check impossible transitions" is exactly this.
 
