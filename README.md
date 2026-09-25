@@ -62,7 +62,6 @@ See [ROADMAP.md](ROADMAP.md) for responsibilities, integration points, and compl
 - [Project overview](docs/PROJECT_OVERVIEW.md)
 - [Initial decisions](docs/DECISIONS.md)
 - [Current round tasks](docs/TASKS.md)
-- [Known issues](docs/KNOWN_ISSUES.md)
 - [Learning and rotation record](docs/LEARNING.md)
 
 ## Principles

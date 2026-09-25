@@ -42,7 +42,7 @@ The tables are task groups, not instructions to create a single large pull reque
 
 **Parallel starting point:** Round 1.1 uses agreed state/outcome examples. Round 1.2 uses the merged one-event implementation and an outcome vocabulary agreed before splitting; its own shared prerequisite is giving the sampler access to game state and agreeing who maps possession to team profiles, since both halves depend on that interface. Round 1.3 uses the completed engine and fixed result format.
 
-The turnover-past-the-goal-line fix (see docs/KNOWN_ISSUES.md) sits with Developer A in 1.2 and must land before the checkpoint, since the legality sweep covers exactly that bug. Task-level detail for the current round lives in [docs/TASKS.md](docs/TASKS.md).
+Task-level detail for the current round lives in [docs/TASKS.md](docs/TASKS.md).
 
 **Done:** Both run a complete seeded game, have implemented rules and probability behavior, and can explain simplifications. Each adds meaningful tests for their changes.
 

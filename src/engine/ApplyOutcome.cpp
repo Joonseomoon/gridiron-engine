@@ -30,6 +30,13 @@ namespace gridiron {
         state.distance = std::min(10, 100 - state.ball_position);
     }
 
+    void touchback(GameState& state) {
+        state.possession = opponentOf(state.possession);
+        state.ball_position = 25;
+        state.down = 1;
+        state.distance = 10;
+    }
+
     GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome) {
         GameState newState = gameState;
 
@@ -60,12 +67,17 @@ namespace gridiron {
                 break;
             case OutcomeType::Turnover:
                 if (playOutcome.play_type != PlayType::FieldGoalAttempt) {
-                    // Interception/fumble: the offense gained yards before
-                    // losing the ball. A missed field goal has no return
-                    // yardage, so ball_position stays at the spot of the kick.
                     newState.ball_position += playOutcome.yards_gained;
                 }
-                turnoverAtSpot(newState);
+
+                if (newState.ball_position <= 0) {
+                    awardScoreAndKickoff(newState, opponentOf(newState.possession), 7, newState.possession);
+                    wasScoringPlay = true;
+                } else if (newState.ball_position > 100) {
+                    touchback(newState);
+                } else {
+                    turnoverAtSpot(newState);
+                }
                 break;
             case OutcomeType::FieldGoalMade:
                 awardScoreAndKickoff(newState, newState.possession, 3, opponentOf(newState.possession));

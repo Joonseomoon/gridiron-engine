@@ -22,7 +22,7 @@ Also agree who maps possession to profiles: `offense = (possession == Home) ? st
 
 ## Also on the probability model side
 
-7. **Fix turnovers past either goal line.** See DECISIONS.md "Turnover past either goal line" for the agreed rule, and KNOWN_ISSUES.md for the failing tests. Currently `applyOutcome`'s `Turnover` case has no bounds guard, so it can produce a ball position of -5 or 105 and a negative `distance`. Must land before the checkpoint — "check impossible transitions" is exactly this.
+7. ~~**Fix turnovers past either goal line.**~~ Done. Touchback and defensive touchdown implemented per DECISIONS.md "Turnover past either goal line", with boundary tests at exactly 0 and exactly 100 and a defensive-touchdown-at-halftime test.
 
 ## Checkpoint
 
@@ -32,4 +32,8 @@ Also agree who maps possession to profiles: `offense = (possession == Home) ? st
 
 ## Deferred to M1.3
 
-Readable event log and final result presentation, including `SimulationResult` and computing `Winner` (both defined and used by nothing today). See KNOWN_ISSUES.md — `applyOutcome` currently computes what happened on each play and discards it, which the log will need back.
+Readable event log and final result presentation, including `SimulationResult` and computing `Winner` (both defined and used by nothing today).
+
+`applyOutcome` works out whether a play scored, turned the ball over, or converted a first down, then returns only a `GameState` — discarding it. The log will need that back, likely as a small result struct rather than a bare `GameState`.
+
+Diffing before/after states is not enough: an interception, a turnover on downs, and a missed field goal all look like "possession flipped, score unchanged," but they are three different sentences in a log. (`OutcomeType::Touchdown` and `Safety` were dropped from the sampler's enum for the same reason — they are derived from field position, so no sampler could emit them. Those concepts belong in this output type instead.)
