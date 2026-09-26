@@ -30,7 +30,7 @@ Still uncaught by design: a change to the *order* random numbers are drawn. Only
 
 - Run complete seeded games and inspect the play sequence together.
 - Same seed, same teams reproduces an identical game.
-- **Invariant sweep:** run many games across different seeds and assert every intermediate state is legal — down 1-4, distance >= 0, ball position 0-100, no 5th quarter, final scores reachable from 2/3/7-point plays. This is what would have caught the turnover bug.
+- **Invariant sweep:** run many games across different seeds and assert every intermediate state is legal — down 1-4, distance >= 0, ball position **1-99**, no 5th quarter, final scores reachable from 2/3/7-point plays. This is what would have caught the turnover bug. Note 1-99, not 0-100: at or past either goal line now always resolves as a score or a touchback, so a live ball never rests on 0 or 100 (see DECISIONS.md "Goal line boundaries").
 
 ## At the round boundary, once nobody has open work
 
