@@ -133,6 +133,8 @@ These are modeling choices baked into OutcomeSampler that were not decided in M0
 - **Turnover yardage is the yardage the play would have gained.** On a turnover, the sampler reports the same `yards_gained` it would have on a normal play, and applyOutcome advances the ball that far before flipping possession. This stands in for "the spot of the turnover" without modeling returns separately.
 - **Turnover probability is a flat per-play rate** (`offense.turnover_rate`), identical for runs and passes, and unaffected by situation.
 - **Play duration is sampled independently of the play's result**: ~N(30, 5) with a 15s floor for gains over 20 yards, ~N(20, 5) with a 10s floor otherwise. The clock does not distinguish in-bounds from out-of-bounds or incomplete passes, per the running-clock simplification above.
+- **A field goal attempt burns the same clock as an ordinary short play** (~N(20, 5), 10s floor). Realistically a snap-kick-whistle is quicker, but reusing the existing distribution keeps one source of play timing and preserves the "every play burns at least 10 seconds" bound that game termination relies on.
+- **`field_goal_rating` means make probability on a 20-yard chip shot.** Success is `rating - 0.01 * (kickDistance - 20)`, clamped to [0.01, 0.99], where `kickDistance = distance-to-goal + 17`. So a realistic kicker rates about 0.95, not 0.8: at 0.95 that gives roughly 0.95 at a chip shot, 0.79 from 40 yards, and 0.58 from the 57-yard edge of the attempt range. Hand-tuned like the yardage constants, to be refit in M5.
 
 ## M0.2 State-transition cases
 

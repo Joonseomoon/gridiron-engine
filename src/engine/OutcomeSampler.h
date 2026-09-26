@@ -16,11 +16,15 @@ namespace gridiron{
         const TeamProfile& offense,
         const TeamProfile& defense, 
         std::mt19937& rng);
-
     
     PlayOutcome samplePassOutcome(
         const TeamProfile& offense,
         const TeamProfile& defense, 
+        std::mt19937& rng);
+
+    PlayOutcome sampleFieldGoalOutcome(
+        const TeamProfile& kicker,
+        int distanceToGoal,
         std::mt19937& rng);
 } // End namespace
 

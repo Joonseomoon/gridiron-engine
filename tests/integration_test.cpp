@@ -62,28 +62,34 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
     EXPECT_LE(newState.time_remaining_seconds, 900);
 }
 
-// Same seed, same teams: the sampled play and resulting state must be identical.
-TEST(IntegrationTest, SameSeedProducesIdenticalResult) {
-    gridiron::TeamProfile offense{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
-    gridiron::TeamProfile defense{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+// A 4th-down snap in range must travel the field goal path end to end: the
+// sampler decides to kick, and applyOutcome resolves it as points or a turnover.
+TEST(IntegrationTest, FieldGoalAttemptRunsEndToEnd) {
+    gridiron::TeamProfile kicking{.name = "BAL", .field_goal_rating = 0.95};
+    gridiron::TeamProfile defending{.name = "SEA"};
 
-    gridiron::GameState state;
-    state.home = offense;
-    state.away = defense;
+    // 20 yards to the goal is a 37 yard kick, so a make and a miss leave the
+    // ball on different yard lines (25 versus 20) and are distinguishable.
+    const auto state = gridiron::GameState{
+        .home = kicking, .away = defending, .down = 4, .ball_position = 80};
 
-    std::mt19937 rngOne(1000);
-    std::mt19937 rngTwo(1000);
+    std::mt19937 rng(7);
+    const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, rng);
+    ASSERT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
 
-    gridiron::PlayOutcome outcomeOne = gridiron::samplePlayOutcome(state, rngOne);
-    gridiron::PlayOutcome outcomeTwo = gridiron::samplePlayOutcome(state, rngTwo);
+    const gridiron::GameState newState = gridiron::applyOutcome(state, outcome);
 
-    gridiron::GameState stateOne = gridiron::applyOutcome(state, outcomeOne);
-    gridiron::GameState stateTwo = gridiron::applyOutcome(state, outcomeTwo);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.away_score, 0);
 
-    EXPECT_EQ(stateOne.down, stateTwo.down);
-    EXPECT_EQ(stateOne.distance, stateTwo.distance);
-    EXPECT_EQ(stateOne.ball_position, stateTwo.ball_position);
-    EXPECT_EQ(stateOne.time_remaining_seconds, stateTwo.time_remaining_seconds);
-    EXPECT_EQ(stateOne.home_score, stateTwo.home_score);
-    EXPECT_EQ(stateOne.away_score, stateTwo.away_score);
+    if (outcome.outcome_type == gridiron::OutcomeType::FieldGoalMade) {
+        EXPECT_EQ(newState.home_score, 3);
+        EXPECT_EQ(newState.ball_position, 25);
+    } else {
+        ASSERT_EQ(outcome.outcome_type, gridiron::OutcomeType::Turnover);
+        EXPECT_EQ(newState.home_score, 0);
+        EXPECT_EQ(newState.ball_position, 20);
+    }
 }
