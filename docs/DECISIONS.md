@@ -70,7 +70,8 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
     - Standard 4 downs to gain 10 yards for a first down; failing to convert on 4th down turns the ball over on downs at the current spot.
     - Turnovers (interception/fumble, sampled via each team's Turnover Rate) immediately flip possession at the spot of the turnover; down resets to 1st and distance to 10.
     - Touchdown when Ball Position reaches the opponent's goal line (yard 100 from the scoring team's perspective): +6 points, followed by an automatic extra point (+1), no 2-point attempts in V1.
-    - Field goal decision on 4th down is a fixed rule: if the ball is within 40 yards of the opponent's goal line (i.e. distance-to-goal <= 40), attempt a field goal; otherwise, go for it on 4th down. Field Goal Rating is used to sample success; make = +3 and possession flips (kickoff simplification below), miss = turnover on downs at the spot.
+    - Field goal decision on 4th down is a fixed rule: if the ball is within 40 yards of the opponent's goal line (i.e. distance-to-goal <= 40), attempt a field goal; otherwise, go for it on 4th down. Make = +3 and possession flips (kickoff simplification below), miss = turnover on downs at the spot.
+    - Field goal success depends on both Field Goal Rating and kick distance, where kick distance = distance-to-goal + 17 (10 yards of end zone, 7 yards of snap and hold). So the 40-yard cutoff above allows attempts up to roughly 57 yards. Longer kicks are less likely to convert; the exact curve is a hand-tuned placeholder to be replaced with fitted data in M5, like the yardage constants.
     - Safety (offense tackled behind their own goal line): +2 to the defense, possession flips to that defense via a simplified kickoff.
     - After any score, possession flips via a fixed-field-position kickoff simplification (e.g. receiving team starts at their own 25) rather than simulating the kick itself.
 

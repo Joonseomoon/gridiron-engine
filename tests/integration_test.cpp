@@ -38,7 +38,7 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
     state.away = defense;
 
     std::mt19937 rng(2000);
-    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(offense, defense, rng);
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, rng);
     gridiron::GameState newState = gridiron::applyOutcome(state, outcome);
 
     std::cout << "Sampled play: play_type=" << toString(outcome.play_type)
@@ -74,8 +74,8 @@ TEST(IntegrationTest, SameSeedProducesIdenticalResult) {
     std::mt19937 rngOne(1000);
     std::mt19937 rngTwo(1000);
 
-    gridiron::PlayOutcome outcomeOne = gridiron::samplePlayOutcome(offense, defense, rngOne);
-    gridiron::PlayOutcome outcomeTwo = gridiron::samplePlayOutcome(offense, defense, rngTwo);
+    gridiron::PlayOutcome outcomeOne = gridiron::samplePlayOutcome(state, rngOne);
+    gridiron::PlayOutcome outcomeTwo = gridiron::samplePlayOutcome(state, rngTwo);
 
     gridiron::GameState stateOne = gridiron::applyOutcome(state, outcomeOne);
     gridiron::GameState stateTwo = gridiron::applyOutcome(state, outcomeTwo);

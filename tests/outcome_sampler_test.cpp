@@ -102,7 +102,8 @@ TEST_F(OutcomeSamplerTest, PassPlayTimeMinimum){
 
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsRunOrPass){
     std::mt19937 rng(42);
-    gridiron::PlayType playType = gridiron::choosePlayType(rng);
+    auto gameState = gridiron::GameState();
+    gridiron::PlayType playType = gridiron::choosePlayType(gameState, rng);
     EXPECT_TRUE(playType == gridiron::PlayType::Run ||
                 playType == gridiron::PlayType::Pass);
 }

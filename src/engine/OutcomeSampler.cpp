@@ -7,7 +7,7 @@
 namespace gridiron{
     
 
-    PlayType choosePlayType(std::mt19937& rng){
+    PlayType choosePlayType(const GameState& gameState, std::mt19937& rng){
         std::uniform_real_distribution<double> passOrRunDistribution(0.0, 1.0);
         if (passOrRunDistribution(rng) > 0.5){
             return PlayType::Run;
@@ -86,8 +86,10 @@ namespace gridiron{
             };
     }
 
-    PlayOutcome samplePlayOutcome(const TeamProfile& offense, const TeamProfile& defense, std::mt19937& rng){
-        PlayType playType = choosePlayType(rng);
+    PlayOutcome samplePlayOutcome(const GameState& gameState, std::mt19937& rng){
+        PlayType playType = choosePlayType(gameState, rng);
+        const TeamProfile& offense = (gameState.possession == Possession::Home) ? gameState.home : gameState.away;
+        const TeamProfile& defense = (gameState.possession == Possession::Home) ? gameState.away : gameState.home;
 
         if (playType == PlayType::Run){
             return sampleRunOutcome(offense, defense, rng);
