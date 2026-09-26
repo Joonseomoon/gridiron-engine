@@ -50,8 +50,8 @@ namespace gridiron {
                     // regardless of down/distance.
                     awardScoreAndKickoff(newState, newState.possession, 7, opponentOf(newState.possession));
                     wasScoringPlay = true;
-                } else if (newState.ball_position < 0) {
-                    // Tackled behind the goal line: safety.
+                } else if (newState.ball_position <= 0) {
+                    // Tackled in the offense's own end zone: safety.
                     awardScoreAndKickoff(newState, opponentOf(newState.possession), 2, opponentOf(newState.possession));
                     wasScoringPlay = true;
                 } else if (playOutcome.yards_gained >= newState.distance) {
@@ -73,7 +73,7 @@ namespace gridiron {
                 if (newState.ball_position <= 0) {
                     awardScoreAndKickoff(newState, opponentOf(newState.possession), 7, newState.possession);
                     wasScoringPlay = true;
-                } else if (newState.ball_position > 100) {
+                } else if (newState.ball_position >= 100) {
                     touchback(newState);
                 } else {
                     turnoverAtSpot(newState);

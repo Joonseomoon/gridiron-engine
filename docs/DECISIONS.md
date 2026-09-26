@@ -187,25 +187,27 @@ These are modeling choices baked into OutcomeSampler that were not decided in M0
     - Down = 1
     - Distance (for new first down) = min(10, 100 - ball position)
 
-### Turnover past either goal line
+### Goal line boundaries
 
-Derive these by flipping first, then judging the new position by the ordinary end-zone rules. After a turnover `newPos = 100 - oldPos`, so:
+One rule covers both cases: **at or past either goal line is in an end zone.** A touchdown is scored by reaching the plane at 100, and by the same logic a ball at the plane at 0 is in the offense's own end zone.
 
-- `newPos >= 100` (recovering team is in the end zone it is attacking) means `oldPos <= 0` → **defensive touchdown**. +7 to the defense, then a kickoff to the original offense.
-- `newPos < 0` (recovering team is behind its own goal line) means `oldPos > 100` → **touchback**. Possession flips, ball at the receiving team's own 25, down 1, distance 10, no score. (25 rather than the real-NFL 20, to match the kickoff simplification used everywhere else.)
-- Anything between is an ordinary turnover at the spot.
+| Ball position after the play | Normal play | Turnover |
+| --- | --- | --- |
+| `>= 100` | touchdown | touchback |
+| `<= 0` | safety | defensive touchdown |
+| `1` to `99` | play on | turnover at the spot |
 
-| Case | Possession flips? | Far goal line | Own goal line |
-| --- | --- | --- | --- |
-| Normal play | No | `>= 100` touchdown | `< 0` safety |
-| Turnover | Yes | `> 100` touchback | `<= 0` defensive touchdown |
+- **Touchdown**: +7 (6 plus the automatic extra point), kickoff to the opponent.
+- **Safety**: +2 to the defense, which then receives the kickoff.
+- **Touchback**: possession flips, ball at the receiving team's own 25, 1st and 10, no score. (25 rather than the real-NFL 20, to keep one kickoff spot everywhere. Deliberate simplification, not an oversight.)
+- **Defensive touchdown**: the defense recovers in the end zone it is attacking. +7 to the defense, then a kickoff to the original offense. This is the mirror of the safety rule — same spot on the field, different ball outcome: downed with the ball is 2 points, fumbled away is 7.
 
-The inequalities invert between the rows because the turnover row is the flip-image of the normal row. Do not "correct" them to match each other — derive from the flip instead. Worked examples: a turnover at exactly 0 is a defensive touchdown (the defense recovers in the end zone it attacks); a turnover at exactly 100 is an ordinary turnover giving the defense the ball at its own goal line, not a touchback, for the same reason a runner stopped at his own goal line is not a safety.
+Consequence worth relying on: a live ball never rests on 0 or 100, so the legal range for `ball_position` between plays is **1 to 99**. Anything outside that is a bug, not an edge case.
 
-Note the defensive touchdown is the mirror of the safety rule, not a duplicate of it: same spot on the field, different ball outcome. Tackled with the ball is 2 points to the defense; fumbled away is 7.
+Integer yards mean 0 and 100 have to fall on one side of the line or the other; putting them inside the end zone is what makes the table symmetric and matches how touchdowns already worked.
 
 ### Safety
-- If a play moves the ball position < 0:
+- If a play moves the ball position <= 0 (see "Goal line boundaries" above):
     - Add 2 points to the defensive team
     - Possession flipps to that team
     - New offesnse starts on 25 yard line

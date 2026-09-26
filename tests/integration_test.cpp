@@ -56,8 +56,10 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
     // Legal-state bounds, matching the acceptance criteria in docs/DECISIONS.md.
     EXPECT_GE(newState.down, 1);
     EXPECT_LE(newState.down, 4);
-    EXPECT_GE(newState.ball_position, 0);
-    EXPECT_LE(newState.ball_position, 100);
+    // At or past either goal line always resolves as a score or a touchback,
+    // so a live ball never rests on 0 or 100.
+    EXPECT_GE(newState.ball_position, 1);
+    EXPECT_LE(newState.ball_position, 99);
     EXPECT_GE(newState.time_remaining_seconds, 0);
     EXPECT_LE(newState.time_remaining_seconds, 900);
 }

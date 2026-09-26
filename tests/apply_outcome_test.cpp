@@ -531,7 +531,9 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly0ResultsInTouchdown) {
     EXPECT_FALSE(newState.game_over);
 }
 
-TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInNoTouchback) {
+// At or past a goal line is in an end zone, so the spot exactly on the line is
+// a touchback rather than possession at the recovering team's own 0.
+TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInTouchback) {
     auto curr_state = gridiron::GameState{.ball_position = 90};
     auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 10, 38);
     gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
@@ -541,9 +543,27 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInNoTouchback) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 0);
+    EXPECT_EQ(newState.ball_position, 25);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+}
+
+// Mirror of the touchdown rule: reaching the plane of a goal line counts, so
+// being downed exactly on your own goal line is a safety, not 1st and 10 there.
+TEST(ApplyOutcomeTest, TackledAtExactlyOwnGoalLineIsSafety) {
+    auto curr_state = gridiron::GameState{.ball_position = 5};
+    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -5, 38);
+    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 862);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
 }
 
