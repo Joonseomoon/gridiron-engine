@@ -1,10 +1,13 @@
 #pragma once
 
+#include <random>
+
 #include "GameState.h"
 #include "TeamProfile.h"
-#include "PlayOutcome.h"
-#include "ApplyOutcome.h"
 
-namespace gridiron{
-    GameState runGame (const TeamProfile& home, const TeamProfile& away, std::mt19937& rng);
-}
+namespace gridiron {
+
+// Simulate four quarters using the caller's random engine; ties are allowed.
+GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng);
+
+} // namespace gridiron

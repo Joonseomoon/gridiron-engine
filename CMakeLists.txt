@@ -20,8 +20,11 @@ add_executable(gridiron_tests
         tests/apply_outcome_test.cpp
         tests/outcome_sampler_test.cpp
         tests/integration_test.cpp
+        tests/game_run_test.cpp
         src/engine/ApplyOutcome.cpp
-        src/engine/OutcomeSampler.cpp)
+        src/engine/OutcomeSampler.cpp
+        src/engine/GameRunner.cpp
+        )
 target_link_libraries(gridiron_tests PRIVATE gtest_main)
 include(GoogleTest)
 gtest_discover_tests(gridiron_tests)
