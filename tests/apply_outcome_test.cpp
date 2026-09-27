@@ -531,7 +531,9 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly0ResultsInTouchdown) {
     EXPECT_FALSE(newState.game_over);
 }
 
-TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInNoTouchback) {
+// At or past a goal line is in an end zone, so the spot exactly on the line is
+// a touchback rather than possession at the recovering team's own 0.
+TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInTouchback) {
     auto curr_state = gridiron::GameState{.ball_position = 90};
     auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 10, 38);
     gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
@@ -541,9 +543,27 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInNoTouchback) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 0);
+    EXPECT_EQ(newState.ball_position, 25);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+}
+
+// Mirror of the touchdown rule: reaching the plane of a goal line counts, so
+// being downed exactly on your own goal line is a safety, not 1st and 10 there.
+TEST(ApplyOutcomeTest, TackledAtExactlyOwnGoalLineIsSafety) {
+    auto curr_state = gridiron::GameState{.ball_position = 5};
+    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -5, 38);
+    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 862);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
 }
 
@@ -574,4 +594,85 @@ TEST(ApplyOutcomeTest, MissedFieldGoalIgnoresYardsGained) {
     EXPECT_EQ(newState.ball_position, 75);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
+}
+
+// --- Reset completeness -----------------------------------------------------
+// Every other scoring and touchback test starts at 1st & 10, so a missing
+// down or distance reset is invisible: the old value carries over unchanged.
+// These start from 3rd & 4 so the resets have to actually happen.
+
+TEST(ApplyOutcomeTest, TouchdownResetsDownAndDistanceFromMidSeries) {
+    auto curr_state = gridiron::GameState{.down = 3, .distance = 4, .ball_position = 90};
+    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38);
+    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.home_score, 7);
+}
+
+TEST(ApplyOutcomeTest, TouchbackResetsDownAndDistanceFromMidSeries) {
+    auto curr_state = gridiron::GameState{.down = 3, .distance = 4, .ball_position = 90};
+    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 15, 38);
+    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+}
+
+// --- Quarter transition boundaries ------------------------------------------
+
+// Every other clock test overshoots zero, so the quarter would still end if the
+// check were `< 0`. Here the play consumes exactly the time remaining.
+TEST(ApplyOutcomeTest, QuarterEndsWhenElapsedExactlyConsumesTheClock) {
+    auto curr_state = gridiron::GameState{.time_remaining_seconds = 38};
+    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38);
+    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+
+    EXPECT_EQ(newState.quarter, 2);
+    EXPECT_EQ(newState.time_remaining_seconds, 900);
+    EXPECT_EQ(newState.down, 2);
+    EXPECT_EQ(newState.distance, 5);
+    EXPECT_EQ(newState.ball_position, 30);
+    EXPECT_FALSE(newState.game_over);
+}
+
+// Nothing else covers Q3 -> Q4. A game-over check of `>= 4` rather than `> 4`
+// would end the game a full quarter early and pass every other test.
+TEST(ApplyOutcomeTest, ThirdQuarterEndingAdvancesToFourthWithoutEndingTheGame) {
+    auto curr_state = gridiron::GameState{.quarter = 3, .time_remaining_seconds = 10};
+    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38);
+    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+
+    EXPECT_EQ(newState.quarter, 4);
+    EXPECT_EQ(newState.time_remaining_seconds, 900);
+    EXPECT_FALSE(newState.game_over);
+}
+
+// SafetyToEndHalf cannot detect a missing wasScoringPlay flag, because with the
+// default opening possession of Home the halftime rule hands the ball to Away
+// anyway — the same team the safety already gave it to. Flipping the opening
+// possession makes the two rules disagree, so the flag becomes observable.
+TEST(ApplyOutcomeTest, SafetyToEndHalfKeepsItsOwnKickoffWhenAwayOpened) {
+    auto curr_state = gridiron::GameState{
+        .quarter = 2,
+        .time_remaining_seconds = 10,
+        .opening_possession = gridiron::Possession::Away,
+        .ball_position = 4};
+    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38);
+    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+
+    EXPECT_EQ(newState.quarter, 3);
+    EXPECT_EQ(newState.time_remaining_seconds, 900);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 2);
+    EXPECT_FALSE(newState.game_over);
 }

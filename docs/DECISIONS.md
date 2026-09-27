@@ -70,7 +70,8 @@ Fill this in together during Milestone 0. Keep decisions short and revise them a
     - Standard 4 downs to gain 10 yards for a first down; failing to convert on 4th down turns the ball over on downs at the current spot.
     - Turnovers (interception/fumble, sampled via each team's Turnover Rate) immediately flip possession at the spot of the turnover; down resets to 1st and distance to 10.
     - Touchdown when Ball Position reaches the opponent's goal line (yard 100 from the scoring team's perspective): +6 points, followed by an automatic extra point (+1), no 2-point attempts in V1.
-    - Field goal decision on 4th down is a fixed rule: if the ball is within 40 yards of the opponent's goal line (i.e. distance-to-goal <= 40), attempt a field goal; otherwise, go for it on 4th down. Field Goal Rating is used to sample success; make = +3 and possession flips (kickoff simplification below), miss = turnover on downs at the spot.
+    - Field goal decision on 4th down is a fixed rule: if the ball is within 40 yards of the opponent's goal line (i.e. distance-to-goal <= 40), attempt a field goal; otherwise, go for it on 4th down. Make = +3 and possession flips (kickoff simplification below), miss = turnover on downs at the spot.
+    - Field goal success depends on both Field Goal Rating and kick distance, where kick distance = distance-to-goal + 17 (10 yards of end zone, 7 yards of snap and hold). So the 40-yard cutoff above allows attempts up to roughly 57 yards. Longer kicks are less likely to convert; the exact curve is a hand-tuned placeholder to be replaced with fitted data in M5, like the yardage constants.
     - Safety (offense tackled behind their own goal line): +2 to the defense, possession flips to that defense via a simplified kickoff.
     - After any score, possession flips via a fixed-field-position kickoff simplification (e.g. receiving team starts at their own 25) rather than simulating the kick itself.
 
@@ -132,6 +133,8 @@ These are modeling choices baked into OutcomeSampler that were not decided in M0
 - **Turnover yardage is the yardage the play would have gained.** On a turnover, the sampler reports the same `yards_gained` it would have on a normal play, and applyOutcome advances the ball that far before flipping possession. This stands in for "the spot of the turnover" without modeling returns separately.
 - **Turnover probability is a flat per-play rate** (`offense.turnover_rate`), identical for runs and passes, and unaffected by situation.
 - **Play duration is sampled independently of the play's result**: ~N(30, 5) with a 15s floor for gains over 20 yards, ~N(20, 5) with a 10s floor otherwise. The clock does not distinguish in-bounds from out-of-bounds or incomplete passes, per the running-clock simplification above.
+- **A field goal attempt burns the same clock as an ordinary short play** (~N(20, 5), 10s floor). Realistically a snap-kick-whistle is quicker, but reusing the existing distribution keeps one source of play timing and preserves the "every play burns at least 10 seconds" bound that game termination relies on.
+- **`field_goal_rating` means make probability on a 20-yard chip shot.** Success is `rating - 0.01 * (kickDistance - 20)`, clamped to [0.01, 0.99], where `kickDistance = distance-to-goal + 17`. So a realistic kicker rates about 0.95, not 0.8: at 0.95 that gives roughly 0.95 at a chip shot, 0.79 from 40 yards, and 0.58 from the 57-yard edge of the attempt range. Hand-tuned like the yardage constants, to be refit in M5.
 
 ## M0.2 State-transition cases
 
@@ -184,25 +187,27 @@ These are modeling choices baked into OutcomeSampler that were not decided in M0
     - Down = 1
     - Distance (for new first down) = min(10, 100 - ball position)
 
-### Turnover past either goal line
+### Goal line boundaries
 
-Derive these by flipping first, then judging the new position by the ordinary end-zone rules. After a turnover `newPos = 100 - oldPos`, so:
+One rule covers both cases: **at or past either goal line is in an end zone.** A touchdown is scored by reaching the plane at 100, and by the same logic a ball at the plane at 0 is in the offense's own end zone.
 
-- `newPos >= 100` (recovering team is in the end zone it is attacking) means `oldPos <= 0` → **defensive touchdown**. +7 to the defense, then a kickoff to the original offense.
-- `newPos < 0` (recovering team is behind its own goal line) means `oldPos > 100` → **touchback**. Possession flips, ball at the receiving team's own 25, down 1, distance 10, no score. (25 rather than the real-NFL 20, to match the kickoff simplification used everywhere else.)
-- Anything between is an ordinary turnover at the spot.
+| Ball position after the play | Normal play | Turnover |
+| --- | --- | --- |
+| `>= 100` | touchdown | touchback |
+| `<= 0` | safety | defensive touchdown |
+| `1` to `99` | play on | turnover at the spot |
 
-| Case | Possession flips? | Far goal line | Own goal line |
-| --- | --- | --- | --- |
-| Normal play | No | `>= 100` touchdown | `< 0` safety |
-| Turnover | Yes | `> 100` touchback | `<= 0` defensive touchdown |
+- **Touchdown**: +7 (6 plus the automatic extra point), kickoff to the opponent.
+- **Safety**: +2 to the defense, which then receives the kickoff.
+- **Touchback**: possession flips, ball at the receiving team's own 25, 1st and 10, no score. (25 rather than the real-NFL 20, to keep one kickoff spot everywhere. Deliberate simplification, not an oversight.)
+- **Defensive touchdown**: the defense recovers in the end zone it is attacking. +7 to the defense, then a kickoff to the original offense. This is the mirror of the safety rule — same spot on the field, different ball outcome: downed with the ball is 2 points, fumbled away is 7.
 
-The inequalities invert between the rows because the turnover row is the flip-image of the normal row. Do not "correct" them to match each other — derive from the flip instead. Worked examples: a turnover at exactly 0 is a defensive touchdown (the defense recovers in the end zone it attacks); a turnover at exactly 100 is an ordinary turnover giving the defense the ball at its own goal line, not a touchback, for the same reason a runner stopped at his own goal line is not a safety.
+Consequence worth relying on: a live ball never rests on 0 or 100, so the legal range for `ball_position` between plays is **1 to 99**. Anything outside that is a bug, not an edge case.
 
-Note the defensive touchdown is the mirror of the safety rule, not a duplicate of it: same spot on the field, different ball outcome. Tackled with the ball is 2 points to the defense; fumbled away is 7.
+Integer yards mean 0 and 100 have to fall on one side of the line or the other; putting them inside the end zone is what makes the table symmetric and matches how touchdowns already worked.
 
 ### Safety
-- If a play moves the ball position < 0:
+- If a play moves the ball position <= 0 (see "Goal line boundaries" above):
     - Add 2 points to the defensive team
     - Possession flipps to that team
     - New offesnse starts on 25 yard line

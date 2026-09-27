@@ -10,9 +10,11 @@ Also agree who maps possession to profiles: `offense = (possession == Home) ? st
 
 ## Probability model
 
-1. **4th-down field goal decision.** Per DECISIONS.md: on 4th down, if distance-to-goal <= 40, attempt a field goal; otherwise go for it. Belongs in `choosePlayType` once it can see `GameState`.
-2. **Field goal make/miss sampling** from `field_goal_rating`, emitting `PlayType::FieldGoalAttempt` with `OutcomeType::FieldGoalMade` or `OutcomeType::Turnover` (miss). This is the first code to read `field_goal_rating`, and the first thing able to produce `FieldGoalAttempt` — both are currently unreachable in production.
-3. **Checks of sampled behavior.** Over many samples, confirm the turnover rate and field goal success rate land near their configured values.
+1. ~~**4th-down field goal decision.**~~ Done. `choosePlayType` now takes `GameState` and returns `FieldGoalAttempt` on 4th down with distance-to-goal <= 40, with tests pinning both clauses of that condition independently and the boundary at exactly 40.
+2. ~~**Field goal make/miss sampling.**~~ Done. Distance-dependent, per the `field_goal_rating` definition recorded in DECISIONS.md. `samplePlayOutcome` now derives offense/defense from `possession` itself, so the shared prerequisite is settled: the mapping lives in the sampler, not in callers.
+3. ~~**Checks of sampled behavior.**~~ Done, and extended well past the original scope after mutation testing showed the sampler suite caught only 1 of 18 planted bugs. It now covers the yardage formulas (mean, spread, rating direction, which ratings feed which formula), turnover frequency at a non-trivial rate, the over-20-yard duration branch, the run/pass split, and dispatch-matches-decision.
+
+Still uncaught by design: a change to the *order* random numbers are drawn. Only a golden test with hard-coded sampled values catches that, and those values are implementation-defined for `std::normal_distribution` — adding one would pin CI to macOS/libc++. Deliberately deferred rather than forgotten.
 
 ## Game progression
 
@@ -28,7 +30,21 @@ Also agree who maps possession to profiles: `offense = (possession == Home) ? st
 
 - Run complete seeded games and inspect the play sequence together.
 - Same seed, same teams reproduces an identical game.
-- **Invariant sweep:** run many games across different seeds and assert every intermediate state is legal — down 1-4, distance >= 0, ball position 0-100, no 5th quarter, final scores reachable from 2/3/7-point plays. This is what would have caught the turnover bug.
+- **Invariant sweep:** run many games across different seeds and assert every intermediate state is legal — down 1-4, distance >= 0, ball position **1-99**, no 5th quarter, final scores reachable from 2/3/7-point plays. This is what would have caught the turnover bug. Note 1-99, not 0-100: at or past either goal line now always resolves as a score or a touchback, so a live ball never rests on 0 or 100 (see DECISIONS.md "Goal line boundaries").
+
+## At the round boundary, once nobody has open work
+
+**Set up clang-format.** Formatting is currently inconsistent between files (brace placement, spacing), and locals mix camelCase with snake_case while struct members are snake_case. A formatter ends that class of review comment for good.
+
+Do it only when neither of us has an open branch — reformatting every file while someone has in-flight work means merge conflicts in every file they touched, for no functional reason. Then:
+
+- Make it its own commit, touching nothing but formatting.
+- Add `.git-blame-ignore-revs` with that commit's SHA so `git blame` still points at whoever wrote each line.
+- Enforce it in CI (`clang-format --dry-run --Werror`), or it drifts back within a few PRs.
+
+Good fit for Developer B: LEARNING.md shows build/tests/docs as A-only so far, and CONTRIBUTING.md says to fix areas with a single implementer.
+
+Optional follow-on: clang-tidy, which can mechanically enforce the naming convention. Noisier, so it can wait. Note neither tool would have caught any of the bugs found this round — they were all football-rules reasoning. This is for clean diffs, not correctness.
 
 ## Deferred to M1.3
 
