@@ -97,6 +97,7 @@ namespace gridiron {
             }
             if (newState.quarter > 4) {
                 newState.quarter = 4;
+                newState.time_remaining_seconds = 0;
                 newState.game_over = true;
             }
         }
