@@ -8,6 +8,10 @@
 namespace gridiron {
 
 GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng) {
+    return runGame(home, away, rng, PlayObserver{});
+}
+
+GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng, const PlayObserver& onPlay) {
     GameState state;
     state.home = home;
     state.away = away;
@@ -24,7 +28,11 @@ GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937
             throw std::runtime_error("Game exceeded maximum play count");
         }
         const PlayOutcome outcome = samplePlayOutcome(state, rng);
-        state = applyOutcome(state, outcome);
+        GameState next = applyOutcome(state, outcome);
+        if (onPlay) {
+            onPlay(state, outcome, next);
+        }
+        state = next;
         ++plays;
     }
     return state;

@@ -4,7 +4,7 @@ Update this briefly at each milestone boundary. Record actual implementation wor
 
 | Area | A implemented | B implemented | Useful next crossover |
 | --- | --- | --- | --- |
-| Game state and football rules | M1.1: `applyOutcome` — down/distance, turnovers, scoring, goal-line and safety detection, quarter/halftime/game-over transitions (PR #7, #9) | Reviewed only | B takes the game loop that drives plays to `game_over`, plus the seeded opening coin toss |
+| Game state and football rules | M1.1: `applyOutcome` — down/distance, turnovers, scoring, goal-line and safety detection, quarter/halftime/game-over transitions (PR #7, #9) | M1.2: `runGame` game loop with play-count bound, seeded opening coin toss, termination and reproducibility tests (PR #14) | Crossover done both ways in this area |
 | Probability sampling and team models | M1.2: 4th-down field-goal decision and distance-dependent make/miss sampling; extended the sampler test suite after mutation testing exposed it as mostly vacuous | M1.1: `OutcomeSampler` — run/pass yardage from team ratings, per-play turnover sampling, seeded RNG, play duration (PR #9) | Crossover done both ways in this area. B could take the golden/draw-order test that is still deferred |
 | Batch execution and reproducibility | | | |
 | Statistics and uncertainty | | | |
