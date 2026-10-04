@@ -141,8 +141,8 @@ TEST(InvariantSweepTest, ObserverDoesNotChangeTheGame) {
         std::mt19937 rngObserved(seed);
 
         const auto plain = gridiron::runGame(m.home, m.away, rngPlain);
-        const auto observed = gridiron::runGame(m.home, m.away, rngObserved,
-                                                [](const auto&, const auto&, const auto&) {});
+        const auto observed =
+            gridiron::runGame(m.home, m.away, rngObserved, [](const auto&, const auto&, const auto&) {});
 
         EXPECT_EQ(plain.home_score, observed.home_score);
         EXPECT_EQ(plain.away_score, observed.away_score);
@@ -158,10 +158,9 @@ TEST(InvariantSweepTest, SameSeedReproducesEveryPlay) {
     const auto record = [&](unsigned seed) {
         std::vector<gridiron::PlayOutcome> plays;
         std::mt19937 rng(seed);
-        gridiron::runGame(m.home, m.away, rng,
-                          [&](const auto&, const gridiron::PlayOutcome& outcome, const auto&) {
-                              plays.push_back(outcome);
-                          });
+        gridiron::runGame(m.home, m.away, rng, [&](const auto&, const gridiron::PlayOutcome& outcome, const auto&) {
+            plays.push_back(outcome);
+        });
         return plays;
     };
 
