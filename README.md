@@ -28,11 +28,6 @@ Run the test binary directly for faster iteration or to filter to one test:
 ./build/gridiron_tests --gtest_filter=ApplyOutcomeTest.SomeTestName
 ```
 
-Dump one seeded game play by play (developer tool with fixed BAL vs SEA teams, not the M1.3 CLI):
-```
-./build/gridiron_debug_game 1000
-```
-
 Tests also run automatically in CI on every push/PR to `main` (see `.github/workflows/ci.yml`). CI fails on any of:
 
 - **Compiler warnings.** Locally they are only warnings; reproduce CI with `cmake -S . -B build -DGRIDIRON_WERROR=ON`.
