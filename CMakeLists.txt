@@ -16,11 +16,18 @@ FetchContent_MakeAvailable(googletest)
 enable_testing()
 
 add_executable(gridiron_engine src/main.cpp)
+add_executable(gridiron_debug_game
+        tools/debug_game.cpp
+        src/engine/ApplyOutcome.cpp
+        src/engine/OutcomeSampler.cpp
+        src/engine/GameRunner.cpp
+        )
 add_executable(gridiron_tests
         tests/apply_outcome_test.cpp
         tests/outcome_sampler_test.cpp
         tests/integration_test.cpp
         tests/game_run_test.cpp
+        tests/invariant_sweep_test.cpp
         src/engine/ApplyOutcome.cpp
         src/engine/OutcomeSampler.cpp
         src/engine/GameRunner.cpp

@@ -18,15 +18,17 @@ Still uncaught by design: a change to the *order* random numbers are drawn. Only
 
 ## Game progression
 
-4. **Game loop.** Repeat sample → apply until `game_over`, using the possession-to-profile mapping above.
-5. **Seeded opening coin toss** setting `opening_possession`. Already decided in DECISIONS.md, implemented nowhere — it currently sits at its `Home` default, and the halftime rule depends on it being real.
-6. **Termination test.** Every play burns at least 10 seconds, so a game is bounded at roughly 360 plays. Assert it terminates rather than assuming it.
+4. ~~**Game loop.**~~ Done. `runGame` in `GameRunner` repeats sample → apply until `game_over`, and throws if a game passes the 360-play bound instead of looping forever.
+5. ~~**Seeded opening coin toss**~~ Done. Drawn first from the game's RNG stream, so the same seed reproduces it.
+6. ~~**Termination test.**~~ Done, including extreme team profiles and turnover rates of 0 and 1.
 
 ## Also on the probability model side
 
 7. ~~**Fix turnovers past either goal line.**~~ Done. Touchback and defensive touchdown implemented per DECISIONS.md "Turnover past either goal line", with boundary tests at exactly 0 and exactly 100 and a defensive-touchdown-at-halftime test.
 
 ## Checkpoint
+
+Done in `tests/invariant_sweep_test.cpp`. `runGame` now has an overload taking a per-play observer `(before, outcome, after)` so the sweep can see every intermediate state; it draws no random numbers, and a test checks that a seed produces the same game with or without one. M1.3's event log can use the same hook. The sweep runs 1000 seeds × 5 matchups (typical, both extreme mismatches, turnover-heavy, and a defensive struggle that ends most drives on 4th down) and checks the bounds below plus: the field goal decision rule on every snap, one team scoring per play by 2/3/7 only, final score equal to the sum of scoring plays, clock monotonicity, the post-score kickoff spot, and the halftime possession rule. Planting the old turnover-past-the-goal-line bug, or handing the second half to the opening team, makes it fail.
 
 - Run complete seeded games and inspect the play sequence together.
 - Same seed, same teams reproduces an identical game.
@@ -53,3 +55,11 @@ Readable event log and final result presentation, including `SimulationResult` a
 `applyOutcome` works out whether a play scored, turned the ball over, or converted a first down, then returns only a `GameState` — discarding it. The log will need that back, likely as a small result struct rather than a bare `GameState`.
 
 Diffing before/after states is not enough: an interception, a turnover on downs, and a missed field goal all look like "possession flipped, score unchanged," but they are three different sentences in a log. (`OutcomeType::Touchdown` and `Safety` were dropped from the sampler's enum for the same reason — they are derived from field position, so no sampler could emit them. Those concepts belong in this output type instead.)
+
+### Developer A — fix the halftime kickoff rule
+
+The second half always starts with the team that did **not** open the game receiving at its own 25, 1st and 10 — even when the last play of the first half scored. This is the rule DECISIONS.md "End of quarter" already states (and the real NFL rule); the code currently disagrees.
+
+- In `applyOutcome`, drop the `!wasScoringPlay` condition on the quarter-3 reset so halftime always overrides the scoring play's kickoff. The points from that play still count.
+- `PassCrossesGoalLineOnFinalPlayOfHalfStillScores` and `SafetyToEndHalfKeepsItsOwnKickoffWhenAwayOpened` assert the old behavior; rewrite them to expect the opponent of `opening_possession` to receive.
+- In `tests/invariant_sweep_test.cpp`, remove the `&& !scored` exemption from the halftime check so the sweep enforces the rule on every game.
