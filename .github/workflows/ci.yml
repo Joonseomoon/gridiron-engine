@@ -14,10 +14,48 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Configure
-        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug -DGRIDIRON_WERROR=ON
 
       - name: Build
         run: cmake --build build
 
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  # AddressSanitizer + UndefinedBehaviorSanitizer: catch memory errors and
+  # undefined behavior while the tests run. -fno-sanitize-recover makes any
+  # finding fail the job instead of just printing.
+  sanitizers:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
+
+      - name: Build
+        run: cmake --build build
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+  format:
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pinned: different clang-format versions format slightly differently.
+      # Keep in sync with the version in README.md.
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install clang-format
+        run: pip install clang-format==23.1.2
+
+      - name: Check formatting
+        run: git ls-files '*.cpp' '*.h' | xargs clang-format --dry-run --Werror

@@ -84,7 +84,7 @@ TEST(GameRunTest, RepeatAfterUnrelated){
 TEST(GameRunTest, MultiSeedTermination){
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
-    for (int seed : {2000, 3500, 5420, 1290, 9832}) {
+    for (unsigned seed : {2000u, 3500u, 5420u, 1290u, 9832u}) {
         SCOPED_TRACE(seed);
         std::mt19937 rng(seed);
         const auto state = gridiron::runGame(home, away, rng);
@@ -108,7 +108,7 @@ TEST(GameRunTest, OpeningCoinToss){
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
     bool sawHome = false;
     bool sawAway = false;
-    for (int i = 0; i < 50; ++i) {
+    for (unsigned i = 0; i < 50; ++i) {
 
         std::mt19937 rng(i);
         gridiron::GameState playGame = gridiron::runGame (home, away, rng);

@@ -15,6 +15,16 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(googletest)
 enable_testing()
 
+# Warnings for our own targets only (not GoogleTest). CI turns them into
+# errors with -DGRIDIRON_WERROR=ON; locally they stay warnings so a newer
+# compiler's new warning doesn't block a build.
+option(GRIDIRON_WERROR "Treat compiler warnings as errors" OFF)
+add_library(gridiron_warnings INTERFACE)
+target_compile_options(gridiron_warnings INTERFACE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+if(GRIDIRON_WERROR)
+    target_compile_options(gridiron_warnings INTERFACE -Werror)
+endif()
+
 add_executable(gridiron_engine src/main.cpp)
 add_executable(gridiron_debug_game
         tools/debug_game.cpp
@@ -32,6 +42,8 @@ add_executable(gridiron_tests
         src/engine/OutcomeSampler.cpp
         src/engine/GameRunner.cpp
         )
-target_link_libraries(gridiron_tests PRIVATE gtest_main)
+target_link_libraries(gridiron_engine PRIVATE gridiron_warnings)
+target_link_libraries(gridiron_debug_game PRIVATE gridiron_warnings)
+target_link_libraries(gridiron_tests PRIVATE gtest_main gridiron_warnings)
 include(GoogleTest)
 gtest_discover_tests(gridiron_tests)
