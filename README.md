@@ -76,7 +76,7 @@ See [ROADMAP.md](ROADMAP.md) for responsibilities, integration points, and compl
 - [Working agreement](CONTRIBUTING.md)
 - [Project overview](docs/PROJECT_OVERVIEW.md)
 - [Initial decisions](docs/DECISIONS.md)
-- [Current round tasks](docs/TASKS.md)
+- [Side tasks: bugs, tooling, deferred tests](docs/TASKS.md)
 - [Learning and rotation record](docs/LEARNING.md)
 
 ## Principles
