@@ -5,19 +5,6 @@ work is tracked in ROADMAP.md and its issues, not here. Remove an item once it i
 
 ## Bugs
 
-### Halftime kickoff rule (Developer A, M1.3)
-
-The second half always starts with the team that did **not** open the game receiving at its own 25, 1st and 10 — even
-when the last play of the first half scored. This is the rule DECISIONS.md "End of quarter" already states (and the real
-NFL rule); the code currently disagrees.
-
-- In `applyOutcome`, drop the `!wasScoringPlay` condition on the quarter-3 reset so halftime always overrides the
-  scoring play's kickoff. The points from that play still count.
-- `PassCrossesGoalLineOnFinalPlayOfHalfStillScores` and `SafetyToEndHalfKeepsItsOwnKickoffWhenAwayOpened` assert the old
-  behavior; rewrite them to expect the opponent of `opening_possession` to receive.
-- In `tests/invariant_sweep_test.cpp`, remove the `&& !scored` exemption from the halftime check so the sweep enforces
-  the rule on every game.
-
 ## Deferred
 
 ### clang-tidy

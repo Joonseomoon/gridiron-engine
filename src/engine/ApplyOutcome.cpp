@@ -41,8 +41,6 @@ void touchback(GameState& state) {
 GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome) {
     GameState newState = gameState;
 
-    bool wasScoringPlay = false;
-
     switch (playOutcome.outcome_type) {
     case OutcomeType::Normal:
         newState.ball_position += playOutcome.yards_gained;
@@ -50,11 +48,9 @@ GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcom
             // A gain that reaches or crosses the goal line scores,
             // regardless of down/distance.
             awardScoreAndKickoff(newState, newState.possession, 7, opponentOf(newState.possession));
-            wasScoringPlay = true;
         } else if (newState.ball_position <= 0) {
             // Tackled in the offense's own end zone: safety.
             awardScoreAndKickoff(newState, opponentOf(newState.possession), 2, opponentOf(newState.possession));
-            wasScoringPlay = true;
         } else if (playOutcome.yards_gained >= newState.distance) {
             // First down conversion
             newState.distance = std::min(10, 100 - newState.ball_position);
@@ -73,7 +69,6 @@ GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcom
 
         if (newState.ball_position <= 0) {
             awardScoreAndKickoff(newState, opponentOf(newState.possession), 7, newState.possession);
-            wasScoringPlay = true;
         } else if (newState.ball_position >= 100) {
             touchback(newState);
         } else {
@@ -82,7 +77,6 @@ GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcom
         break;
     case OutcomeType::FieldGoalMade:
         awardScoreAndKickoff(newState, newState.possession, 3, opponentOf(newState.possession));
-        wasScoringPlay = true;
         break;
     }
 
@@ -90,7 +84,7 @@ GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcom
     if (newState.time_remaining_seconds <= 0) {
         newState.quarter++;
         newState.time_remaining_seconds = 900;
-        if (newState.quarter == 3 && !wasScoringPlay) {
+        if (newState.quarter == 3) {
             newState.down = 1;
             newState.distance = 10;
             newState.ball_position = 25;

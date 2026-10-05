@@ -105,9 +105,8 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                     EXPECT_EQ(after.ball_position, 25);
                 }
 
-                // Halftime hands the ball to the team that did not open,
-                // unless the last play of the half scored and set its own kickoff.
-                if (before.quarter == 2 && after.quarter == 3 && !scored) {
+                // Halftime hands the ball to the team that did not open
+                if (before.quarter == 2 && after.quarter == 3) {
                     EXPECT_EQ(after.possession, opponentOf(after.opening_possession));
                     EXPECT_EQ(after.ball_position, 25);
                 }

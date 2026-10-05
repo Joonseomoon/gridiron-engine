@@ -8,8 +8,8 @@ include(FetchContent)
 
 FetchContent_Declare(
         googletest
-        GIT_REPOSITORY  https://github.com/google/googletest
-        GIT_TAG         v1.18.0
+        GIT_REPOSITORY https://github.com/google/googletest
+        GIT_TAG v1.18.0
 )
 
 FetchContent_MakeAvailable(googletest)
@@ -21,22 +21,33 @@ enable_testing()
 option(GRIDIRON_WERROR "Treat compiler warnings as errors" OFF)
 add_library(gridiron_warnings INTERFACE)
 target_compile_options(gridiron_warnings INTERFACE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
-if(GRIDIRON_WERROR)
+if (GRIDIRON_WERROR)
     target_compile_options(gridiron_warnings INTERFACE -Werror)
-endif()
+endif ()
 
-add_executable(gridiron_engine src/main.cpp)
+add_library(gridiron_core
+        src/engine/ApplyOutcome.cpp
+        src/engine/OutcomeSampler.cpp
+        src/engine/GameRunner.cpp
+)
+target_link_libraries(gridiron_core PRIVATE gridiron_warnings)
+add_library(gridiron_cli
+        src/cli/Teams.cpp
+        src/cli/CommandLine.cpp
+)
+target_link_libraries(gridiron_cli PRIVATE gridiron_warnings)
+
+add_executable(simulate src/main.cpp)
 add_executable(gridiron_tests
         tests/apply_outcome_test.cpp
         tests/outcome_sampler_test.cpp
         tests/integration_test.cpp
         tests/game_run_test.cpp
         tests/invariant_sweep_test.cpp
-        src/engine/ApplyOutcome.cpp
-        src/engine/OutcomeSampler.cpp
-        src/engine/GameRunner.cpp
-        )
-target_link_libraries(gridiron_engine PRIVATE gridiron_warnings)
-target_link_libraries(gridiron_tests PRIVATE gtest_main gridiron_warnings)
+        tests/teams_test.cpp
+        tests/command_line_test.cpp
+)
+target_link_libraries(simulate PRIVATE gridiron_cli gridiron_core gridiron_warnings)
+target_link_libraries(gridiron_tests PRIVATE gtest_main gridiron_cli gridiron_core gridiron_warnings)
 include(GoogleTest)
 gtest_discover_tests(gridiron_tests)

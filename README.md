@@ -10,7 +10,7 @@ The project gives two developers practical experience with C++, stateful simulat
 
 ## Current status
 
-Engine skeleton in progress. `applyOutcome` (M1.1) is implemented and tested; the CLI simulator itself is not yet built.
+M1.3 in progress. The engine plays a complete seeded game (M1.1–M1.2), and the `simulate` command runs one from the terminal. Its output is currently a one-line final score; the play-by-play log and final result presentation are in progress.
 
 ## Building and testing
 
@@ -44,6 +44,15 @@ Tests also run automatically in CI on every push/PR to `main` (see `.github/work
   Most editors (CLion, VS Code) can format on save using `.clang-format`; point them at this version.
 
 After cloning, run `git config blame.ignoreRevsFile .git-blame-ignore-revs` so `git blame` skips the one-time reformatting commit.
+
+## Running a game
+
+After building:
+```
+./build/simulate BAL SEA --seed 1000    # BAL at home vs SEA, fixed seed: same game every time
+./build/simulate bal sea                # team names are case-insensitive; with no seed, a random one is used and printed
+```
+Usage: `simulate HOME AWAY [--seed N]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in `src/cli/Teams.cpp`). Invalid input prints an error and the usage line, and exits with code 1.
 
 ## First milestone
 

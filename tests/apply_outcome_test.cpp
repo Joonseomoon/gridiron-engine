@@ -344,7 +344,7 @@ TEST(ApplyOutcomeTest, FieldGoalMadeToEndHalf) {
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
-    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
     EXPECT_EQ(newState.ball_position, 25);
@@ -424,9 +424,7 @@ TEST(ApplyOutcomeTest, PassCrossesGoalLineOnFinalPlayOfHalfStillScores) {
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
-    // Scoring play's own kickoff assignment (opponent of scorer receives)
-    // must win over the halftime "opponent of opening possession" rule.
-    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
     EXPECT_EQ(newState.ball_position, 25);
@@ -588,7 +586,7 @@ TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineAtEndOfHalf) {
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
-    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
     EXPECT_EQ(newState.ball_position, 25);
@@ -670,11 +668,7 @@ TEST(ApplyOutcomeTest, ThirdQuarterEndingAdvancesToFourthWithoutEndingTheGame) {
     EXPECT_FALSE(newState.game_over);
 }
 
-// SafetyToEndHalf cannot detect a missing wasScoringPlay flag, because with the
-// default opening possession of Home the halftime rule hands the ball to Away
-// anyway — the same team the safety already gave it to. Flipping the opening
-// possession makes the two rules disagree, so the flag becomes observable.
-TEST(ApplyOutcomeTest, SafetyToEndHalfKeepsItsOwnKickoffWhenAwayOpened) {
+TEST(ApplyOutcomeTest, SafetyToEndHalfDoesNotKeepItsOwnKickoffWhenAwayOpened) {
     auto curr_state = gridiron::GameState{.quarter = 2,
                                           .time_remaining_seconds = 10,
                                           .opening_possession = gridiron::Possession::Away,
@@ -684,7 +678,7 @@ TEST(ApplyOutcomeTest, SafetyToEndHalfKeepsItsOwnKickoffWhenAwayOpened) {
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
-    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.ball_position, 25);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);

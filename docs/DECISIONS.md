@@ -225,7 +225,7 @@ Integer yards mean 0 and 100 have to fall on one side of the line or the other; 
         - Quarter += 1
         - Time Remaining in quarter = 900
     - If the new quarter is quarter 3:
-        - Possession goes to the team that did not start the game with the ball
+        - Possession goes to the team that did not start the game with the ball, even if the last play of the first half scored (that play's points still count; its kickoff is replaced by the second-half kickoff)
         - Ball position = 25
         - Down = 1 
         - Distance = 10
@@ -260,3 +260,21 @@ Integer yards mean 0 and 100 have to fall on one side of the line or the other; 
 ## Decision log
 
 For later decisions, add a date, decision, reason, and practical consequence. Add detail only when it will help future development.
+
+### 2026-10-05: Command line interface (M1.3)
+
+- **Decision:** the command is `simulate HOME AWAY [--seed N]`. Teams are given by abbreviation, case-insensitively (`bal` = `BAL`), and `--seed` may appear before or after the teams. The seed is an integer from 0 to 4294967295, because `std::mt19937` takes a 32-bit seed.
+- **Reason:** matches the first-demo command above; strict parsing (`std::from_chars`, whole string must be digits) turns typos into clear errors instead of a silently different game.
+- **Consequence:** errors (unknown option, unknown team, the same team twice, a bad or repeated seed) go to stderr with a usage line and exit code 1; a game exits 0. The executable target is `simulate`.
+
+### 2026-10-05: Seed when none is given
+
+- **Decision:** without `--seed`, the CLI draws one from `std::random_device`, plays with it, and prints it.
+- **Reason:** keeps casual runs varied while every game stays reproducible: rerun with the printed seed.
+- **Consequence:** the printed seed is part of the output contract; the M1.3 result presentation must keep showing it.
+
+### 2026-10-05: Built-in teams and code layout
+
+- **Decision:** the CLI's teams are a hand-set table in `src/cli/Teams.cpp` (currently BAL, SEA, LAR, KC, HOU, DAL), with ratings in [0, 1] chosen to give distinct styles. Engine code builds as the `gridiron_core` library; CLI-only code (teams, argument parsing) builds as `gridiron_cli`.
+- **Reason:** the ratings are placeholders until M5 fits real ones, and later front ends (the M2 batch runner, the M6 API) should reuse the engine without inheriting the CLI's team table.
+- **Consequence:** add a team by adding one row to the table; `teams_test.cpp` checks every team is found and every rating is in range. New engine source files go in `gridiron_core`, new CLI files in `gridiron_cli`.
