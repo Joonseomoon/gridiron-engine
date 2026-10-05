@@ -2,8 +2,8 @@
 
 #include <stdexcept>
 
-#include "OutcomeSampler.h"
 #include "ApplyOutcome.h"
+#include "OutcomeSampler.h"
 
 namespace gridiron {
 

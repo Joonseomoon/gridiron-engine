@@ -8,24 +8,24 @@
 #include "../src/engine/TeamProfile.h"
 
 namespace {
-    const char* toString(gridiron::PlayType type) {
-        switch (type) {
-            case gridiron::PlayType::Run: return "Run";
-            case gridiron::PlayType::Pass: return "Pass";
-            case gridiron::PlayType::FieldGoalAttempt: return "FieldGoalAttempt";
-        }
-        return "Unknown";
+const char* toString(gridiron::PlayType type) {
+    switch (type) {
+    case gridiron::PlayType::Run: return "Run";
+    case gridiron::PlayType::Pass: return "Pass";
+    case gridiron::PlayType::FieldGoalAttempt: return "FieldGoalAttempt";
     }
-
-    const char* toString(gridiron::OutcomeType type) {
-        switch (type) {
-            case gridiron::OutcomeType::Normal: return "Normal";
-            case gridiron::OutcomeType::Turnover: return "Turnover";
-            case gridiron::OutcomeType::FieldGoalMade: return "FieldGoalMade";
-        }
-        return "Unknown";
-    }
+    return "Unknown";
 }
+
+const char* toString(gridiron::OutcomeType type) {
+    switch (type) {
+    case gridiron::OutcomeType::Normal: return "Normal";
+    case gridiron::OutcomeType::Turnover: return "Turnover";
+    case gridiron::OutcomeType::FieldGoalMade: return "FieldGoalMade";
+    }
+    return "Unknown";
+}
+} // namespace
 
 // M1.1 shared checkpoint: sample one real event with samplePlayOutcome,
 // apply it with applyOutcome, and inspect the resulting state.
@@ -42,16 +42,12 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
     gridiron::GameState newState = gridiron::applyOutcome(state, outcome);
 
     std::cout << "Sampled play: play_type=" << toString(outcome.play_type)
-               << " outcome_type=" << toString(outcome.outcome_type)
-               << " yards_gained=" << outcome.yards_gained
-               << " elapsed_seconds=" << outcome.elapsed_seconds << "\n";
+              << " outcome_type=" << toString(outcome.outcome_type) << " yards_gained=" << outcome.yards_gained
+              << " elapsed_seconds=" << outcome.elapsed_seconds << "\n";
     std::cout << "Resulting state: quarter=" << newState.quarter
-               << " time_remaining=" << newState.time_remaining_seconds
-               << " down=" << newState.down
-               << " distance=" << newState.distance
-               << " ball_position=" << newState.ball_position
-               << " home_score=" << newState.home_score
-               << " away_score=" << newState.away_score << "\n";
+              << " time_remaining=" << newState.time_remaining_seconds << " down=" << newState.down
+              << " distance=" << newState.distance << " ball_position=" << newState.ball_position
+              << " home_score=" << newState.home_score << " away_score=" << newState.away_score << "\n";
 
     // Legal-state bounds, matching the acceptance criteria in docs/DECISIONS.md.
     EXPECT_GE(newState.down, 1);
@@ -72,8 +68,7 @@ TEST(IntegrationTest, FieldGoalAttemptRunsEndToEnd) {
 
     // 20 yards to the goal is a 37 yard kick, so a make and a miss leave the
     // ball on different yard lines (25 versus 20) and are distinguishable.
-    const auto state = gridiron::GameState{
-        .home = kicking, .away = defending, .down = 4, .ball_position = 80};
+    const auto state = gridiron::GameState{.home = kicking, .away = defending, .down = 4, .ball_position = 80};
 
     std::mt19937 rng(7);
     const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, rng);

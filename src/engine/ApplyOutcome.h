@@ -4,5 +4,5 @@
 #include "PlayOutcome.h"
 
 namespace gridiron {
-    GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome);
+GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome);
 }

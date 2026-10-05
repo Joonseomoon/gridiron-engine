@@ -2,17 +2,9 @@
 
 namespace gridiron {
 
-enum class PlayType {
-    Run,
-    Pass,
-    FieldGoalAttempt
-};
+enum class PlayType { Run, Pass, FieldGoalAttempt };
 
-enum class OutcomeType {
-    Normal,
-    Turnover,
-    FieldGoalMade
-};
+enum class OutcomeType { Normal, Turnover, FieldGoalMade };
 
 struct PlayOutcome {
     PlayType play_type;

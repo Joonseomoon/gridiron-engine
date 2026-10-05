@@ -29,7 +29,7 @@ const std::vector<Matchup>& matchups() {
     return all;
 }
 
-constexpr int kSeedsPerMatchup = 1000;
+constexpr unsigned kSeedsPerMatchup = 1000;
 
 void expectLegal(const gridiron::GameState& s) {
     EXPECT_GE(s.down, 1);
@@ -55,7 +55,7 @@ gridiron::Possession opponentOf(gridiron::Possession p) {
 
 TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
     for (const Matchup& m : matchups()) {
-        for (int seed = 0; seed < kSeedsPerMatchup; ++seed) {
+        for (unsigned seed = 0; seed < kSeedsPerMatchup; ++seed) {
             SCOPED_TRACE(testing::Message() << m.label << ", seed " << seed);
             std::mt19937 rng(seed);
 
@@ -135,14 +135,14 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
 // Attaching an observer must not change the game: it draws no random numbers.
 TEST(InvariantSweepTest, ObserverDoesNotChangeTheGame) {
     const Matchup& m = matchups().front();
-    for (int seed = 0; seed < 50; ++seed) {
+    for (unsigned seed = 0; seed < 50; ++seed) {
         SCOPED_TRACE(seed);
         std::mt19937 rngPlain(seed);
         std::mt19937 rngObserved(seed);
 
         const auto plain = gridiron::runGame(m.home, m.away, rngPlain);
-        const auto observed = gridiron::runGame(m.home, m.away, rngObserved,
-                                                [](const auto&, const auto&, const auto&) {});
+        const auto observed =
+            gridiron::runGame(m.home, m.away, rngObserved, [](const auto&, const auto&, const auto&) {});
 
         EXPECT_EQ(plain.home_score, observed.home_score);
         EXPECT_EQ(plain.away_score, observed.away_score);
@@ -155,13 +155,12 @@ TEST(InvariantSweepTest, ObserverDoesNotChangeTheGame) {
 // identical final score.
 TEST(InvariantSweepTest, SameSeedReproducesEveryPlay) {
     const Matchup& m = matchups().front();
-    const auto record = [&](int seed) {
+    const auto record = [&](unsigned seed) {
         std::vector<gridiron::PlayOutcome> plays;
         std::mt19937 rng(seed);
-        gridiron::runGame(m.home, m.away, rng,
-                          [&](const auto&, const gridiron::PlayOutcome& outcome, const auto&) {
-                              plays.push_back(outcome);
-                          });
+        gridiron::runGame(m.home, m.away, rng, [&](const auto&, const gridiron::PlayOutcome& outcome, const auto&) {
+            plays.push_back(outcome);
+        });
         return plays;
     };
 

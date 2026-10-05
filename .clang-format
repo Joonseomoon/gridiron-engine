@@ -1,0 +1,9 @@
+# Formatting is enforced in CI with clang-format 23.1.2 (see README.md).
+BasedOnStyle: LLVM
+IndentWidth: 4
+ColumnLimit: 120
+NamespaceIndentation: None
+PointerAlignment: Left
+AccessModifierOffset: -4
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Empty

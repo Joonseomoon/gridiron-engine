@@ -28,12 +28,22 @@ Run the test binary directly for faster iteration or to filter to one test:
 ./build/gridiron_tests --gtest_filter=ApplyOutcomeTest.SomeTestName
 ```
 
-Dump one seeded game play by play (developer tool with fixed BAL vs SEA teams, not the M1.3 CLI):
-```
-./build/gridiron_debug_game 1000
-```
+Tests also run automatically in CI on every push/PR to `main` (see `.github/workflows/ci.yml`). CI fails on any of:
 
-Tests also run automatically in CI on every push/PR to `main` (see `.github/workflows/ci.yml`).
+- **Compiler warnings.** Locally they are only warnings; reproduce CI with `cmake -S . -B build -DGRIDIRON_WERROR=ON`.
+- **Sanitizer findings.** The tests are also run under AddressSanitizer and UndefinedBehaviorSanitizer:
+  ```
+  cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
+  cmake --build build-asan && ctest --test-dir build-asan --output-on-failure
+  ```
+- **Unformatted code.** Style lives in `.clang-format`. Use the same pinned version as CI, since versions format slightly differently:
+  ```
+  pip3 install clang-format==23.1.2                   # or pipx install clang-format==23.1.2
+  git ls-files '*.cpp' '*.h' | xargs clang-format -i  # format everything
+  ```
+  Most editors (CLion, VS Code) can format on save using `.clang-format`; point them at this version.
+
+After cloning, run `git config blame.ignoreRevsFile .git-blame-ignore-revs` so `git blame` skips the one-time reformatting commit.
 
 ## First milestone
 
@@ -66,7 +76,7 @@ See [ROADMAP.md](ROADMAP.md) for responsibilities, integration points, and compl
 - [Working agreement](CONTRIBUTING.md)
 - [Project overview](docs/PROJECT_OVERVIEW.md)
 - [Initial decisions](docs/DECISIONS.md)
-- [Current round tasks](docs/TASKS.md)
+- [Side tasks: bugs, tooling, deferred tests](docs/TASKS.md)
 - [Learning and rotation record](docs/LEARNING.md)
 
 ## Principles
