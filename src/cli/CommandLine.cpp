@@ -37,7 +37,7 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
     }
 
     if (teams.size() != 2) {
-        return "expected two teams: simulate HOME AWAY [--seed N]";
+        return "expected two teams";
     }
 
     return Options{teams[0], teams[1], seed};
