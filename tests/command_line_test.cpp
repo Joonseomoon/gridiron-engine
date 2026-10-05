@@ -11,6 +11,11 @@ bool isError(const std::vector<std::string>& args) {
     const auto result = gridiron::parseArgs(args);
     return std::holds_alternative<std::string>(result);
 }
+
+bool isResolveError(const gridiron::Options& options) {
+    const auto result = gridiron::resolveTeams(options);
+    return std::holds_alternative<std::string>(result);
+}
 } // namespace
 
 TEST(CommandLineTest, TwoTeamsAndSeed) {
@@ -112,4 +117,43 @@ TEST(CommandLineTest, RejectsUnknownOption) {
     const auto* error = std::get_if<std::string>(&result);
     ASSERT_NE(error, nullptr);
     EXPECT_NE(error->find("unknown option"), std::string::npos);
+}
+
+TEST(CommandLineTest, ResolvesTwoKnownTeams) {
+    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "SEA", std::nullopt});
+    const auto* matchup = std::get_if<gridiron::Matchup>(&result);
+    ASSERT_NE(matchup, nullptr);
+    EXPECT_EQ(matchup->home.name, "BAL");
+    EXPECT_EQ(matchup->away.name, "SEA");
+}
+
+TEST(CommandLineTest, ResolvesTeamsCaseInsensitively) {
+    const auto result = gridiron::resolveTeams(gridiron::Options{"bal", "sea", std::nullopt});
+    const auto* matchup = std::get_if<gridiron::Matchup>(&result);
+    ASSERT_NE(matchup, nullptr);
+    EXPECT_EQ(matchup->home.name, "BAL");
+    EXPECT_EQ(matchup->away.name, "SEA");
+}
+
+TEST(CommandLineTest, RejectsUnknownHomeTeam) {
+    EXPECT_TRUE(isResolveError(gridiron::Options{"XYZ", "SEA", std::nullopt}));
+}
+
+TEST(CommandLineTest, RejectsUnknownAwayTeam) {
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "XYZ", std::nullopt}));
+}
+
+TEST(CommandLineTest, RejectsSameTeamTwice) {
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "BAL", std::nullopt}));
+}
+
+TEST(CommandLineTest, RejectsSameTeamDifferentCase) {
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "bal", std::nullopt}));
+}
+
+TEST(CommandLineTest, UnknownTeamErrorListsAvailableTeams) {
+    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "XYZ", std::nullopt});
+    const auto* error = std::get_if<std::string>(&result);
+    ASSERT_NE(error, nullptr);
+    EXPECT_NE(error->find("BAL"), std::string::npos);
 }

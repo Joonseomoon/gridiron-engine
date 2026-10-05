@@ -1,5 +1,7 @@
 #include "CommandLine.h"
 
+#include "Teams.h"
+
 #include <charconv>
 
 namespace gridiron {
@@ -39,5 +41,36 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
     }
 
     return Options{teams[0], teams[1], seed};
+}
+
+namespace {
+std::string availableTeams() {
+    std::string list;
+    for (const auto& name : teamAbbreviations()) {
+        if (!list.empty()) {
+            list += ", ";
+        }
+        list += name;
+    }
+    return list;
+}
+} // namespace
+
+std::variant<Matchup, std::string> resolveTeams(const Options& options) {
+    const auto home = findTeam(options.home);
+    if (!home) {
+        return "unknown team '" + options.home + "'. Available: " + availableTeams();
+    }
+
+    const auto away = findTeam(options.away);
+    if (!away) {
+        return "unknown team '" + options.away + "'. Available: " + availableTeams();
+    }
+
+    if (home->name == away->name) {
+        return "home and away must be different teams";
+    }
+
+    return Matchup{*home, *away};
 }
 } // namespace gridiron
