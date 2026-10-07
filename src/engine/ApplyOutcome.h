@@ -2,7 +2,8 @@
 
 #include "GameState.h"
 #include "PlayOutcome.h"
+#include "PlayResult.h"
 
 namespace gridiron {
-GameState applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome);
+PlayResult applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome);
 }

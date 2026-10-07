@@ -4,6 +4,7 @@
 
 #include "ApplyOutcome.h"
 #include "OutcomeSampler.h"
+#include "PlayResult.h"
 
 namespace gridiron {
 
@@ -28,11 +29,11 @@ GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937
             throw std::runtime_error("Game exceeded maximum play count");
         }
         const PlayOutcome outcome = samplePlayOutcome(state, rng);
-        GameState next = applyOutcome(state, outcome);
+        PlayResult result = applyOutcome(state, outcome);
         if (onPlay) {
-            onPlay(state, outcome, next);
+            onPlay(state, outcome, result);
         }
-        state = next;
+        state = result.state;
         ++plays;
     }
     return state;
