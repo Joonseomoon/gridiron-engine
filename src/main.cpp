@@ -1,11 +1,14 @@
 #include <cstdint>
 #include <iostream>
+#include <ostream>
 #include <random>
 #include <string>
 #include <vector>
 
 #include "cli/CommandLine.h"
+#include "cli/GameLog.h"
 #include "engine/GameRunner.h"
+#include "engine/SimulationResult.h"
 
 namespace {
 constexpr const char* kUsage = "usage: simulate HOME AWAY [--seed N]\n";
@@ -30,9 +33,23 @@ int main(int argc, char* argv[]) {
 
     const std::uint32_t seed = options.seed ? *options.seed : std::random_device{}();
     std::mt19937 rng(seed);
-    const gridiron::GameState result = gridiron::runGame(matchup.home, matchup.away, rng);
+    const gridiron::GameState result = gridiron::runGame(
+        matchup.home, matchup.away, rng,
+        [](const gridiron::GameState& before, const gridiron::PlayOutcome& outcome,
+           const gridiron::PlayResult& playResult) { gridiron::printPlay(std::cout, before, outcome, playResult); });
 
-    std::cout << matchup.home.name << " " << result.home_score << " - " << matchup.away.name << " " << result.away_score
-              << " (seed " << seed << ")\n";
+    gridiron::SimulationResult summary;
+    summary.home_score = result.home_score;
+    summary.away_score = result.away_score;
+    summary.seed = seed;
+    if (result.home_score > result.away_score) {
+        summary.winner = gridiron::Winner::Home;
+    } else if (result.home_score < result.away_score) {
+        summary.winner = gridiron::Winner::Away;
+    } else {
+        summary.winner = gridiron::Winner::Tie;
+    }
+
+    gridiron::printFinalResult(std::cout, matchup.home.name, matchup.away.name, summary);
     return 0;
 }
