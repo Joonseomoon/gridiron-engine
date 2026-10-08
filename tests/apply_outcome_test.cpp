@@ -1,12 +1,14 @@
 #include "../src/engine/ApplyOutcome.h"
 #include "../src/engine/GameState.h"
 #include "../src/engine/PlayOutcome.h"
+#include "../src/engine/PlayResult.h"
 #include <gtest/gtest.h>
 
 TEST(ApplyOutcomeTest, RunWithoutFirstDownAdvancesDownAndClock) {
     auto curr_state = gridiron::GameState();
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 6, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 6, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -17,12 +19,16 @@ TEST(ApplyOutcomeTest, RunWithoutFirstDownAdvancesDownAndClock) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, RunWithFirstDownConversionAdvancesClock) {
     auto curr_state = gridiron::GameState();
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 12, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 12, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -33,12 +39,14 @@ TEST(ApplyOutcomeTest, RunWithFirstDownConversionAdvancesClock) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::FirstDown);
 }
 
 TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithPositiveYardsGained) {
     auto curr_state = gridiron::GameState();
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -53,8 +61,10 @@ TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithPositiveYardsGained) {
 
 TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithNegativeYardsGained) {
     auto curr_state = gridiron::GameState();
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -8, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -8, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+    ;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -68,8 +78,9 @@ TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithNegativeYardsGained) {
 }
 TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithPositiveYardsGained) {
     auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -84,8 +95,9 @@ TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithPositiveYardsGained) {
 
 TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithNegativeYardsGained) {
     auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -8, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -8, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -100,8 +112,9 @@ TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithNegativeYardsGained) {
 
 TEST(ApplyOutcomeTest, AwayRunCrossesGoalLineScoresTouchdown) {
     auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away, .ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -117,8 +130,9 @@ TEST(ApplyOutcomeTest, AwayRunCrossesGoalLineScoresTouchdown) {
 TEST(ApplyOutcomeTest, FieldGoalMissedByHomeTeam) {
     auto curr_state = gridiron::GameState();
     auto playOutcome =
-        gridiron::PlayOutcome(gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::Turnover, 1000, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+        gridiron::PlayOutcome{gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::Turnover, 1000, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -134,8 +148,9 @@ TEST(ApplyOutcomeTest, FieldGoalMissedByHomeTeam) {
 TEST(ApplyOutcomeTest, FieldGoalMadeByHomeTeam) {
     auto curr_state = gridiron::GameState();
     auto playOutcome =
-        gridiron::PlayOutcome(gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::FieldGoalMade, 75, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+        gridiron::PlayOutcome{gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::FieldGoalMade, 75, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -151,8 +166,9 @@ TEST(ApplyOutcomeTest, FieldGoalMadeByHomeTeam) {
 TEST(ApplyOutcomeTest, FieldGoalMissedByAwayTeam) {
     auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away};
     auto playOutcome =
-        gridiron::PlayOutcome(gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::Turnover, 75, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+        gridiron::PlayOutcome{gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::Turnover, 75, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -168,8 +184,9 @@ TEST(ApplyOutcomeTest, FieldGoalMissedByAwayTeam) {
 TEST(ApplyOutcomeTest, FieldGoalMadeByAwayTeam) {
     auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away};
     auto playOutcome =
-        gridiron::PlayOutcome(gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::FieldGoalMade, 0, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+        gridiron::PlayOutcome{gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::FieldGoalMade, 0, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -184,8 +201,9 @@ TEST(ApplyOutcomeTest, FieldGoalMadeByAwayTeam) {
 
 TEST(ApplyOutcomeTest, AwayTackledBehindOwnGoalLineGivesHomeSafety) {
     auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away, .ball_position = 4};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -200,8 +218,9 @@ TEST(ApplyOutcomeTest, AwayTackledBehindOwnGoalLineGivesHomeSafety) {
 
 TEST(ApplyOutcomeTest, 4thDownFailConversionWithPass) {
     auto curr_state = gridiron::GameState{.down = 4};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 3, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 3, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -216,8 +235,9 @@ TEST(ApplyOutcomeTest, 4thDownFailConversionWithPass) {
 
 TEST(ApplyOutcomeTest, RunWithNegativeYardsGainedBelowZero) {
     auto curr_state = gridiron::GameState{.ball_position = 4};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -232,8 +252,9 @@ TEST(ApplyOutcomeTest, RunWithNegativeYardsGainedBelowZero) {
 
 TEST(ApplyOutcomeTest, 4thDownAndPassWithNegativeYardsGainedBelowZero) {
     auto curr_state = gridiron::GameState{.down = 4, .ball_position = 4};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, -7, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, -7, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -248,8 +269,9 @@ TEST(ApplyOutcomeTest, 4thDownAndPassWithNegativeYardsGainedBelowZero) {
 
 TEST(ApplyOutcomeTest, RunWith1stQuarterEnd) {
     auto curr_state = gridiron::GameState{.time_remaining_seconds = 10};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 2);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -264,8 +286,9 @@ TEST(ApplyOutcomeTest, RunWith1stQuarterEnd) {
 
 TEST(ApplyOutcomeTest, RunWithFirstDownConversionNearGoal) {
     auto curr_state = gridiron::GameState{.ball_position = 85};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 10, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 10, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -280,8 +303,9 @@ TEST(ApplyOutcomeTest, RunWithFirstDownConversionNearGoal) {
 
 TEST(ApplyOutcomeTest, TurnoverWithSpotNearGoal) {
     auto curr_state = gridiron::GameState{.ball_position = 50};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -48, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -48, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -296,8 +320,9 @@ TEST(ApplyOutcomeTest, TurnoverWithSpotNearGoal) {
 
 TEST(ApplyOutcomeTest, PassWithHalftimeAndHomeOpening) {
     auto curr_state = gridiron::GameState{.quarter = 2, .time_remaining_seconds = 10};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -313,8 +338,9 @@ TEST(ApplyOutcomeTest, PassWithHalftimeAndHomeOpening) {
 TEST(ApplyOutcomeTest, RunWithHalftimeAndAwayAwayOpening) {
     auto curr_state = gridiron::GameState{
         .quarter = 2, .time_remaining_seconds = 10, .opening_possession = gridiron::Possession::Away};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -329,8 +355,9 @@ TEST(ApplyOutcomeTest, RunWithHalftimeAndAwayAwayOpening) {
 
 TEST(ApplyOutcomeTest, RunIn4thQuarterToEndGame) {
     auto curr_state = gridiron::GameState{.quarter = 4, .time_remaining_seconds = 10};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_TRUE(newState.game_over);
 }
@@ -339,8 +366,9 @@ TEST(ApplyOutcomeTest, FieldGoalMadeToEndHalf) {
     auto curr_state =
         gridiron::GameState{.quarter = 2, .time_remaining_seconds = 10, .possession = gridiron::Possession::Away};
     auto playOutcome =
-        gridiron::PlayOutcome(gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::FieldGoalMade, 0, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+        gridiron::PlayOutcome{gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::FieldGoalMade, 0, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -355,8 +383,9 @@ TEST(ApplyOutcomeTest, FieldGoalMadeToEndHalf) {
 
 TEST(ApplyOutcomeTest, SafetyToEndHalf) {
     auto curr_state = gridiron::GameState{.quarter = 2, .time_remaining_seconds = 10, .ball_position = 4};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -374,8 +403,9 @@ TEST(ApplyOutcomeTest, TouchdownToEndGame) {
                                           .time_remaining_seconds = 10,
                                           .opening_possession = gridiron::Possession::Away,
                                           .ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
@@ -384,8 +414,9 @@ TEST(ApplyOutcomeTest, TouchdownToEndGame) {
 
 TEST(ApplyOutcomeTest, RunReachesExactlyGoalLineScoresTouchdown) {
     auto curr_state = gridiron::GameState{.ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 10, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 10, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -400,8 +431,9 @@ TEST(ApplyOutcomeTest, RunReachesExactlyGoalLineScoresTouchdown) {
 
 TEST(ApplyOutcomeTest, RunCrossesBeyondGoalLineScoresTouchdown) {
     auto curr_state = gridiron::GameState{.ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -419,8 +451,9 @@ TEST(ApplyOutcomeTest, PassCrossesGoalLineOnFinalPlayOfHalfStillScores) {
                                           .time_remaining_seconds = 10,
                                           .opening_possession = gridiron::Possession::Away,
                                           .ball_position = 92};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 10, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 10, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -435,8 +468,9 @@ TEST(ApplyOutcomeTest, PassCrossesGoalLineOnFinalPlayOfHalfStillScores) {
 
 TEST(ApplyOutcomeTest, RunGainsExactYardsNeededForFirstDown) {
     auto curr_state = gridiron::GameState();
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 10, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 10, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -451,8 +485,9 @@ TEST(ApplyOutcomeTest, RunGainsExactYardsNeededForFirstDown) {
 
 TEST(ApplyOutcomeTest, TurnoverAtMidfield) {
     auto curr_state = gridiron::GameState{.ball_position = 50};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 0, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 0, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -467,8 +502,9 @@ TEST(ApplyOutcomeTest, TurnoverAtMidfield) {
 
 TEST(ApplyOutcomeTest, FailedFourthDownAtMidfield) {
     auto curr_state = gridiron::GameState{.down = 4, .ball_position = 50};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 3, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Pass, gridiron::OutcomeType::Normal, 3, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -484,8 +520,9 @@ TEST(ApplyOutcomeTest, FailedFourthDownAtMidfield) {
 TEST(ApplyOutcomeTest, Q4EndsInTie) {
     auto curr_state =
         gridiron::GameState{.quarter = 4, .time_remaining_seconds = 10, .home_score = 21, .away_score = 21};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 2, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 2, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 4);
     EXPECT_TRUE(newState.game_over);
@@ -496,8 +533,9 @@ TEST(ApplyOutcomeTest, Q4EndsInTie) {
 TEST(ApplyOutcomeTest, TurnoverNearOpponentGoalLineResultsInTouchback) {
     // 90 + 15 = 105, flipped to 100 - 105 = -5 before any guard runs.
     auto curr_state = gridiron::GameState{.ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Pass, gridiron::OutcomeType::Turnover, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Pass, gridiron::OutcomeType::Turnover, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -513,8 +551,9 @@ TEST(ApplyOutcomeTest, TurnoverNearOpponentGoalLineResultsInTouchback) {
 TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineResultsInDefensiveTouchdown) {
     // 5 - 10 = -5, flipped to 100 - (-5) = 105 before any guard runs.
     auto curr_state = gridiron::GameState{.ball_position = 5};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -10, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -10, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -529,8 +568,9 @@ TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineResultsInDefensiveTouchdown) {
 
 TEST(ApplyOutcomeTest, TurnoverAtExactly0ResultsInTouchdown) {
     auto curr_state = gridiron::GameState{.ball_position = 5};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -547,8 +587,9 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly0ResultsInTouchdown) {
 // a touchback rather than possession at the recovering team's own 0.
 TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInTouchback) {
     auto curr_state = gridiron::GameState{.ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 10, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 10, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -565,8 +606,9 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInTouchback) {
 // being downed exactly on your own goal line is a safety, not 1st and 10 there.
 TEST(ApplyOutcomeTest, TackledAtExactlyOwnGoalLineIsSafety) {
     auto curr_state = gridiron::GameState{.ball_position = 5};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 1);
     EXPECT_EQ(newState.time_remaining_seconds, 862);
@@ -581,8 +623,9 @@ TEST(ApplyOutcomeTest, TackledAtExactlyOwnGoalLineIsSafety) {
 
 TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineAtEndOfHalf) {
     auto curr_state = gridiron::GameState{.quarter = 2, .time_remaining_seconds = 10, .ball_position = 5};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -10, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, -10, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -593,6 +636,9 @@ TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineAtEndOfHalf) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::DefensiveTouchdown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
 
 TEST(ApplyOutcomeTest, MissedFieldGoalIgnoresYardsGained) {
@@ -600,8 +646,9 @@ TEST(ApplyOutcomeTest, MissedFieldGoalIgnoresYardsGained) {
     // spot of the kick (100 - spot), regardless of the yards_gained field.
     auto curr_state = gridiron::GameState{.ball_position = 25};
     auto playOutcome =
-        gridiron::PlayOutcome(gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::Turnover, 9999, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+        gridiron::PlayOutcome{gridiron::PlayType::FieldGoalAttempt, gridiron::OutcomeType::Turnover, 9999, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.ball_position, 75);
@@ -616,8 +663,9 @@ TEST(ApplyOutcomeTest, MissedFieldGoalIgnoresYardsGained) {
 
 TEST(ApplyOutcomeTest, TouchdownResetsDownAndDistanceFromMidSeries) {
     auto curr_state = gridiron::GameState{.down = 3, .distance = 4, .ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
@@ -628,8 +676,9 @@ TEST(ApplyOutcomeTest, TouchdownResetsDownAndDistanceFromMidSeries) {
 
 TEST(ApplyOutcomeTest, TouchbackResetsDownAndDistanceFromMidSeries) {
     auto curr_state = gridiron::GameState{.down = 3, .distance = 4, .ball_position = 90};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 15, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Turnover, 15, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
@@ -645,8 +694,9 @@ TEST(ApplyOutcomeTest, TouchbackResetsDownAndDistanceFromMidSeries) {
 // check were `< 0`. Here the play consumes exactly the time remaining.
 TEST(ApplyOutcomeTest, QuarterEndsWhenElapsedExactlyConsumesTheClock) {
     auto curr_state = gridiron::GameState{.time_remaining_seconds = 38};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 2);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -660,8 +710,9 @@ TEST(ApplyOutcomeTest, QuarterEndsWhenElapsedExactlyConsumesTheClock) {
 // would end the game a full quarter early and pass every other test.
 TEST(ApplyOutcomeTest, ThirdQuarterEndingAdvancesToFourthWithoutEndingTheGame) {
     auto curr_state = gridiron::GameState{.quarter = 3, .time_remaining_seconds = 10};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 5, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 4);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
@@ -673,8 +724,9 @@ TEST(ApplyOutcomeTest, SafetyToEndHalfDoesNotKeepItsOwnKickoffWhenAwayOpened) {
                                           .time_remaining_seconds = 10,
                                           .opening_possession = gridiron::Possession::Away,
                                           .ball_position = 4};
-    auto playOutcome = gridiron::PlayOutcome(gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38);
-    gridiron::GameState newState = applyOutcome(curr_state, playOutcome);
+    auto playOutcome = gridiron::PlayOutcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, -7, 38};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);

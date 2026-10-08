@@ -34,6 +34,7 @@ target_link_libraries(gridiron_core PRIVATE gridiron_warnings)
 add_library(gridiron_cli
         src/cli/Teams.cpp
         src/cli/CommandLine.cpp
+        src/cli/GameLog.cpp
 )
 target_link_libraries(gridiron_cli PRIVATE gridiron_warnings)
 

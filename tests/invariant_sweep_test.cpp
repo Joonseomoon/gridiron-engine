@@ -64,11 +64,11 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
             int awayFromScoringPlays = 0;
 
             const auto onPlay = [&](const gridiron::GameState& before, const gridiron::PlayOutcome& outcome,
-                                    const gridiron::GameState& after) {
+                                    const gridiron::PlayResult& after) {
                 ++plays;
                 expectLegal(before);
-                if (!after.game_over) {
-                    expectLegal(after);
+                if (!after.state.game_over) {
+                    expectLegal(after.state);
                 }
                 EXPECT_FALSE(before.game_over);
                 EXPECT_GE(outcome.elapsed_seconds, 10);
@@ -79,8 +79,8 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                 EXPECT_EQ(outcome.play_type == gridiron::PlayType::FieldGoalAttempt, inFieldGoalSpot);
 
                 // At most one team scores per play, and only by 2, 3, or 7.
-                const int homeDelta = after.home_score - before.home_score;
-                const int awayDelta = after.away_score - before.away_score;
+                const int homeDelta = after.state.home_score - before.home_score;
+                const int awayDelta = after.state.away_score - before.away_score;
                 EXPECT_TRUE(homeDelta == 0 || awayDelta == 0);
                 for (int delta : {homeDelta, awayDelta}) {
                     EXPECT_TRUE(delta == 0 || delta == 2 || delta == 3 || delta == 7) << "delta " << delta;
@@ -91,27 +91,27 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
 
                 // Clock only moves forward: same quarter with less time, or
                 // the next quarter with a fresh 900 seconds.
-                if (after.quarter == before.quarter && !after.game_over) {
-                    EXPECT_LT(after.time_remaining_seconds, before.time_remaining_seconds);
-                } else if (!after.game_over) {
-                    EXPECT_EQ(after.quarter, before.quarter + 1);
-                    EXPECT_EQ(after.time_remaining_seconds, 900);
+                if (after.state.quarter == before.quarter && !after.state.game_over) {
+                    EXPECT_LT(after.state.time_remaining_seconds, before.time_remaining_seconds);
+                } else if (!after.state.game_over) {
+                    EXPECT_EQ(after.state.quarter, before.quarter + 1);
+                    EXPECT_EQ(after.state.time_remaining_seconds, 900);
                 }
 
                 // After any score the receiving team starts 1st and 10 at its 25.
                 if (scored) {
-                    EXPECT_EQ(after.down, 1);
-                    EXPECT_EQ(after.distance, 10);
-                    EXPECT_EQ(after.ball_position, 25);
+                    EXPECT_EQ(after.state.down, 1);
+                    EXPECT_EQ(after.state.distance, 10);
+                    EXPECT_EQ(after.state.ball_position, 25);
                 }
 
                 // Halftime hands the ball to the team that did not open
-                if (before.quarter == 2 && after.quarter == 3) {
-                    EXPECT_EQ(after.possession, opponentOf(after.opening_possession));
-                    EXPECT_EQ(after.ball_position, 25);
+                if (before.quarter == 2 && after.state.quarter == 3) {
+                    EXPECT_EQ(after.state.possession, opponentOf(after.state.opening_possession));
+                    EXPECT_EQ(after.state.ball_position, 25);
                 }
 
-                EXPECT_EQ(after.opening_possession, before.opening_possession);
+                EXPECT_EQ(after.state.opening_possession, before.opening_possession);
             };
 
             const gridiron::GameState final = gridiron::runGame(m.home, m.away, rng, onPlay);

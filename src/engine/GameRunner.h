@@ -5,13 +5,14 @@
 
 #include "GameState.h"
 #include "PlayOutcome.h"
+#include "PlayResult.h"
 #include "TeamProfile.h"
 
 namespace gridiron {
 
 // Called once per play with the state before the snap, the sampled outcome,
 // and the state after applying it.
-using PlayObserver = std::function<void(const GameState& before, const PlayOutcome& outcome, const GameState& after)>;
+using PlayObserver = std::function<void(const GameState& before, const PlayOutcome& outcome, const PlayResult& after)>;
 
 // Simulate four quarters using the caller's random engine; ties are allowed.
 GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng);
