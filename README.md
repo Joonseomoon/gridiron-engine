@@ -10,7 +10,7 @@ The project gives two developers practical experience with C++, stateful simulat
 
 ## Current status
 
-M1.3 in progress. The engine plays a complete seeded game (M1.1–M1.2), and the `simulate` command runs one from the terminal. Its output is currently a one-line final score; the play-by-play log and final result presentation are in progress.
+M1 complete: `simulate` plays a full seeded game from the terminal and prints a play-by-play log and the final result. Next is M2, running repeated matchups and summarizing the results. A few M1 follow-ups are tracked in [docs/TASKS.md](docs/TASKS.md).
 
 ## Building and testing
 
@@ -52,9 +52,27 @@ After building:
 ./build/simulate BAL SEA --seed 1000    # BAL at home vs SEA, fixed seed: same game every time
 ./build/simulate bal sea                # team names are case-insensitive; with no seed, a random one is used and printed
 ```
+Output is a play-by-play log followed by the final result (excerpt):
+```
+Q1 14:34 - BAL run for 1 yards. 2nd & 9 on BAL 26.
+Q1 13:41 - BAL pass for 1 yards. Short of the first down. Turnover on downs.
+Q1 13:41 - SEA ball on BAL 28, 1st & 10.
+...
+Q2 14:43 - SEA field goal attempt from 40 yards: GOOD. SEA +3.
+...
+Q4 0:00 - Game End.
+Final Score
+BAL - 6
+SEA - 26
+
+Winner: SEA
+Seed: 1000
+```
+Each line shows the game clock after the play. Field position names the side of the field: `BAL 28` is the 28-yard line on BAL's half, whichever team has the ball.
+
 Usage: `simulate HOME AWAY [--seed N]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in `src/cli/Teams.cpp`). Invalid input prints an error and the usage line, and exits with code 1.
 
-## First milestone
+## First milestone (complete)
 
 Run one complete simplified game from the terminal and print a final score and readable game log. Use hand-set team ratings and a fixed random seed. Agree on rule simplifications before implementing them.
 
