@@ -1,16 +1,22 @@
 # Gridiron Engine
 
-A C++ NFL simulation and strategy engine with Monte Carlo analysis, performance benchmarks, and historical model evaluation.
+A C++ NFL simulation and strategy engine with Monte Carlo analysis, performance benchmarks, and historical model
+evaluation.
 
 ## The idea
 
-Build a simplified football simulator, repeat matchups to estimate outcome distributions, and compare decisions within a game. Improve speed and realism in measured iterations. Later versions add historical NFL data, an API and frontend, and optional sports market analytics.
+Build a simplified football simulator, repeat matchups to estimate outcome distributions, and compare decisions within a
+game. Improve speed and realism in measured iterations. Later versions add historical NFL data, an API and frontend, and
+optional sports market analytics.
 
-The project gives two developers practical experience with C++, stateful simulation, probability, performance engineering, and model evaluation.
+The project gives two developers practical experience with C++, stateful simulation, probability, performance
+engineering, and model evaluation.
 
 ## Current status
 
-M1 complete: `simulate` plays a full seeded game from the terminal and prints a play-by-play log and the final result. Next is M2, running repeated matchups and summarizing the results. A few M1 follow-ups are tracked in [docs/TASKS.md](docs/TASKS.md).
+M1 complete: `simulate` plays a full seeded game from the terminal and prints a play-by-play log and the final result.
+Next is M2, running repeated matchups and summarizing the results. A few M1 follow-ups are tracked
+in [docs/TASKS.md](docs/TASKS.md).
 
 ## Building and testing
 
@@ -23,6 +29,7 @@ ctest --test-dir build --output-on-failure   # run all tests
 ```
 
 Run the test binary directly for faster iteration or to filter to one test:
+
 ```
 ./build/gridiron_tests
 ./build/gridiron_tests --gtest_filter=ApplyOutcomeTest.SomeTestName
@@ -36,23 +43,28 @@ Tests also run automatically in CI on every push/PR to `main` (see `.github/work
   cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
   cmake --build build-asan && ctest --test-dir build-asan --output-on-failure
   ```
-- **Unformatted code.** Style lives in `.clang-format`. Use the same pinned version as CI, since versions format slightly differently:
+- **Unformatted code.** Style lives in `.clang-format`. Use the same pinned version as CI, since versions format
+  slightly differently:
   ```
   pip3 install clang-format==23.1.2                   # or pipx install clang-format==23.1.2
   git ls-files '*.cpp' '*.h' | xargs clang-format -i  # format everything
   ```
   Most editors (CLion, VS Code) can format on save using `.clang-format`; point them at this version.
 
-After cloning, run `git config blame.ignoreRevsFile .git-blame-ignore-revs` so `git blame` skips the one-time reformatting commit.
+After cloning, run `git config blame.ignoreRevsFile .git-blame-ignore-revs` so `git blame` skips the one-time
+reformatting commit.
 
 ## Running a game
 
 After building:
+
 ```
 ./build/simulate BAL SEA --seed 1000    # BAL at home vs SEA, fixed seed: same game every time
 ./build/simulate bal sea                # team names are case-insensitive; with no seed, a random one is used and printed
 ```
+
 Output is a play-by-play log followed by the final result (excerpt):
+
 ```
 Q1 14:34 - BAL run for 1 yards. 2nd & 9 on BAL 26.
 Q1 13:41 - BAL pass for 1 yards. Short of the first down. Turnover on downs.
@@ -68,21 +80,66 @@ SEA - 26
 Winner: SEA
 Seed: 1000
 ```
-Each line shows the game clock after the play. Field position names the side of the field: `BAL 28` is the 28-yard line on BAL's half, whichever team has the ball.
 
-Usage: `simulate HOME AWAY [--seed N]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in `src/cli/Teams.cpp`). Invalid input prints an error and the usage line, and exits with code 1.
+Each line shows the game clock after the play. Field position names the side of the field: `BAL 28` is the 28-yard line
+on BAL's half, whichever team has the ball.
+
+Usage: `simulate HOME AWAY [--seed N]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in `src/cli/Teams.cpp`).
+Invalid input prints an error and the usage line, and exits with code 1.
+
+## Limitations
+
+M1 is a deliberately simplified game. The rules below are decided in [docs/DECISIONS.md](docs/DECISIONS.md); this is the
+reader's summary of what the simulation does **not** model.
+
+**Football rules**
+
+- No punts, penalties, timeouts, two-minute warning, two-point tries, or overtime. Games can end in a tie.
+- Kickoffs are not played: after every score, and to start the second half, the receiving team starts at its own 25.
+  Touchbacks also go to the 25.
+- 4th down is a fixed rule: within 40 yards of the goal line, kick a field goal; otherwise go for it. A missed field
+  goal turns the ball over at the line of scrimmage.
+- Turnovers have no returns. The ball changes hands where the play ended; a defensive touchdown only happens when that
+  spot is in the offense's own end zone.
+- Every touchdown is worth 7 (the extra point is automatic).
+
+**Clock**
+
+- Running clock only. Each play takes a sampled 10+ seconds whatever happened, so incomplete passes and out-of-bounds
+  plays don't stop it.
+
+**Probability model**
+
+- Play calling is a coin flip: 50% run, 50% pass, regardless of down, distance, score, or time.
+- Yardage is drawn from a normal distribution around `base + k × (offense rating − defense rating)`. The constants are
+  hand-tuned guesses, not fitted to data (that is M5).
+- Turnovers are a flat per-play rate from the offense's rating, the same for runs and passes and in every situation.
+- Field goal success falls linearly with distance from a hand-set rating.
+- Team ratings are hand-set for six built-in teams (`src/cli/Teams.cpp`).
+
+**Reproducibility**
+
+- Same seed and teams give an identical game **on the same platform and standard library**. The yardage and clock draws
+  use `std::normal_distribution`, whose output is implementation-defined, so a seed can produce a different game with
+  another compiler or OS. Only macOS has been tested.
 
 ## First milestone (complete)
 
-Run one complete simplified game from the terminal and print a final score and readable game log. Use hand-set team ratings and a fixed random seed. Agree on rule simplifications before implementing them.
+Run one complete simplified game from the terminal and print a final score and readable game log. Use hand-set team
+ratings and a fixed random seed. Agree on rule simplifications before implementing them.
 
 ## Why C++
 
-The simulation loop offers opportunities to study memory layout, allocation, random-number generation, and CPU parallelism. We will measure performance rather than assume it. Data preparation may use Python; the reusable simulation engine stays in C++.
+The simulation loop offers opportunities to study memory layout, allocation, random-number generation, and CPU
+parallelism. We will measure performance rather than assume it. Data preparation may use Python; the reusable simulation
+engine stays in C++.
 
 ## Working together
 
-Both developers build substantive functionality at every milestone. Each round has two parallel task groups, agreed shared inputs and outputs, and an integration checkpoint. Lead areas rotate within milestones so both people implement systems, statistical, data, and interface work. We integrate a small working path early and expand it together. Tests belong to both authors.
+Both developers build substantive functionality at every milestone. Each round has two parallel task groups, agreed
+shared inputs and outputs, and an integration checkpoint. Lead areas rotate within milestones so both people implement
+systems, statistical, data, and interface work. We integrate a small working path early and expand it together. Tests
+belong to both authors.
 
 ## Roadmap
 

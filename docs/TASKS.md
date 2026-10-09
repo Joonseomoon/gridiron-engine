@@ -5,7 +5,7 @@ work is tracked in ROADMAP.md and its issues, not here. Remove an item once it i
 
 ## Carry-over from M1.3 (finish during M2.1)
 
-The M1.3 checkpoint passed acceptance criteria 1–5 and 8 from DECISIONS.md. These items close the rest.
+The M1.3 checkpoint passed acceptance criteria 1–5 and 8 from DECISIONS.md. These items close the rest; README.md "Limitations" lists them as open until they land.
 
 ### Acceptance criteria 6 and 7 (Developer A)
 
@@ -16,10 +16,6 @@ The M1.3 checkpoint passed acceptance criteria 1–5 and 8 from DECISIONS.md. Th
 
 - **`PlayResult` tags.** Only 3 `applyOutcome` tests check `event` / `turnover` / `period`. Add a tag assertion for each case: touchdown, field goal good and missed, safety, touchback, interception vs fumble, defensive touchdown, turnover on downs, end of quarter, halftime, end of game. Optionally, check tag consistency in the invariant sweep (e.g. a touchdown tag always means the offense gained 7).
 - **`printPlay` / `printFinalResult`.** No tests yet. Print into a `std::ostringstream` and compare the text: one line per event type, field position on both sides and at midfield, `& goal`, the clock at `0:00`, and a tie in the final block.
-
-### Write down M1's limitations (at the M2.1 checkpoint)
-
-CONTRIBUTING.md asks to record limitations before moving on. Collect them in one place (a "Limitations" section in README.md is the natural home) so a reader of the demo knows what it does not model: no punts, penalties, timeouts, two-point tries, or overtime; kickoffs are a fixed spot at the 25; a running clock; a 50/50 run/pass split; flat per-play turnover rate; hand-set team ratings and yardage constants (to be fitted in M5). Most are already decided in DECISIONS.md; this is a summary for readers, not new decisions. Note criteria 6 and 7 here until the carry-over above lands.
 
 ## Bugs
 
