@@ -278,3 +278,79 @@ For later decisions, add a date, decision, reason, and practical consequence. Ad
 - **Decision:** the CLI's teams are a hand-set table in `src/cli/Teams.cpp` (currently BAL, SEA, LAR, KC, HOU, DAL), with ratings in [0, 1] chosen to give distinct styles. Engine code builds as the `gridiron_core` library; CLI-only code (teams, argument parsing) builds as `gridiron_cli`.
 - **Reason:** the ratings are placeholders until M5 fits real ones, and later front ends (the M2 batch runner, the M6 API) should reuse the engine without inheriting the CLI's team table.
 - **Consequence:** add a team by adding one row to the table; `teams_test.cpp` checks every team is found and every rating is in range. New engine source files go in `gridiron_core`, new CLI files in `gridiron_cli`.
+
+## M2.1 batch runs (decided 2026-10-09)
+
+The M2 shared prerequisite: single-game result and batch summary formats, seed policy, and run metadata. Developer A implements first and updates this section with anything changed during implementation; Developer B builds on the updated version.
+
+### Single-game result
+
+- **Decision:** one game's result is the existing `SimulationResult` (home score, away score, winner, seed), built from the final `GameState` and the seed by one function shared by `simulate` and the batch runner (this is M1.3 carry-over criterion #6). `SimulationResult::seed` changes from `uint64_t` to `std::uint32_t`. Team names are not stored per game; they belong to the batch.
+- **Reason:** one definition of "the result" for single games and batches; `std::mt19937` and the CLI already use 32-bit seeds.
+- **Consequence:** the runner produces `SimulationResult`s and the aggregation consumes them, so the two halves meet only at this struct.
+
+### Running a batch
+
+- **Decision:** `std::vector<SimulationResult> runBatch(const TeamProfile& home, const TeamProfile& away, int games, std::uint32_t batchSeed)`, returning every game's result.
+- **Reason:** simplest interface; even 100,000 results is about 2 MB, so streaming or callbacks wait until M3 measures a need.
+- **Consequence:** lives in `gridiron_core`, so the M6 API can reuse it without the CLI.
+
+### Seed policy
+
+- **Decision:** game `i` (counting from 0) uses seed `batchSeed + i`, with its own fresh `std::mt19937`; no generator is shared between games. Unsigned arithmetic wraps near the top of the range, which stays deterministic. Without a batch seed, a random one is drawn and printed, as `simulate` already does.
+- **Reason:** any game in a batch can be replayed alone (game 37 of batch seed 1000 is `simulate HOME AWAY --seed 1037`), and games don't depend on each other or on run order, which M3's parallel execution needs.
+- **Consequence:** test that batch game `i` equals a standalone `runGame` with seed `batchSeed + i`.
+
+### Clean start per game
+
+- **Decision:** every game starts from a new `GameState` and a new generator; nothing carries over between games.
+- **Reason:** results must not depend on which games ran before.
+- **Consequence:** `runGame` already builds a fresh state; the runner must not reuse a generator or state across games.
+
+### Batch summary
+
+- **Decision:**
+  ```cpp
+  struct BatchSummary {
+      int games = 0;
+      int home_wins = 0;
+      int away_wins = 0;
+      int ties = 0;
+      double mean_home_score = 0.0;
+      double mean_away_score = 0.0;
+      double mean_margin = 0.0; // home minus away; negative means the away team outscored the home team
+      double mean_total = 0.0;  // home plus away
+  };
+  BatchSummary aggregate(const std::vector<SimulationResult>& results);
+  ```
+  An empty input returns `games = 0` and all values zero.
+- **Reason:** covers the roadmap's counts, scores, margins, and totals; a signed, home-relative margin removes the ambiguity in "margin".
+- **Consequence:** lives in `gridiron_core`. Standard deviations and confidence intervals are M2.2 work (Developer A's crossover into this code), so leave room for them but don't add them now.
+
+### Command line
+
+- **Decision:** `simulate HOME AWAY [--seed N] [--games N]`. Without `--games`, one game with the play-by-play log, as now. With `--games N` (1 to 1,000,000), `--seed` is the batch seed and only the batch summary is printed, with no play logs. Developer A parses `--games`; Developer B prints the summary.
+- **Reason:** extends the existing command instead of adding a second program; printing results stays with whoever owns result presentation.
+- **Consequence:** out-of-range or non-numeric `--games` is an error, with parser tests like the seed's.
+
+### Run metadata
+
+- **Decision:** above the batch summary, print the two teams, the number of games, and the batch seed. Nothing is saved to a file in M2.1.
+- **Reason:** enough to reproduce any batch from the terminal; export and recorded model/seed metadata are Developer B's M2.2 task.
+- **Consequence:** the printed batch seed is part of the output, as the single-game seed is.
+
+### Shared example
+
+Three hand-made results, for testing aggregation before the runner exists:
+
+| Game | Home | Away | Winner |
+| --- | --- | --- | --- |
+| 1 | 24 | 17 | Home |
+| 2 | 10 | 20 | Away |
+| 3 | 13 | 13 | Tie |
+
+Expected `aggregate` result: 3 games; 1 home win, 1 away win, 1 tie; mean home score 15.67 (47 / 3), mean away score 16.67 (50 / 3), mean margin -1.0, mean total 32.33 (97 / 3).
+
+### Checkpoint
+
+Run about 5 real games through `runBatch` and then `aggregate`. Check that wins + losses + ties equals the number of games, that the mean margin equals the mean home score minus the mean away score, and that one game picked from the batch replays with the same score via `simulate --seed batchSeed+i`.
