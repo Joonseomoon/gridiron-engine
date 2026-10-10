@@ -65,7 +65,7 @@ PlayResult applyOutcome(const GameState& gameState, const PlayOutcome& playOutco
             newState.distance = std::min(10, 100 - newState.ball_position);
             newState.down = 1;
         } else if (newState.down == 4 && playOutcome.yards_gained < newState.distance) {
-            result.event = PlayEvent::Normal;
+            result.event = PlayEvent::Normal; // Check in on this why is it normal would it make sense to be a turnover?
             result.turnover = TurnoverKind::TurnoverOnDowns;
             turnoverAtSpot(newState);
         } else {

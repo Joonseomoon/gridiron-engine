@@ -61,6 +61,10 @@ void printPlay(std::ostream& out, const GameState& before, const PlayOutcome& ou
         distanceText = std::to_string(result.state.distance);
     }
 
+    if (before.quarter == 1 && before.time_remaining_seconds == 900) {
+        out << "Q1 15:00 - Game Start. " << offense << " receives the football.\n";
+    }
+
     out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
         << std::setfill(' ') << " - ";
 
