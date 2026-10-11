@@ -1,5 +1,6 @@
 #pragma once
 
+#include "GameState.h"
 #include <cstdint>
 
 namespace gridiron {
@@ -10,7 +11,9 @@ struct SimulationResult {
     int home_score = 0;
     int away_score = 0;
     Winner winner = Winner::Tie;
-    uint64_t seed = 0;
+    std::uint32_t seed = 0;
 };
+
+SimulationResult toResult(const GameState& gameState, std::uint32_t seed);
 
 } // namespace gridiron

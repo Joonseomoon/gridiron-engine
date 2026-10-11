@@ -38,17 +38,7 @@ int main(int argc, char* argv[]) {
         [](const gridiron::GameState& before, const gridiron::PlayOutcome& outcome,
            const gridiron::PlayResult& playResult) { gridiron::printPlay(std::cout, before, outcome, playResult); });
 
-    gridiron::SimulationResult summary;
-    summary.home_score = result.home_score;
-    summary.away_score = result.away_score;
-    summary.seed = seed;
-    if (result.home_score > result.away_score) {
-        summary.winner = gridiron::Winner::Home;
-    } else if (result.home_score < result.away_score) {
-        summary.winner = gridiron::Winner::Away;
-    } else {
-        summary.winner = gridiron::Winner::Tie;
-    }
+    const auto summary = gridiron::toResult(result, seed);
 
     gridiron::printFinalResult(std::cout, matchup.home.name, matchup.away.name, summary);
     return 0;
