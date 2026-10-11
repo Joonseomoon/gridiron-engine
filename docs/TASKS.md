@@ -12,11 +12,6 @@ The M1.3 checkpoint passed acceptance criteria 1–5 and 8 from DECISIONS.md. Th
 - **#6 Winner correctness.** The winner is computed inline in `main.cpp`, where no test can reach it. Move it into a function (e.g. build a `SimulationResult` from the final `GameState` and the seed) and test a home win, an away win, and a tie.
 - **#7 Rule fidelity.** The log never says who received the opening kickoff, so the coin toss is invisible. Print an opening line before the first play, as in the DECISIONS.md sample: `Q1 15:00 - BAL ball on BAL 25, 1st & 10`.
 
-### Tests for the play log (Developer B)
-
-- **`PlayResult` tags.** Only 3 `applyOutcome` tests check `event` / `turnover` / `period`. Add a tag assertion for each case: touchdown, field goal good and missed, safety, touchback, interception vs fumble, defensive touchdown, turnover on downs, end of quarter, halftime, end of game. Optionally, check tag consistency in the invariant sweep (e.g. a touchdown tag always means the offense gained 7).
-- **`printPlay` / `printFinalResult`.** No tests yet. Print into a `std::ostringstream` and compare the text: one line per event type, field position on both sides and at midfield, `& goal`, the clock at `0:00`, and a tie in the final block.
-
 ## Bugs
 
 ## Deferred
