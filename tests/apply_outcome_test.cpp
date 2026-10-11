@@ -40,6 +40,8 @@ TEST(ApplyOutcomeTest, RunWithFirstDownConversionAdvancesClock) {
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
     EXPECT_EQ(result.event, gridiron::PlayEvent::FirstDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithPositiveYardsGained) {
@@ -57,6 +59,9 @@ TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithPositiveYardsGained) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithNegativeYardsGained) {
@@ -75,6 +80,9 @@ TEST(ApplyOutcomeTest, TurnoverByHomeTeamWithNegativeYardsGained) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithPositiveYardsGained) {
     auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away};
@@ -91,6 +99,9 @@ TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithPositiveYardsGained) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithNegativeYardsGained) {
@@ -108,6 +119,9 @@ TEST(ApplyOutcomeTest, TurnoverByAwayTeamWithNegativeYardsGained) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, AwayRunCrossesGoalLineScoresTouchdown) {
@@ -125,6 +139,9 @@ TEST(ApplyOutcomeTest, AwayRunCrossesGoalLineScoresTouchdown) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, FieldGoalMissedByHomeTeam) {
@@ -143,6 +160,9 @@ TEST(ApplyOutcomeTest, FieldGoalMissedByHomeTeam) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::FieldGoalMissed);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, FieldGoalMadeByHomeTeam) {
@@ -161,6 +181,9 @@ TEST(ApplyOutcomeTest, FieldGoalMadeByHomeTeam) {
     EXPECT_EQ(newState.home_score, 3);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::FieldGoalGood);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, FieldGoalMissedByAwayTeam) {
@@ -179,6 +202,9 @@ TEST(ApplyOutcomeTest, FieldGoalMissedByAwayTeam) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::FieldGoalMissed);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, FieldGoalMadeByAwayTeam) {
@@ -197,6 +223,9 @@ TEST(ApplyOutcomeTest, FieldGoalMadeByAwayTeam) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 3);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::FieldGoalGood);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, AwayTackledBehindOwnGoalLineGivesHomeSafety) {
@@ -214,6 +243,9 @@ TEST(ApplyOutcomeTest, AwayTackledBehindOwnGoalLineGivesHomeSafety) {
     EXPECT_EQ(newState.home_score, 2);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Safety);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, 4thDownFailConversionWithPass) {
@@ -231,6 +263,9 @@ TEST(ApplyOutcomeTest, 4thDownFailConversionWithPass) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, RunWithNegativeYardsGainedBelowZero) {
@@ -248,6 +283,9 @@ TEST(ApplyOutcomeTest, RunWithNegativeYardsGainedBelowZero) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Safety);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, 4thDownAndPassWithNegativeYardsGainedBelowZero) {
@@ -265,6 +303,9 @@ TEST(ApplyOutcomeTest, 4thDownAndPassWithNegativeYardsGainedBelowZero) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Safety);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, RunWith1stQuarterEnd) {
@@ -282,6 +323,9 @@ TEST(ApplyOutcomeTest, RunWith1stQuarterEnd) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndQuarter);
 }
 
 TEST(ApplyOutcomeTest, RunWithFirstDownConversionNearGoal) {
@@ -299,6 +343,9 @@ TEST(ApplyOutcomeTest, RunWithFirstDownConversionNearGoal) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::FirstDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverWithSpotNearGoal) {
@@ -316,6 +363,9 @@ TEST(ApplyOutcomeTest, TurnoverWithSpotNearGoal) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, PassWithHalftimeAndHomeOpening) {
@@ -333,6 +383,9 @@ TEST(ApplyOutcomeTest, PassWithHalftimeAndHomeOpening) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
 
 TEST(ApplyOutcomeTest, RunWithHalftimeAndAwayAwayOpening) {
@@ -351,6 +404,9 @@ TEST(ApplyOutcomeTest, RunWithHalftimeAndAwayAwayOpening) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
 
 TEST(ApplyOutcomeTest, RunIn4thQuarterToEndGame) {
@@ -360,6 +416,9 @@ TEST(ApplyOutcomeTest, RunIn4thQuarterToEndGame) {
     auto& newState = result.state;
 
     EXPECT_TRUE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
 }
 
 TEST(ApplyOutcomeTest, FieldGoalMadeToEndHalf) {
@@ -379,6 +438,9 @@ TEST(ApplyOutcomeTest, FieldGoalMadeToEndHalf) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 3);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::FieldGoalGood);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
 
 TEST(ApplyOutcomeTest, SafetyToEndHalf) {
@@ -396,6 +458,9 @@ TEST(ApplyOutcomeTest, SafetyToEndHalf) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Safety);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
 
 TEST(ApplyOutcomeTest, TouchdownToEndGame) {
@@ -410,6 +475,9 @@ TEST(ApplyOutcomeTest, TouchdownToEndGame) {
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_TRUE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
 }
 
 TEST(ApplyOutcomeTest, RunReachesExactlyGoalLineScoresTouchdown) {
@@ -427,6 +495,9 @@ TEST(ApplyOutcomeTest, RunReachesExactlyGoalLineScoresTouchdown) {
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, RunCrossesBeyondGoalLineScoresTouchdown) {
@@ -444,6 +515,9 @@ TEST(ApplyOutcomeTest, RunCrossesBeyondGoalLineScoresTouchdown) {
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, PassCrossesGoalLineOnFinalPlayOfHalfStillScores) {
@@ -464,6 +538,9 @@ TEST(ApplyOutcomeTest, PassCrossesGoalLineOnFinalPlayOfHalfStillScores) {
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
 
 TEST(ApplyOutcomeTest, RunGainsExactYardsNeededForFirstDown) {
@@ -481,6 +558,9 @@ TEST(ApplyOutcomeTest, RunGainsExactYardsNeededForFirstDown) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::FirstDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverAtMidfield) {
@@ -498,6 +578,9 @@ TEST(ApplyOutcomeTest, TurnoverAtMidfield) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, FailedFourthDownAtMidfield) {
@@ -515,6 +598,9 @@ TEST(ApplyOutcomeTest, FailedFourthDownAtMidfield) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, Q4EndsInTie) {
@@ -528,6 +614,9 @@ TEST(ApplyOutcomeTest, Q4EndsInTie) {
     EXPECT_TRUE(newState.game_over);
     EXPECT_EQ(newState.home_score, 21);
     EXPECT_EQ(newState.away_score, 21);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
 }
 
 TEST(ApplyOutcomeTest, TurnoverNearOpponentGoalLineResultsInTouchback) {
@@ -546,6 +635,9 @@ TEST(ApplyOutcomeTest, TurnoverNearOpponentGoalLineResultsInTouchback) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Touchback);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Interception);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineResultsInDefensiveTouchdown) {
@@ -564,6 +656,9 @@ TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineResultsInDefensiveTouchdown) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::DefensiveTouchdown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverAtExactly0ResultsInTouchdown) {
@@ -581,6 +676,9 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly0ResultsInTouchdown) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::DefensiveTouchdown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 // At or past a goal line is in an end zone, so the spot exactly on the line is
@@ -600,6 +698,9 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInTouchback) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Touchback);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 // Mirror of the touchdown rule: reaching the plane of a goal line counts, so
@@ -619,6 +720,9 @@ TEST(ApplyOutcomeTest, TackledAtExactlyOwnGoalLineIsSafety) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Safety);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineAtEndOfHalf) {
@@ -654,6 +758,9 @@ TEST(ApplyOutcomeTest, MissedFieldGoalIgnoresYardsGained) {
     EXPECT_EQ(newState.ball_position, 75);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::FieldGoalMissed);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 // --- Reset completeness -----------------------------------------------------
@@ -672,6 +779,9 @@ TEST(ApplyOutcomeTest, TouchdownResetsDownAndDistanceFromMidSeries) {
     EXPECT_EQ(newState.distance, 10);
     EXPECT_EQ(newState.ball_position, 25);
     EXPECT_EQ(newState.home_score, 7);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 TEST(ApplyOutcomeTest, TouchbackResetsDownAndDistanceFromMidSeries) {
@@ -686,6 +796,9 @@ TEST(ApplyOutcomeTest, TouchbackResetsDownAndDistanceFromMidSeries) {
     EXPECT_EQ(newState.ball_position, 25);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Touchback);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::Fumble);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
 }
 
 // --- Quarter transition boundaries ------------------------------------------
@@ -704,6 +817,9 @@ TEST(ApplyOutcomeTest, QuarterEndsWhenElapsedExactlyConsumesTheClock) {
     EXPECT_EQ(newState.distance, 5);
     EXPECT_EQ(newState.ball_position, 30);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndQuarter);
 }
 
 // Nothing else covers Q3 -> Q4. A game-over check of `>= 4` rather than `> 4`
@@ -717,6 +833,9 @@ TEST(ApplyOutcomeTest, ThirdQuarterEndingAdvancesToFourthWithoutEndingTheGame) {
     EXPECT_EQ(newState.quarter, 4);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndQuarter);
 }
 
 TEST(ApplyOutcomeTest, SafetyToEndHalfDoesNotKeepItsOwnKickoffWhenAwayOpened) {
@@ -735,4 +854,7 @@ TEST(ApplyOutcomeTest, SafetyToEndHalfDoesNotKeepItsOwnKickoffWhenAwayOpened) {
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Safety);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
