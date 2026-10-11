@@ -7,3 +7,4 @@ PointerAlignment: Left
 AccessModifierOffset: -4
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: Empty
+InsertNewlineAtEOF: true
