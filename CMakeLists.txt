@@ -31,6 +31,7 @@ add_library(gridiron_core
         src/engine/GameRunner.cpp
         src/engine/BatchSummary.cpp
         src/engine/SimulationResult.cpp
+        src/engine/BatchRunner.cpp
 )
 target_link_libraries(gridiron_core PRIVATE gridiron_warnings)
 add_library(gridiron_cli
