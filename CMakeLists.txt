@@ -55,6 +55,7 @@ add_executable(gridiron_tests
         tests/batch_summary_test.cpp
         tests/batch_log_test.cpp
         tests/simulation_result_test.cpp
+        tests/batch_runner_test.cpp
 )
 target_link_libraries(simulate PRIVATE gridiron_cli gridiron_core gridiron_warnings)
 target_link_libraries(gridiron_tests PRIVATE gtest_main gridiron_cli gridiron_core gridiron_warnings)
