@@ -15,8 +15,8 @@ engineering, and model evaluation.
 ## Current status
 
 M1 complete: `simulate` plays a full seeded game from the terminal and prints a play-by-play log and the final result.
-Next is M2, running repeated matchups and summarizing the results. A few M1 follow-ups are tracked
-in [docs/TASKS.md](docs/TASKS.md).
+M2.1 complete: `simulate --games N` runs a reproducible batch of games and prints win/loss/tie counts and mean scores.
+Next is M2.2: uncertainty estimates, configurable run settings, and result export.
 
 ## Building and testing
 
@@ -66,6 +66,7 @@ After building:
 Output is a play-by-play log followed by the final result (excerpt):
 
 ```
+Q1 15:00 - Game Start. BAL receives the football.
 Q1 14:34 - BAL run for 1 yards. 2nd & 9 on BAL 26.
 Q1 13:41 - BAL pass for 1 yards. Short of the first down. Turnover on downs.
 Q1 13:41 - SEA ball on BAL 28, 1st & 10.
@@ -84,8 +85,27 @@ Seed: 1000
 Each line shows the game clock after the play. Field position names the side of the field: `BAL 28` is the 28-yard line
 on BAL's half, whichever team has the ball.
 
-Usage: `simulate HOME AWAY [--seed N]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in `src/cli/Teams.cpp`).
-Invalid input prints an error and the usage line, and exits with code 1.
+Usage: `simulate HOME AWAY [--seed N] [--games N]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in
+`src/cli/Teams.cpp`). Invalid input prints an error and the usage line, and exits with code 1.
+
+## Running a batch
+
+`--games N` (1 to 1,000,000) plays the same matchup N times and prints only a summary, with no play-by-play:
+
+```
+./build/simulate BAL SEA --games 5 --seed 1000
+```
+
+```
+BAL vs SEA, 5 games, batch seed 1000
+BAL wins: 1     SEA wins: 4     Ties: 0
+Mean score: BAL 11.20   SEA 24.60
+Mean margin (BAL - SEA): -13.40 Mean total: 35.80
+```
+
+With `--games`, `--seed` is the batch seed: game `i` (counting from 0) uses seed `batchSeed + i`, so any game in a batch
+can be replayed on its own. Game 2 above is `./build/simulate BAL SEA --seed 1002`. Without `--seed`, a random batch
+seed is drawn and printed in the first line. The seed policy is decided in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Limitations
 
