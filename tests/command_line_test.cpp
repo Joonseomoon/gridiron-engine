@@ -120,7 +120,7 @@ TEST(CommandLineTest, RejectsUnknownOption) {
 }
 
 TEST(CommandLineTest, ResolvesTwoKnownTeams) {
-    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "SEA", std::nullopt});
+    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "SEA", std::nullopt, std::nullopt});
     const auto* matchup = std::get_if<gridiron::Matchup>(&result);
     ASSERT_NE(matchup, nullptr);
     EXPECT_EQ(matchup->home.name, "BAL");
@@ -128,7 +128,7 @@ TEST(CommandLineTest, ResolvesTwoKnownTeams) {
 }
 
 TEST(CommandLineTest, ResolvesTeamsCaseInsensitively) {
-    const auto result = gridiron::resolveTeams(gridiron::Options{"bal", "sea", std::nullopt});
+    const auto result = gridiron::resolveTeams(gridiron::Options{"bal", "sea", std::nullopt, std::nullopt});
     const auto* matchup = std::get_if<gridiron::Matchup>(&result);
     ASSERT_NE(matchup, nullptr);
     EXPECT_EQ(matchup->home.name, "BAL");
@@ -136,24 +136,125 @@ TEST(CommandLineTest, ResolvesTeamsCaseInsensitively) {
 }
 
 TEST(CommandLineTest, RejectsUnknownHomeTeam) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"XYZ", "SEA", std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"XYZ", "SEA", std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, RejectsUnknownAwayTeam) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "XYZ", std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "XYZ", std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, RejectsSameTeamTwice) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "BAL", std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "BAL", std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, RejectsSameTeamDifferentCase) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "bal", std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "bal", std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, UnknownTeamErrorListsAvailableTeams) {
-    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "XYZ", std::nullopt});
+    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "XYZ", std::nullopt, std::nullopt});
     const auto* error = std::get_if<std::string>(&result);
     ASSERT_NE(error, nullptr);
     EXPECT_NE(error->find("BAL"), std::string::npos);
+}
+
+TEST(CommandLineTest, TwoTeamsAndGames) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--games", "100"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    EXPECT_EQ(options->home, "BAL");
+    EXPECT_EQ(options->away, "SEA");
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, 100);
+    EXPECT_FALSE(options->seed.has_value());
+}
+
+TEST(CommandLineTest, GamesAbsentWhenNotGiven) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--seed", "1000"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    EXPECT_FALSE(options->games.has_value());
+}
+
+TEST(CommandLineTest, AcceptsFewestGames) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--games", std::to_string(gridiron::kMinGames)});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, gridiron::kMinGames);
+}
+
+TEST(CommandLineTest, AcceptsMostGames) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--games", std::to_string(gridiron::kMaxGames)});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, gridiron::kMaxGames);
+}
+
+TEST(CommandLineTest, GamesAndSeedTogether) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--games", "50", "--seed", "1000"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, 50);
+    ASSERT_TRUE(options->seed.has_value());
+    EXPECT_EQ(*options->seed, 1000u);
+}
+
+TEST(CommandLineTest, SeedAndGamesBeforeTeams) {
+    const auto result = gridiron::parseArgs({"--seed", "7", "--games", "3", "BAL", "SEA"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    EXPECT_EQ(options->home, "BAL");
+    EXPECT_EQ(options->away, "SEA");
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, 3);
+    ASSERT_TRUE(options->seed.has_value());
+    EXPECT_EQ(*options->seed, 7u);
+}
+
+TEST(CommandLineTest, RejectsZeroGames) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "0"}));
+}
+
+TEST(CommandLineTest, RejectsTooManyGames) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", std::to_string(gridiron::kMaxGames + 1)}));
+}
+
+TEST(CommandLineTest, RejectsNegativeGames) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "-5"}));
+}
+
+TEST(CommandLineTest, RejectsNonNumericGames) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "abc"}));
+}
+
+TEST(CommandLineTest, RejectsGamesWithTrailingJunk) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "10x"}));
+}
+
+TEST(CommandLineTest, RejectsEmptyGames) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", ""}));
+}
+
+TEST(CommandLineTest, RejectsGamesWithoutValue) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games"}));
+}
+
+TEST(CommandLineTest, RejectsGamesGivenTwice) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "1", "--games", "2"}));
+}
+
+TEST(CommandLineTest, OutOfRangeGamesErrorNamesTheRange) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--games", "0"});
+    const auto* error = std::get_if<std::string>(&result);
+    ASSERT_NE(error, nullptr);
+    EXPECT_NE(error->find(std::to_string(gridiron::kMaxGames)), std::string::npos);
 }

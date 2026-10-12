@@ -354,3 +354,13 @@ Expected `aggregate` result: 3 games; 1 home win, 1 away win, 1 tie; mean home s
 ### Checkpoint
 
 Run about 5 real games through `runBatch` and then `aggregate`. Check that wins + losses + ties equals the number of games, that the mean margin equals the mean home score minus the mean away score, and that one game picked from the batch replays with the same score via `simulate --seed batchSeed+i`.
+
+### Implementation notes (2026-10-12)
+
+Settled while Developer A implemented the runner and `--games`; none of these change a decision above.
+
+- The single-game result function is `SimulationResult toResult(const GameState& final, std::uint32_t seed)` in `src/engine/SimulationResult.h`. `simulate` and `runBatch` both use it.
+- `runBatch` lives in `src/engine/BatchRunner.h`. A game count of zero or less returns an empty vector; the CLI never passes one, since `--games` is range-checked first.
+- The `--games` limits are `kMinGames = 1` and `kMaxGames = 1'000'000` in `src/cli/CommandLine.h`, so the parser, its error message, and its tests share one value. `Options::games` is `std::optional<int>`: "not given" (single game with the log) must stay distinguishable from `--games 1` (a one-game batch summary).
+- The run metadata line is printed by `simulate` itself, above `printBatchSummary`: `BAL vs SEA, 5 games, batch seed 1000`.
+- Checkpoint result: `simulate BAL SEA --games 5 --seed 1000` gave BAL 1 win, SEA 4, no ties, mean scores 11.20 and 24.60, mean margin -13.40. Replaying seeds 1000–1004 one at a time gives the same five scores (6–26, 3–32, 18–16, 17–25, 12–24).
