@@ -9,6 +9,7 @@ namespace gridiron {
 std::variant<Options, std::string> parseArgs(const std::vector<std::string>& args) {
     std::vector<std::string> teams;
     std::optional<std::uint32_t> seed;
+    std::optional<int> games;
 
     for (std::size_t i = 0; i < args.size(); ++i) {
         const std::string& arg = args[i];
@@ -30,6 +31,28 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
             ++i;
             continue;
         }
+        if (arg == "--games") {
+            if (games) {
+                return "--games given more than once";
+            }
+            if (i + 1 >= args.size()) {
+                return "--games needs a value";
+            }
+            const std::string& text = args[i + 1];
+            int value = 0;
+            const char* end = text.data() + text.size();
+            const auto [stoppedAt, error] = std::from_chars(text.data(), end, value);
+            if (error != std::errc{} || stoppedAt != end) {
+                return "invalid game count '" + text + "'";
+            }
+            if (value > kMaxGames || value < kMinGames) {
+                return "--games must be between " + std::to_string(kMinGames) + " and " + std::to_string(kMaxGames);
+            }
+
+            games = value;
+            ++i;
+            continue;
+        }
         if (arg.starts_with("-")) {
             return "unknown option '" + arg + "'";
         }
@@ -40,7 +63,7 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
         return "expected two teams";
     }
 
-    return Options{teams[0], teams[1], seed};
+    return Options{teams[0], teams[1], seed, games};
 }
 
 namespace {
