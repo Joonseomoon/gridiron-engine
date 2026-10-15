@@ -1,12 +1,16 @@
 #include "cli/BatchLog.h"
 
 #include <cstdint>
+#include <cstdlib>
+#include <filesystem>
 #include <fstream>
 #include <iostream>
 #include <optional>
 #include <ostream>
 #include <random>
 #include <string>
+#include <system_error>
+#include <unistd.h>
 #include <vector>
 
 #include "cli/BatchCsv.h"
@@ -57,19 +61,45 @@ int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batc
 
     if (outputPath) {
         gridiron::BatchMetadata metadata{matchup.home, matchup.away, games, batchSeed, commandLine};
-        std::ofstream file(*outputPath);
-
-        if (!file.is_open()) {
-            std::cerr << "error: could not open file: " << *outputPath << '\n';
+        const std::filesystem::path finalPath(*outputPath);
+        const std::string tempTemplate = finalPath.string() + ".tmp.XXXXXX";
+        std::vector<char> tempName(tempTemplate.begin(), tempTemplate.end());
+        tempName.push_back('\0');
+        int fd = mkstemp(tempName.data());
+        if (fd == -1) {
+            std::cerr << "error: could not create temporary file\n";
             return 1;
         }
+        const std::filesystem::path tempPath(tempName.data());
+        if (close(fd) == -1) {
+            std::cerr << "error: could not close temporary file\n";
 
+            std::error_code cleanupError;
+            std::filesystem::remove(tempPath, cleanupError);
+            return 1;
+        }
+        std::ofstream file(tempPath);
+        if (!file.is_open()) {
+            std::cerr << "error: could not open temporary file: " << tempPath << '\n';
+            std::error_code cleanupError;
+            std::filesystem::remove(tempPath, cleanupError);
+            return 1;
+        }
         gridiron::writeBatchCsv(file, metadata, results, summary);
-
         file.close();
-
         if (!file) {
-            std::cerr << "error: failed to write output file: " << *outputPath << '\n';
+            std::cerr << "error: failed to write output file: " << tempPath << '\n';
+            std::error_code cleanupError;
+            std::filesystem::remove(tempPath, cleanupError);
+            return 1;
+        }
+        std::error_code error;
+        std::filesystem::rename(tempPath, finalPath, error);
+
+        if (error) {
+            std::cerr << "error: could not rename temporary file: " << error.message() << '\n';
+            std::error_code cleanupError;
+            std::filesystem::remove(tempPath, cleanupError);
             return 1;
         }
     }

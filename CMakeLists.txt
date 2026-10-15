@@ -58,6 +58,11 @@ add_executable(gridiron_tests
         tests/simulation_result_test.cpp
         tests/batch_runner_test.cpp
         tests/batch_csv_test.cpp
+        tests/cli_export_test.cpp
+)
+add_dependencies(gridiron_tests simulate)
+target_compile_definitions(gridiron_tests PRIVATE
+    SIMULATE_PATH="$<TARGET_FILE:simulate>"
 )
 target_link_libraries(simulate PRIVATE gridiron_cli gridiron_core gridiron_warnings)
 target_link_libraries(gridiron_tests PRIVATE gtest_main gridiron_cli gridiron_core gridiron_warnings)
