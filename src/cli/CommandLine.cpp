@@ -10,6 +10,7 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
     std::vector<std::string> teams;
     std::optional<std::uint32_t> seed;
     std::optional<int> games;
+    std::optional<std::string> out;
 
     for (std::size_t i = 0; i < args.size(); ++i) {
         const std::string& arg = args[i];
@@ -53,17 +54,35 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
             ++i;
             continue;
         }
+        if (arg == "--out") {
+            if (out) {
+                return "--out given more than once";
+            }
+            if (i + 1 >= args.size()) {
+                return "--out needs a value";
+            }
+            if (args[i + 1].empty() || args[i + 1].starts_with("--")) {
+                return "--out needs a filename";
+            }
+
+            out = args[i + 1];
+            i++;
+            continue;
+        }
         if (arg.starts_with("-")) {
             return "unknown option '" + arg + "'";
         }
         teams.push_back(arg);
+    }
+    if (out && !games) {
+        return "--out requires --games";
     }
 
     if (teams.size() != 2) {
         return "expected two teams";
     }
 
-    return Options{teams[0], teams[1], seed, games};
+    return Options{teams[0], teams[1], seed, games, out};
 }
 
 namespace {

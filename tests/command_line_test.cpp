@@ -120,7 +120,8 @@ TEST(CommandLineTest, RejectsUnknownOption) {
 }
 
 TEST(CommandLineTest, ResolvesTwoKnownTeams) {
-    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "SEA", std::nullopt, std::nullopt});
+    const auto result =
+        gridiron::resolveTeams(gridiron::Options{"BAL", "SEA", std::nullopt, std::nullopt, std::nullopt});
     const auto* matchup = std::get_if<gridiron::Matchup>(&result);
     ASSERT_NE(matchup, nullptr);
     EXPECT_EQ(matchup->home.name, "BAL");
@@ -128,7 +129,8 @@ TEST(CommandLineTest, ResolvesTwoKnownTeams) {
 }
 
 TEST(CommandLineTest, ResolvesTeamsCaseInsensitively) {
-    const auto result = gridiron::resolveTeams(gridiron::Options{"bal", "sea", std::nullopt, std::nullopt});
+    const auto result =
+        gridiron::resolveTeams(gridiron::Options{"bal", "sea", std::nullopt, std::nullopt, std::nullopt});
     const auto* matchup = std::get_if<gridiron::Matchup>(&result);
     ASSERT_NE(matchup, nullptr);
     EXPECT_EQ(matchup->home.name, "BAL");
@@ -136,23 +138,24 @@ TEST(CommandLineTest, ResolvesTeamsCaseInsensitively) {
 }
 
 TEST(CommandLineTest, RejectsUnknownHomeTeam) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"XYZ", "SEA", std::nullopt, std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"XYZ", "SEA", std::nullopt, std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, RejectsUnknownAwayTeam) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "XYZ", std::nullopt, std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "XYZ", std::nullopt, std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, RejectsSameTeamTwice) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "BAL", std::nullopt, std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "BAL", std::nullopt, std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, RejectsSameTeamDifferentCase) {
-    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "bal", std::nullopt, std::nullopt}));
+    EXPECT_TRUE(isResolveError(gridiron::Options{"BAL", "bal", std::nullopt, std::nullopt, std::nullopt}));
 }
 
 TEST(CommandLineTest, UnknownTeamErrorListsAvailableTeams) {
-    const auto result = gridiron::resolveTeams(gridiron::Options{"BAL", "XYZ", std::nullopt, std::nullopt});
+    const auto result =
+        gridiron::resolveTeams(gridiron::Options{"BAL", "XYZ", std::nullopt, std::nullopt, std::nullopt});
     const auto* error = std::get_if<std::string>(&result);
     ASSERT_NE(error, nullptr);
     EXPECT_NE(error->find("BAL"), std::string::npos);
@@ -257,4 +260,66 @@ TEST(CommandLineTest, OutOfRangeGamesErrorNamesTheRange) {
     const auto* error = std::get_if<std::string>(&result);
     ASSERT_NE(error, nullptr);
     EXPECT_NE(error->find(std::to_string(gridiron::kMaxGames)), std::string::npos);
+}
+
+TEST(CommandLineTest, CorrectlyStoresFilename) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--games", "5", "--out", "results.csv"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    EXPECT_EQ(options->home, "BAL");
+    EXPECT_EQ(options->away, "SEA");
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, 5);
+    EXPECT_FALSE(options->seed.has_value());
+    ASSERT_TRUE(options->out.has_value());
+    EXPECT_EQ(*options->out, "results.csv");
+}
+
+TEST(CommandLineTest, CorrectlyStoresFilenameInDifferentOrder) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--out", "results.csv", "--games", "5"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    EXPECT_EQ(options->home, "BAL");
+    EXPECT_EQ(options->away, "SEA");
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, 5);
+    EXPECT_FALSE(options->seed.has_value());
+    ASSERT_TRUE(options->out.has_value());
+    EXPECT_EQ(*options->out, "results.csv");
+}
+
+TEST(CommandLineTest, OutGivenMoreThanOnce) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "5", "--out", "results.csv", "--out", "scores.csv"}));
+}
+
+TEST(CommandLineTest, OutWithoutGameTag) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--out", "results.csv"}));
+}
+
+TEST(CommandLineTest, RejectsOutWithoutFilename) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--seed", "1000", "--games", "5", "--out"}));
+}
+
+TEST(CommandLineTest, RejectsEmptyOutFilename) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--seed", "1000", "--games", "5", "--out", ""}));
+}
+
+TEST(CommandLineTest, RejectsFlagAsOutFilename) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--seed", "1000", "--out", "--games", "5"}));
+}
+
+TEST(CommandLineTest, EmptyOut) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--seed", "1000", "--games", "5"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+    ASSERT_NE(options, nullptr);
+
+    EXPECT_EQ(options->home, "BAL");
+    EXPECT_EQ(options->away, "SEA");
+    ASSERT_TRUE(options->games.has_value());
+    EXPECT_EQ(*options->games, 5);
+    EXPECT_FALSE(options->out.has_value());
+    ASSERT_TRUE(options->seed.has_value());
+    EXPECT_EQ(*options->seed, 1000);
 }
