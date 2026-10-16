@@ -14,6 +14,7 @@ struct Options {
     std::string away;
     std::optional<std::uint32_t> seed;
     std::optional<int> games;
+    std::optional<std::string> out;
 };
 
 struct Matchup {

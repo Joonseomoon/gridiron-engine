@@ -16,7 +16,8 @@ engineering, and model evaluation.
 
 M1 complete: `simulate` plays a full seeded game from the terminal and prints a play-by-play log and the final result.
 M2.1 complete: `simulate --games N` runs a reproducible batch of games and prints win/loss/tie counts and mean scores.
-Next is M2.2: uncertainty estimates, configurable run settings, and result export.
+M2.2 in progress: batch CSV export is implemented with recorded run settings and model metadata. Uncertainty estimates
+and their integration into the export are still pending.
 
 ## Building and testing
 
@@ -85,7 +86,7 @@ Seed: 1000
 Each line shows the game clock after the play. Field position names the side of the field: `BAL 28` is the 28-yard line
 on BAL's half, whichever team has the ball.
 
-Usage: `simulate HOME AWAY [--seed N] [--games N]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in
+Usage: `simulate HOME AWAY [--seed N] [--games N] [--out FILE]`. Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (defined in
 `src/cli/Teams.cpp`). Invalid input prints an error and the usage line, and exits with code 1.
 
 ## Running a batch
@@ -106,6 +107,48 @@ Mean margin (BAL - SEA): -13.40 Mean total: 35.80
 With `--games`, `--seed` is the batch seed: game `i` (counting from 0) uses seed `batchSeed + i`, so any game in a batch
 can be replayed on its own. Game 2 above is `./build/simulate BAL SEA --seed 1002`. Without `--seed`, a random batch
 seed is drawn and printed in the first line. The seed policy is decided in [docs/DECISIONS.md](docs/DECISIONS.md).
+
+## Exporting a batch
+
+Add `--out FILE` to save every game's result while still printing the batch summary to the terminal:
+
+```bash
+./build/simulate BAL SEA --games 5 --seed 1000 --out results.csv
+```
+
+`--out` requires `--games` and may appear only once. Quote paths containing spaces, for example
+`--out "my results.csv"`. The destination's parent directory must already exist. The program writes to a temporary
+file beside the destination and replaces the destination after writing and closing successfully. File creation,
+writing, or rename failures print an error and exit with code 1.
+
+The file begins with `#` comment lines recording the model version, both teams and all six ratings for each team,
+game count, actual batch seed, seed policy, and a shell-quoted replay command. The same block records home wins,
+away wins, ties, and mean home score, away score, margin, and total. Means are written to two decimal places.
+
+After those comments, the CSV table has this header and one row per game (excerpt from the example above):
+
+```csv
+game,seed,home_score,away_score,winner
+0,1000,6,26,away
+1,1001,3,32,away
+2,1002,18,16,home
+```
+
+`game` is a zero-based index; `winner` is `home`, `away`, or `tie`. Each row records the seed actually used for that
+game. CSV readers should skip the initial lines beginning with `#` before reading the column header.
+
+To reproduce a batch, copy the command after `# command:` and run it from the same working directory. If the original
+run omitted `--seed`, the recorded command includes the generated seed. With the same executable/model, team ratings,
+platform, and standard library, replay produces a byte-identical file. For example, save a copy before replaying:
+
+```bash
+cp results.csv first.csv
+# Run the command recorded in results.csv, then compare:
+cmp first.csv results.csv
+```
+
+`cmp` prints nothing and exits successfully when the files are identical. The recorded model version identifies the
+model used; it does not load an older model or restore ratings. Configuration-file loading is not supported.
 
 ## Limitations
 

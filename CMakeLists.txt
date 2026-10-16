@@ -39,6 +39,7 @@ add_library(gridiron_cli
         src/cli/CommandLine.cpp
         src/cli/GameLog.cpp
         src/cli/BatchLog.cpp
+        src/cli/BatchCsv.cpp
 )
 target_link_libraries(gridiron_cli PRIVATE gridiron_warnings)
 
@@ -56,6 +57,12 @@ add_executable(gridiron_tests
         tests/batch_log_test.cpp
         tests/simulation_result_test.cpp
         tests/batch_runner_test.cpp
+        tests/batch_csv_test.cpp
+        tests/cli_export_test.cpp
+)
+add_dependencies(gridiron_tests simulate)
+target_compile_definitions(gridiron_tests PRIVATE
+    SIMULATE_PATH="$<TARGET_FILE:simulate>"
 )
 target_link_libraries(simulate PRIVATE gridiron_cli gridiron_core gridiron_warnings)
 target_link_libraries(gridiron_tests PRIVATE gtest_main gridiron_cli gridiron_core gridiron_warnings)
