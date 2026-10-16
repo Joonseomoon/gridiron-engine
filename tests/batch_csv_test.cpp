@@ -8,7 +8,7 @@
 #include <string>
 #include <vector>
 
-TEST(BatchCsvTest, NormalReusltsTest) {
+TEST(BatchCsvTest, WritesMetadataAndRows) {
     gridiron::BatchMetadata metadata{{"BAL", 0.8, 0.8, 0.8, 0.7, 0.03, 0.94},
                                      {"SEA", 0.7, 0.8, 0.9, 0.8, 0.02, 0.95},
                                      3,
@@ -57,7 +57,7 @@ TEST(BatchCsvTest, NormalReusltsTest) {
     EXPECT_EQ(out.str(), expected);
 }
 
-TEST(BatchCsvTest, ReproduceableBatches) {
+TEST(BatchCsvTest, ReproducibleBatches) {
     gridiron::BatchMetadata metadata{{"BAL", 0.8, 0.8, 0.8, 0.7, 0.03, 0.94},
                                      {"SEA", 0.7, 0.8, 0.9, 0.8, 0.02, 0.95},
                                      3,

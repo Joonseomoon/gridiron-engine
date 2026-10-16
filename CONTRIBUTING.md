@@ -28,6 +28,15 @@ A switch includes a short walkthrough and a meaningful implementation task for t
 
 Maintain [the learning record](docs/LEARNING.md) at milestone boundaries. Aim for breadth over the project, not equal minutes or duplicate implementations. Adjust future assignments for interests and gaps.
 
+## Principles
+
+- Keep main working and merge small changes frequently.
+- Establish correctness before optimization.
+- Separate football rules from probability models.
+- Record assumptions, seeds, model versions, and evaluation settings.
+- More simulations reduce sampling noise; they do not fix a poor model.
+- Treat market analytics as research, with no promise of betting profit.
+
 ## Branches and review
 
 - Work in the same repository using short-lived feature branches.
