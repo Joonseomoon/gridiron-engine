@@ -97,6 +97,17 @@ int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batc
             std::filesystem::remove(tempPath, cleanupError);
             return 1;
         }
+        // mkstemp creates the file owner-only (0600); give the CSV the usual 0644 before it takes the final name.
+        using std::filesystem::perms;
+        const perms csvPerms = perms::owner_read | perms::owner_write | perms::group_read | perms::others_read;
+        std::error_code permissionsError;
+        std::filesystem::permissions(tempPath, csvPerms, permissionsError);
+        if (permissionsError) {
+            std::cerr << "error: could not set permissions on temporary file: " << permissionsError.message() << '\n';
+            std::error_code cleanupError;
+            std::filesystem::remove(tempPath, cleanupError);
+            return 1;
+        }
         std::error_code error;
         std::filesystem::rename(tempPath, finalPath, error);
 

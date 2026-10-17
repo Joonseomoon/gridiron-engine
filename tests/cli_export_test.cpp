@@ -65,6 +65,22 @@ TEST_F(CliExportTest, CreatesCsvFile) {
     EXPECT_EQ(firstLine, "# model_version: m1-v1");
 }
 
+TEST_F(CliExportTest, CsvIsReadableByOthers) {
+    const auto outputPath = directory / "results.csv";
+
+    const std::string command =
+        shellQuote(SIMULATE_PATH) + " BAL SEA --games 3 --seed 1000 --out " + shellQuote(outputPath.string());
+    ASSERT_EQ(std::system(command.c_str()), 0);
+
+    // The temporary file starts owner-only (mkstemp); the finished CSV must be 0644 like a normally created file.
+    using std::filesystem::perms;
+    const perms permissions = std::filesystem::status(outputPath).permissions();
+    EXPECT_NE(permissions & perms::owner_read, perms::none);
+    EXPECT_NE(permissions & perms::owner_write, perms::none);
+    EXPECT_NE(permissions & perms::group_read, perms::none);
+    EXPECT_NE(permissions & perms::others_read, perms::none);
+}
+
 TEST_F(CliExportTest, RejectsMissingParentDirectory) {
     const auto outputPath = directory / "missing" / "results.csv";
     const auto errorPath = directory / "stderr.txt";
