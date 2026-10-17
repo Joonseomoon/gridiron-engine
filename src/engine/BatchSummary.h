@@ -29,5 +29,13 @@ struct BatchSummary {
     double mean_margin_ci95 = 0.0;
 };
 
+struct ConvergencePoint {
+    int games = 0;
+    double home_win_rate = 0.0;
+    double ci95 = 0.0;
+};
+
 BatchSummary aggregate(const std::vector<SimulationResult>& results);
+
+std::vector<ConvergencePoint> convergence(const std::vector<SimulationResult>& results);
 } // namespace gridiron

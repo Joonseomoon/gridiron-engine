@@ -8,7 +8,17 @@ namespace gridiron {
 
 namespace {
 constexpr double kZ95 = 1.96;
+
+// 95% CI half-width for a win rate of wins / games (normal approximation); 0 with fewer than 2 games.
+double winRateCi95(int wins, int games) {
+    if (games < 2) {
+        return 0.0;
+    }
+    const double n = games;
+    const double p = static_cast<double>(wins) / n;
+    return kZ95 * std::sqrt(p * (1.0 - p) / n);
 }
+} // namespace
 
 BatchSummary aggregate(const std::vector<SimulationResult>& results) {
     BatchSummary totalSummary;
@@ -74,10 +84,31 @@ BatchSummary aggregate(const std::vector<SimulationResult>& results) {
     totalSummary.sd_total = std::sqrt(totalSquaredDeviation / static_cast<double>(totalGames - 1));
 
     totalSummary.mean_margin_ci95 = totalSummary.sd_margin / std::sqrt(static_cast<double>(totalGames)) * kZ95;
-    totalSummary.home_win_rate_ci95 =
-        std::sqrt(totalSummary.home_win_rate * (1.0 - totalSummary.home_win_rate) / totalGames) * kZ95;
+    totalSummary.home_win_rate_ci95 = winRateCi95(totalSummary.home_wins, totalGames);
 
     return totalSummary;
 }
 
+std::vector<ConvergencePoint> convergence(const std::vector<SimulationResult>& results) {
+    std::vector<ConvergencePoint> convergencePoints;
+
+    int homeWins{0};
+    std::size_t nextStop = 10;
+
+    for (std::size_t i = 0; i < results.size(); i++) {
+        if (results[i].winner == Winner::Home) {
+            homeWins += 1;
+        }
+        if (i == results.size() - 1 || i + 1 == nextStop) {
+            ConvergencePoint convergencePoint;
+            convergencePoint.games = static_cast<int>(i + 1);
+            const double games = convergencePoint.games;
+            convergencePoint.home_win_rate = static_cast<double>(homeWins) / games;
+            convergencePoint.ci95 = winRateCi95(homeWins, convergencePoint.games);
+            convergencePoints.push_back(convergencePoint);
+            nextStop *= 10;
+        }
+    }
+    return convergencePoints;
+}
 } // namespace gridiron
