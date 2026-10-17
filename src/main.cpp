@@ -59,6 +59,10 @@ int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batc
     const auto summary = gridiron::aggregate(results);
     gridiron::printBatchSummary(std::cout, matchup.home.name, matchup.away.name, summary);
 
+    if (games >= 100) {
+        gridiron::printConvergence(std::cout, matchup.home.name, gridiron::convergence(results));
+    }
+
     if (outputPath) {
         gridiron::BatchMetadata metadata{matchup.home, matchup.away, games, batchSeed, commandLine};
         const std::filesystem::path finalPath(*outputPath);

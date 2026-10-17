@@ -4,6 +4,7 @@
 #include <gtest/gtest.h>
 #include <iomanip>
 #include <sstream>
+#include <vector>
 
 TEST(BatchLogTest, RegularExample) {
     std::vector<gridiron::SimulationResult> results = {
@@ -101,6 +102,25 @@ TEST(BatchLogTest, RestoreStreamFormatting) {
                             "Mean margin (BAL - SEA): 7.00\tMean total: 41.00\n"
                             "Score sd: BAL 0.00\tSEA 0.00\tMargin sd: 0.00\tTotal sd: 0.00\n"
                             "95% CI: BAL win rate 1.000 ± 0.000\tMean margin 7.00 ± 0.00\n");
+    EXPECT_EQ(output.flags(), originalFlags);
+    EXPECT_EQ(output.precision(), originalPrecision);
+}
+
+TEST(BatchLogTest, ConvergenceTable) {
+    // Hand-built points: this test covers printing only; the math is tested in batch_summary_test.cpp.
+    const std::vector<gridiron::ConvergencePoint> points = {{10, 0.3, 0.284}, {100, 0.39, 0.0956}};
+
+    std::ostringstream output;
+    output << std::scientific << std::setprecision(4);
+    const auto originalFlags = output.flags();
+    const auto originalPrecision = output.precision();
+
+    gridiron::printConvergence(output, "BAL", points);
+
+    EXPECT_EQ(output.str(), "\nConvergence:\n"
+                            "Games\tBAL win rate\n"
+                            "10\t0.300 ± 0.284\n"
+                            "100\t0.390 ± 0.096\n");
     EXPECT_EQ(output.flags(), originalFlags);
     EXPECT_EQ(output.precision(), originalPrecision);
 }
