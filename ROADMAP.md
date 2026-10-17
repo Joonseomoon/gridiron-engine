@@ -53,7 +53,7 @@ Work outside these tables (bugs found, tooling, deferred tests) is tracked in [d
 | Round | Developer A | Developer B | Shared checkpoint |
 | --- | --- | --- | --- |
 | 2.1 Produce and summarize (done) | Build batch orchestration, clean initialization, and repeatable seed assignment. | Build aggregation of win/loss/tie counts, scores, margins, and totals from example game results. | Send a handful of actual games through the summary path. |
-| 2.2 Switch areas | Add Monte Carlo uncertainty estimates and convergence summaries to the merged aggregation code. | Add configurable run settings, result export, and recorded model/seed metadata to the merged runner. | Run one reproducible batch with statistics and saved configuration. |
+| 2.2 Switch areas (done) | Add Monte Carlo uncertainty estimates and convergence summaries to the merged aggregation code. | Add configurable run settings, result export, and recorded model/seed metadata to the merged runner. | Run one reproducible batch with statistics and saved configuration. |
 
 **Parallel starting point:** Round 2.1 uses the agreed game-result format. Both tasks in 2.2 extend separate parts of the working batch path.
 

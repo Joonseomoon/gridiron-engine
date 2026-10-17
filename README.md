@@ -3,8 +3,8 @@
 A C++ NFL simulation engine: play seeded games, repeat matchups to estimate outcome distributions, and later compare
 football decisions. See [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) for the goals and architecture.
 
-**Status:** M1 (one seeded game with a play-by-play log) and M2.1 (`--games N` batch summaries) are complete. M2.2 is in
-progress: CSV export with run metadata (`--out`) is done; uncertainty estimates are next.
+**Status:** M1 (one seeded game with a play-by-play log) and M2 (`--games N` batches with uncertainty estimates and CSV
+export) are complete. Next is M3: profiling and performance.
 
 ## Building and testing
 
@@ -67,16 +67,30 @@ The clock shown is after the play. `BAL 28` is the 28-yard line on BAL's half, w
 uses seed `batchSeed + i`, so game 2 below replays alone as `./build/simulate BAL SEA --seed 1002`.
 
 ```
-$ ./build/simulate BAL SEA --games 5 --seed 1000
-BAL vs SEA, 5 games, batch seed 1000
-BAL wins: 1     SEA wins: 4     Ties: 0
-Mean score: BAL 11.20   SEA 24.60
-Mean margin (BAL - SEA): -13.40 Mean total: 35.80
+$ ./build/simulate BAL SEA --games 1000 --seed 1000
+BAL vs SEA, 1000 games, batch seed 1000
+BAL wins: 221   SEA wins: 756   Ties: 23
+Mean score: BAL 11.63   SEA 23.74
+Mean margin (BAL - SEA): -12.11 Mean total: 35.37
+Score sd: BAL 8.08      SEA 10.95       Margin sd: 16.90        Total sd: 9.22
+95% CI: BAL win rate 0.221 ± 0.026      Mean margin -12.11 ± 1.05
+
+Convergence:
+Games   BAL win rate
+10      0.400 ± 0.304
+100     0.250 ± 0.085
+1000    0.221 ± 0.026
 ```
 
+`sd` is how much individual games vary; it doesn't shrink with more games. `95% CI` is the uncertainty of the average
+itself (normal approximation; see [docs/DECISIONS.md](docs/DECISIONS.md)), and it shrinks roughly with √N. With 100 or
+more games, the convergence table shows the estimate after the first 10, 100, 1,000, … games. More games only reduce
+this sampling noise: the interval tightens around what the model predicts, not around what would really happen, so it
+says nothing about whether the model's hand-set ratings and probabilities are right.
+
 **Export** (`--out FILE`, batch only) also writes every game to a CSV. The file starts with `#` lines recording the
-model version, both teams' ratings, the game count and batch seed, the summary, and a `# command:` line. Then comes the
-table:
+model version, both teams' ratings, the game count and batch seed, the summary statistics (with the same values and
+precision as the terminal), and a `# command:` line. Then comes the table:
 
 ```csv
 game,seed,home_score,away_score,winner

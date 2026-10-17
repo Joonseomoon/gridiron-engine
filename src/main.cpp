@@ -59,6 +59,10 @@ int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batc
     const auto summary = gridiron::aggregate(results);
     gridiron::printBatchSummary(std::cout, matchup.home.name, matchup.away.name, summary);
 
+    if (games >= 100) {
+        gridiron::printConvergence(std::cout, matchup.home.name, gridiron::convergence(results));
+    }
+
     if (outputPath) {
         gridiron::BatchMetadata metadata{matchup.home, matchup.away, games, batchSeed, commandLine};
         const std::filesystem::path finalPath(*outputPath);
@@ -89,6 +93,17 @@ int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batc
         file.close();
         if (!file) {
             std::cerr << "error: failed to write output file: " << tempPath << '\n';
+            std::error_code cleanupError;
+            std::filesystem::remove(tempPath, cleanupError);
+            return 1;
+        }
+        // mkstemp creates the file owner-only (0600); give the CSV the usual 0644 before it takes the final name.
+        using std::filesystem::perms;
+        const perms csvPerms = perms::owner_read | perms::owner_write | perms::group_read | perms::others_read;
+        std::error_code permissionsError;
+        std::filesystem::permissions(tempPath, csvPerms, permissionsError);
+        if (permissionsError) {
+            std::cerr << "error: could not set permissions on temporary file: " << permissionsError.message() << '\n';
             std::error_code cleanupError;
             std::filesystem::remove(tempPath, cleanupError);
             return 1;

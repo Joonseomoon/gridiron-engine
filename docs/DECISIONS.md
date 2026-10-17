@@ -367,3 +367,64 @@ Settled while Developer A implemented the runner and `--games`; none of these ch
 - The `--games` limits are `kMinGames = 1` and `kMaxGames = 1'000'000` in `src/cli/CommandLine.h`, so the parser, its error message, and its tests share one value. `Options::games` is `std::optional<int>`: "not given" (single game with the log) must stay distinguishable from `--games 1` (a one-game batch summary).
 - The run metadata line is printed by `simulate` itself, above `printBatchSummary`: `BAL vs SEA, 5 games, batch seed 1000`.
 - Checkpoint result: `simulate BAL SEA --games 5 --seed 1000` gave BAL 1 win, SEA 4, no ties, mean scores 11.20 and 24.60, mean margin -13.40. Replaying seeds 1000–1004 one at a time gives the same five scores (6–26, 3–32, 18–16, 17–25, 12–24).
+
+## M2.2 uncertainty and export (decided 2026-10-16)
+
+Developer B's export (`--out`, PR #32) was built first; its format is recorded here as built. Developer A's statistics
+extend `BatchSummary` and are then added to the export's metadata.
+
+### Uncertainty statistics
+
+- **Decision:** `aggregate` also fills these `BatchSummary` fields:
+  - `sd_home_score`, `sd_away_score`, `sd_margin`, `sd_total`: sample standard deviation (divide by n − 1).
+  - `home_win_rate`: home wins ÷ games. A tie is not a win and does not count as half of one.
+  - `home_win_rate_ci95`: half-width of the 95% interval, `1.96 × sqrt(p × (1 − p) / n)`.
+  - `mean_margin_ci95`: half-width of the 95% interval, `1.96 × sd_margin / sqrt(n)`.
+  - With fewer than 2 games, every sd and CI field is 0.
+- **Reason:** the textbook normal approximation is enough to show sampling noise shrinking as games are added; nothing
+  in M2 needs exact intervals.
+- **Consequence:** the win-rate interval is 0 when every game has the same outcome for home (all wins, or no wins), and
+  is unreliable for small batches or rates near 0 or 1. A better interval (for example Wilson) is a later change.
+
+### Convergence
+
+- **Decision:** `std::vector<ConvergencePoint> convergence(const std::vector<SimulationResult>&)`. Each point holds
+  `games`, `home_win_rate` and `ci95`, computed over the first `games` results. Points are at 10, 100, 1,000, … up to
+  N, plus N itself if it is not already one of them. `printBatchSummary` prints the table only when N ≥ 100.
+- **Reason:** seeds are assigned by game index, so the first k games of a batch are a valid smaller batch; one run shows
+  the estimate settling without rerunning.
+- **Consequence:** the last point always equals `aggregate`'s `home_win_rate` and `home_win_rate_ci95`.
+
+### Export (as built by Developer B)
+
+- **Decision:** `--out FILE` (batch only, at most once) writes `#` metadata lines and then the table
+  `game,seed,home_score,away_score,winner`. The metadata records `model_version` (`kModelVersion`, currently
+  `m1-v1`), both teams and their six ratings, games, batch seed, seed policy, the shell-quoted command (with the
+  generated seed appended when none was given), and the summary. The file is written to a temporary file beside the
+  destination and renamed into place.
+- **Reason:** rerunning the recorded command reproduces the file exactly, which is the "saved configuration" the
+  roadmap asks for. Teams and model constants are not loaded from files in M2.2, and there is no `--config`.
+- **Consequence:** new summary fields go in the metadata block as `# <field_name>: <value>`, using the `BatchSummary`
+  field name, after the existing means. Decimal values are written to 2 places, like the means, except
+  `home_win_rate` and `home_win_rate_ci95`, which use 3 (at 2 places a large batch would print a CI of `0.00`). The
+  terminal summary uses the same precision, so the two match.
+
+### Shared example
+
+The same three games as M2.1 (24–17, 10–20, 13–13). Expected values:
+
+| Field | Value |
+| --- | --- |
+| `sd_home_score` | 7.3711 |
+| `sd_away_score` | 3.5119 |
+| `sd_margin` | 8.5440 |
+| `sd_total` | 7.7675 |
+| `home_win_rate` | 0.3333 (1 / 3) |
+| `home_win_rate_ci95` | 0.5334 |
+| `mean_margin_ci95` | 9.6685 |
+
+### Checkpoint
+
+On `main` with both PRs merged: run `simulate BAL SEA --games 10000 --seed 1000 --out run.csv`, check that the CSV's
+statistics match the terminal output and that its rows reconcile (row count = games, wins add up), rerun the recorded
+command and compare the files with `cmp`, and each developer explains the other's half.
