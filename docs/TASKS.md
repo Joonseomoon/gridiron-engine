@@ -5,6 +5,14 @@ work is tracked in ROADMAP.md and its issues, not here. Remove an item once it i
 
 ## Bugs
 
+### Exported CSV is readable only by its owner
+
+`--out` writes to a temporary file from `mkstemp`, which creates it with mode `0600`, then renames it over the
+destination. So every exported CSV ends up `-rw-------`, unlike a file created normally (`0644` under the usual umask),
+and other users or tools running as another user can't read it. Fix: set the permissions on the temporary file before
+the rename (for example `std::filesystem::permissions` to `0666` minus the current umask, or a plain `0644`), and add a
+check to `tests/cli_export_test.cpp`. Found reviewing PR #32; to be fixed in Developer A's M2.2 work.
+
 ## Deferred
 
 ### clang-tidy
