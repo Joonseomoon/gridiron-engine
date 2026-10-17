@@ -49,6 +49,13 @@ void writeBatchCsv(std::ostream& out, const BatchMetadata& metadata, const std::
     out << "# mean_away_score: " << summary.mean_away_score << '\n';
     out << "# mean_margin: " << summary.mean_margin << '\n';
     out << "# mean_total: " << summary.mean_total << '\n';
+    out << "# sd_home_score: " << summary.sd_home_score << '\n';
+    out << "# sd_away_score: " << summary.sd_away_score << '\n';
+    out << "# sd_margin: " << summary.sd_margin << '\n';
+    out << "# sd_total: " << summary.sd_total << '\n';
+    out << "# home_win_rate: " << std::setprecision(3) << summary.home_win_rate << '\n';
+    out << "# home_win_rate_ci95: " << summary.home_win_rate_ci95 << '\n';
+    out << "# mean_margin_ci95: " << std::setprecision(2) << summary.mean_margin_ci95 << '\n';
 
     out << "game,seed,home_score,away_score,winner\n";
 

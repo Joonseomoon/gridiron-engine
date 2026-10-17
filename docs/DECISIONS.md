@@ -405,7 +405,9 @@ extend `BatchSummary` and are then added to the export's metadata.
 - **Reason:** rerunning the recorded command reproduces the file exactly, which is the "saved configuration" the
   roadmap asks for. Teams and model constants are not loaded from files in M2.2, and there is no `--config`.
 - **Consequence:** new summary fields go in the metadata block as `# <field_name>: <value>`, using the `BatchSummary`
-  field name, after the existing means. Every decimal value is written to 2 places, the same as the means.
+  field name, after the existing means. Decimal values are written to 2 places, like the means, except
+  `home_win_rate` and `home_win_rate_ci95`, which use 3 (at 2 places a large batch would print a CI of `0.00`). The
+  terminal summary uses the same precision, so the two match.
 
 ### Shared example
 
