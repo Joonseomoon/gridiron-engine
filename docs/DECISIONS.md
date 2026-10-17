@@ -1,6 +1,9 @@
-# Initial Decisions
+# Decisions
 
-Fill this in together during Milestone 0. Keep decisions short and revise them as evidence changes.
+The project's design decisions, appended in the order they were made. Each milestone's shared prerequisite gets a
+section here before either developer starts; record anything that changes during implementation in that section rather
+than rewriting history elsewhere. Keep decisions short, and when evidence changes, add the new decision and mark the old
+one superseded.
 
 ## Already agreed
 
