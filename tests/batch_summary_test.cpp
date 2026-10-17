@@ -19,6 +19,14 @@ TEST(BatchSummaryTest, RegularExample) {
     EXPECT_NEAR(summary.mean_margin, -1.0, 1e-12);
     EXPECT_DOUBLE_EQ(summary.mean_total, 97.0 / 3.0);
 
+    EXPECT_NEAR(summary.sd_home_score, 7.3711, 1e-4);
+    EXPECT_NEAR(summary.sd_away_score, 3.5119, 1e-4);
+    EXPECT_NEAR(summary.sd_margin, 8.5440, 1e-4);
+    EXPECT_NEAR(summary.sd_total, 7.7675, 1e-4);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate, 1.0 / 3.0);
+    EXPECT_NEAR(summary.home_win_rate_ci95, 0.5334, 1e-4);
+    EXPECT_NEAR(summary.mean_margin_ci95, 9.6685, 1e-4);
+
     EXPECT_EQ(summary.home_wins + summary.away_wins + summary.ties, summary.games);
 }
 
@@ -37,6 +45,14 @@ TEST(BatchSummaryTest, EmptyVector) {
     EXPECT_DOUBLE_EQ(summary.mean_margin, 0.0);
     EXPECT_DOUBLE_EQ(summary.mean_total, 0.0);
 
+    EXPECT_DOUBLE_EQ(summary.sd_home_score, 0.0);
+    EXPECT_DOUBLE_EQ(summary.sd_away_score, 0.0);
+    EXPECT_DOUBLE_EQ(summary.sd_margin, 0.0);
+    EXPECT_DOUBLE_EQ(summary.sd_total, 0.0);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate, 0.0);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate_ci95, 0.0);
+    EXPECT_DOUBLE_EQ(summary.mean_margin_ci95, 0.0);
+
     EXPECT_EQ(summary.home_wins + summary.away_wins + summary.ties, summary.games);
 }
 
@@ -54,6 +70,15 @@ TEST(BatchSummaryTest, OneGame) {
     EXPECT_DOUBLE_EQ(summary.mean_away_score, 17.0);
     EXPECT_DOUBLE_EQ(summary.mean_margin, 7.0);
     EXPECT_DOUBLE_EQ(summary.mean_total, 41.0);
+
+    // Fewer than 2 games: no spread can be measured, so every sd and CI stays 0.
+    EXPECT_DOUBLE_EQ(summary.sd_home_score, 0.0);
+    EXPECT_DOUBLE_EQ(summary.sd_away_score, 0.0);
+    EXPECT_DOUBLE_EQ(summary.sd_margin, 0.0);
+    EXPECT_DOUBLE_EQ(summary.sd_total, 0.0);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate, 1.0);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate_ci95, 0.0);
+    EXPECT_DOUBLE_EQ(summary.mean_margin_ci95, 0.0);
 
     EXPECT_EQ(summary.home_wins + summary.away_wins + summary.ties, summary.games);
 }
@@ -74,6 +99,15 @@ TEST(BatchSummaryTest, AllTies) {
     EXPECT_DOUBLE_EQ(summary.mean_margin, 0.0);
     EXPECT_DOUBLE_EQ(summary.mean_total, 38.0);
 
+    // Every margin is 0, so the margin has no spread; the home scores still vary.
+    EXPECT_NEAR(summary.sd_home_score, 5.5678, 1e-4);
+    EXPECT_NEAR(summary.sd_away_score, 5.5678, 1e-4);
+    EXPECT_DOUBLE_EQ(summary.sd_margin, 0.0);
+    EXPECT_NEAR(summary.sd_total, 11.1355, 1e-4);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate, 0.0);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate_ci95, 0.0);
+    EXPECT_DOUBLE_EQ(summary.mean_margin_ci95, 0.0);
+
     EXPECT_EQ(summary.home_wins + summary.away_wins + summary.ties, summary.games);
 }
 
@@ -93,6 +127,16 @@ TEST(BatchSummaryTest, AllHomeWins) {
     EXPECT_NEAR(summary.mean_margin, 16.0 / 3.0, 1e-12);
     EXPECT_DOUBLE_EQ(summary.mean_total, 104.0 / 3.0);
 
+    // Margins 6, 5, 5: sd is 1 / sqrt(3), so the margin CI is 1.96 / 3. A win rate of 1 gives a CI of 0, the known
+    // weakness of the normal approximation.
+    EXPECT_DOUBLE_EQ(summary.sd_home_score, 10.0);
+    EXPECT_NEAR(summary.sd_away_score, 9.5044, 1e-4);
+    EXPECT_NEAR(summary.sd_margin, 0.5774, 1e-4);
+    EXPECT_NEAR(summary.sd_total, 19.5021, 1e-4);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate, 1.0);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate_ci95, 0.0);
+    EXPECT_NEAR(summary.mean_margin_ci95, 1.96 / 3.0, 1e-12);
+
     EXPECT_EQ(summary.home_wins + summary.away_wins + summary.ties, summary.games);
 }
 
@@ -111,6 +155,14 @@ TEST(BatchSummaryTest, AllAwayWins) {
     EXPECT_DOUBLE_EQ(summary.mean_away_score, 20.0);
     EXPECT_NEAR(summary.mean_margin, -16.0 / 3.0, 1e-12);
     EXPECT_DOUBLE_EQ(summary.mean_total, 104.0 / 3.0);
+
+    EXPECT_NEAR(summary.sd_home_score, 9.5044, 1e-4);
+    EXPECT_DOUBLE_EQ(summary.sd_away_score, 10.0);
+    EXPECT_NEAR(summary.sd_margin, 0.5774, 1e-4);
+    EXPECT_NEAR(summary.sd_total, 19.5021, 1e-4);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate, 0.0);
+    EXPECT_DOUBLE_EQ(summary.home_win_rate_ci95, 0.0);
+    EXPECT_NEAR(summary.mean_margin_ci95, 1.96 / 3.0, 1e-12);
 
     EXPECT_EQ(summary.home_wins + summary.away_wins + summary.ties, summary.games);
 }
