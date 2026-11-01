@@ -4,6 +4,7 @@ project(gridiron_engine LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+find_package(Threads REQUIRED)
 include(FetchContent)
 
 FetchContent_Declare(
@@ -33,7 +34,7 @@ add_library(gridiron_core
         src/engine/SimulationResult.cpp
         src/engine/BatchRunner.cpp
 )
-target_link_libraries(gridiron_core PRIVATE gridiron_warnings)
+target_link_libraries(gridiron_core PRIVATE gridiron_warnings Threads::Threads)
 add_library(gridiron_cli
         src/cli/Teams.cpp
         src/cli/CommandLine.cpp
@@ -41,7 +42,7 @@ add_library(gridiron_cli
         src/cli/BatchLog.cpp
         src/cli/BatchCsv.cpp
 )
-target_link_libraries(gridiron_cli PRIVATE gridiron_warnings)
+target_link_libraries(gridiron_cli PRIVATE gridiron_warnings Threads::Threads)
 
 add_executable(simulate src/main.cpp)
 add_executable(gridiron_tests

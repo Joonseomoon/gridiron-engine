@@ -323,3 +323,41 @@ TEST(CommandLineTest, EmptyOut) {
     ASSERT_TRUE(options->seed.has_value());
     EXPECT_EQ(*options->seed, 1000);
 }
+
+TEST(CommandLineTest, ThreadsDefaultToOne) {
+    const auto result = gridiron::parseArgs({"BAL", "SEA", "--games", "10"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+
+    ASSERT_NE(options, nullptr);
+    EXPECT_EQ(options->threads, 1);
+}
+
+TEST(CommandLineTest, AcceptsThreadsBeforeGames) {
+    const auto result =
+        gridiron::parseArgs({"BAL", "SEA", "--threads", std::to_string(gridiron::maxThreads()), "--games", "10"});
+    const auto* options = std::get_if<gridiron::Options>(&result);
+
+    ASSERT_NE(options, nullptr);
+    EXPECT_EQ(options->threads, gridiron::maxThreads());
+}
+
+TEST(CommandLineTest, ThreadsRequireGames) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--threads", "1"}));
+}
+
+TEST(CommandLineTest, RejectsInvalidThreadCounts) {
+    for (const std::string value : {"0", "-1", "abc", "4abc", "", "1.5", "99999999999999"}) {
+        SCOPED_TRACE(value);
+        EXPECT_TRUE(isError({"BAL", "SEA", "--games", "10", "--threads", value}));
+    }
+
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "10", "--threads", std::to_string(gridiron::maxThreads() + 1)}));
+}
+
+TEST(CommandLineTest, RejectsThreadsWithoutValue) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "10", "--threads"}));
+}
+
+TEST(CommandLineTest, RejectsRepeatedThreads) {
+    EXPECT_TRUE(isError({"BAL", "SEA", "--games", "10", "--threads", "1", "--threads", "1"}));
+}

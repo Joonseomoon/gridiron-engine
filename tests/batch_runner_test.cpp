@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <limits>
 #include <random>
+#include <stdexcept>
 
 #include "../src/engine/BatchRunner.h"
 #include "../src/engine/GameRunner.h"
@@ -64,4 +65,40 @@ TEST(BatchRunnerTest, GameCountEdgeCases) {
     EXPECT_TRUE(results2.empty());
     const auto results3 = gridiron::runBatch(kHome, kAway, 5, batchSeed);
     EXPECT_EQ(results3.size(), 5u);
+}
+
+TEST(BatchRunnerTest, ThreadCountsPreserveResultsAndOrder) {
+    for (const int games : {1, 3, 103}) {
+        for (const std::uint32_t seed : {1000u, std::numeric_limits<std::uint32_t>::max() - 1}) {
+            SCOPED_TRACE(games);
+            SCOPED_TRACE(seed);
+
+            const auto expected = gridiron::runBatch(kHome, kAway, games, seed, 1);
+
+            for (const int threads : {2, 4, 8}) {
+                SCOPED_TRACE(threads);
+                const auto actual = gridiron::runBatch(kHome, kAway, games, seed, threads);
+
+                ASSERT_EQ(actual.size(), expected.size());
+
+                for (std::size_t i = 0; i < expected.size(); ++i) {
+                    SCOPED_TRACE(i);
+                    EXPECT_EQ(actual[i].home_score, expected[i].home_score);
+                    EXPECT_EQ(actual[i].away_score, expected[i].away_score);
+                    EXPECT_EQ(actual[i].winner, expected[i].winner);
+                    EXPECT_EQ(actual[i].seed, expected[i].seed);
+                }
+            }
+        }
+    }
+}
+
+TEST(BatchRunnerTest, RejectsNonpositiveThreadCounts) {
+    EXPECT_THROW(gridiron::runBatch(kHome, kAway, 10, 1000, 0), std::invalid_argument);
+    EXPECT_THROW(gridiron::runBatch(kHome, kAway, 10, 1000, -1), std::invalid_argument);
+}
+
+TEST(BatchRunnerTest, EmptyBatchesWithMultipleThreads) {
+    EXPECT_TRUE(gridiron::runBatch(kHome, kAway, 0, 1000, 8).empty());
+    EXPECT_TRUE(gridiron::runBatch(kHome, kAway, -3, 1000, 8).empty());
 }

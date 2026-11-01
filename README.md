@@ -38,7 +38,7 @@ reformatting commit.
 ## Running
 
 ```
-simulate HOME AWAY [--seed N] [--games N] [--out FILE]
+simulate HOME AWAY [--seed N] [--games N] [--threads T] [--out FILE]
 ```
 
 Built-in teams: BAL, SEA, LAR, KC, HOU, DAL (`src/cli/Teams.cpp`), case-insensitive. Invalid input prints an error and
@@ -87,6 +87,17 @@ itself (normal approximation; see [docs/DECISIONS.md](docs/DECISIONS.md)), and i
 more games, the convergence table shows the estimate after the first 10, 100, 1,000, … games. More games only reduce
 this sampling noise: the interval tightens around what the model predicts, not around what would really happen, so it
 says nothing about whether the model's hand-set ratings and probabilities are right.
+
+**Parallel batches** (`--threads T`, requires `--games`) default to 1 thread.
+T must be between 1 and the hardware thread count reported by the system
+(maximum 1 if that information is unavailable). For example:
+
+./build/simulate BAL SEA --games 100000 --seed 1000 --threads 4
+
+Results remain in game order, and terminal output is identical across thread counts on the same build and platform. At
+most `min(T, N)` workers run. Small batches may be slower with multiple threads because starting threads adds
+overhead. CSV metadata records the requested thread count; compare game rows rather than whole files when comparing
+different thread counts.
 
 **Export** (`--out FILE`, batch only) also writes every game to a CSV. The file starts with `#` lines recording the
 model version, both teams' ratings, the game count and batch seed, the summary statistics (with the same values and

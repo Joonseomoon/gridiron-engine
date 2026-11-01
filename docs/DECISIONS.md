@@ -428,3 +428,55 @@ The same three games as M2.1 (24–17, 10–20, 13–13). Expected values:
 On `main` with both PRs merged: run `simulate BAL SEA --games 10000 --seed 1000 --out run.csv`, check that the CSV's
 statistics match the terminal output and that its rows reconcile (row count = games, wins add up), rerun the recorded
 command and compare the files with `cmp`, and each developer explains the other's half.
+
+
+## M3.1 Developer B: parallel batches (2026-11-01)
+
+Implemented --threads T with default 1 and a maximum of the reported hardware
+thread count (fallback 1). The flag requires --games. This choice is pending
+Developer A review.
+
+Each worker writes a separate contiguous range in a pre-sized results vector.
+Game i retains seed batchSeed + i. All workers finish before aggregation.
+CSV metadata records the requested thread count.
+
+Machine: Apple M1 Pro, 16 GiB RAM, 6 performance and 2 efficiency cores.
+macOS 27.0.1; Apple Clang 21.0.0 (clang-2100.4.1.1).
+Release build; BAL SEA, 100,000 games, seed 1000.
+One warm-up followed by seven timed runs per thread count.
+
+| Threads | Median seconds | Games/s | Speedup |
+| --- | --- | --- | --- |
+| 1 | 2.54 | 39,370 | 1.00x |
+| 2 | 1.20 | 83,333 | 2.12x |
+| 4 | 0.67 | 149,254 | 3.79x |
+| 8 | 0.43 | 232,558 | 5.91x |
+
+Scaling continued through eight threads, with diminishing returns.
+Unequal core speeds, serial aggregation, and thread overhead are possible
+limits; these measurements do not isolate their individual costs.
+Run-to-run variation means speedup ratios should be treated as approximate.
+
+Validation: 206 tests passed in Release and ThreadSanitizer builds.
+A separate 8-thread, 10,000-game TSAN batch passed without findings.
+Warnings-as-errors and clang-format checks passed.
+Terminal SHA-1 at 1, 2, 4, and 8 threads:
+ab263e1ff4287494ed5f1301c209653971eb8a26.
+
+Before implementation, the original runner at revision 0c38ad2 had a
+median of 2.27 seconds (44,053 games/s), measured after one warm-up
+and seven runs. This was a separate session from the table above;
+the table's speedups use its own T=1 measurement.
+
+The original full CSV SHA-1 was
+ce5e52bf510fb70eea4d002a7d90b9f2e59b62e9,
+which already differed from the supplied reference before these changes.
+
+After implementation, all 10,000 CSV rows match across T=1, 2, 4, 8.
+The header plus data rows, excluding metadata, have SHA-1:
+9e8b92cd0474db6896ec0c2b256b1362ab405326.
+The original full-file reference discrepancy remains unresolved.
+
+Shared checkpoint pending: Developer A review, A-only and combined benchmarks,
+and final CSV reference verification.
+

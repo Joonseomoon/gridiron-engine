@@ -40,6 +40,7 @@ TEST(BatchCsvTest, WritesMetadataAndRows) {
                                  "# away_turnover_rate: 0.02\n"
                                  "# away_field_goal_rating: 0.95\n"
                                  "# games: 3\n"
+                                 "# threads: 1\n"
                                  "# batch_seed: 1000\n"
                                  "# seed_policy: batchSeed + game (uint32 wrap)\n"
                                  "# command: ./build/simulate BAL SEA --games 3 --seed 1000 --out results.csv\n"
