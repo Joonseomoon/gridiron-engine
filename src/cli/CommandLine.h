@@ -15,6 +15,7 @@ struct Options {
     std::optional<std::uint32_t> seed;
     std::optional<int> games;
     std::optional<std::string> out;
+    int threads = 1;
 };
 
 struct Matchup {
@@ -24,6 +25,7 @@ struct Matchup {
 
 constexpr int kMaxGames = 1'000'000;
 constexpr int kMinGames = 1;
+unsigned int maxThreads();
 
 // parses simulate BAL SEA --seed 1000 --games 10 into Options or error string message
 std::variant<Options, std::string> parseArgs(const std::vector<std::string>& args);

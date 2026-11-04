@@ -36,6 +36,7 @@ void writeBatchCsv(std::ostream& out, const BatchMetadata& metadata, const std::
     out << "# away_field_goal_rating: " << metadata.away.field_goal_rating << '\n';
 
     out << "# games: " << metadata.games << '\n';
+    out << "# threads: " << metadata.threads << '\n';
     out << "# batch_seed: " << metadata.batchSeed << '\n';
     out << "# seed_policy: batchSeed + game (uint32 wrap)\n";
     out << "# command: " << metadata.commandLine << '\n';

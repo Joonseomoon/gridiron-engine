@@ -1,15 +1,21 @@
 #include "CommandLine.h"
-
 #include "Teams.h"
 
+#include <algorithm>
 #include <charconv>
+#include <thread>
 
 namespace gridiron {
+
+unsigned int maxThreads() {
+    return std::max(1u, std::thread::hardware_concurrency());
+}
 
 std::variant<Options, std::string> parseArgs(const std::vector<std::string>& args) {
     std::vector<std::string> teams;
     std::optional<std::uint32_t> seed;
     std::optional<int> games;
+    std::optional<int> threads;
     std::optional<std::string> out;
 
     for (std::size_t i = 0; i < args.size(); ++i) {
@@ -54,6 +60,30 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
             ++i;
             continue;
         }
+        if (arg == "--threads") {
+            if (threads) {
+                return "--threads given more than once";
+            }
+            if (i + 1 >= args.size()) {
+                return "--threads needs a value";
+            }
+
+            const std::string& text = args[i + 1];
+            int value = 0;
+            const char* end = text.data() + text.size();
+            const auto [stoppedAt, error] = std::from_chars(text.data(), end, value);
+
+            if (error != std::errc{} || stoppedAt != end) {
+                return "invalid thread count '" + text + "'";
+            }
+            if (value < 1 || static_cast<unsigned int>(value) > maxThreads()) {
+                return "--threads must be between 1 and " + std::to_string(maxThreads());
+            }
+
+            threads = value;
+            ++i;
+            continue;
+        }
         if (arg == "--out") {
             if (out) {
                 return "--out given more than once";
@@ -74,6 +104,10 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
         }
         teams.push_back(arg);
     }
+    if (threads && !games) {
+        return "--threads requires --games";
+    }
+
     if (out && !games) {
         return "--out requires --games";
     }
@@ -82,7 +116,7 @@ std::variant<Options, std::string> parseArgs(const std::vector<std::string>& arg
         return "expected two teams";
     }
 
-    return Options{teams[0], teams[1], seed, games, out};
+    return Options{teams[0], teams[1], seed, games, out, threads.value_or(1)};
 }
 
 namespace {

@@ -23,7 +23,7 @@
 #include "engine/SimulationResult.h"
 
 namespace {
-constexpr const char* kUsage = "usage: simulate HOME AWAY [--seed N] [--games N] [--out FILE]\n";
+constexpr const char* kUsage = "usage: simulate HOME AWAY [--seed N] [--games N] [--threads T] [--out FILE]\n";
 
 std::string shellQuote(const std::string& argument) {
     std::string quoted = "'";
@@ -52,10 +52,10 @@ void runSingleGame(const gridiron::Matchup& matchup, std::uint32_t seed) {
 }
 
 int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batchSeed,
-                 const std::optional<std::string>& outputPath, const std::string& commandLine) {
+                 const std::optional<std::string>& outputPath, const std::string& commandLine, int threads) {
     std::cout << matchup.home.name << " vs " << matchup.away.name << ", " << games << " games, batch seed " << batchSeed
               << "\n";
-    const auto results = gridiron::runBatch(matchup.home, matchup.away, games, batchSeed);
+    const auto results = gridiron::runBatch(matchup.home, matchup.away, games, batchSeed, threads);
     const auto summary = gridiron::aggregate(results);
     gridiron::printBatchSummary(std::cout, matchup.home.name, matchup.away.name, summary);
 
@@ -64,7 +64,7 @@ int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batc
     }
 
     if (outputPath) {
-        gridiron::BatchMetadata metadata{matchup.home, matchup.away, games, batchSeed, commandLine};
+        gridiron::BatchMetadata metadata{matchup.home, matchup.away, games, batchSeed, commandLine, threads};
         const std::filesystem::path finalPath(*outputPath);
         const std::string tempTemplate = finalPath.string() + ".tmp.XXXXXX";
         std::vector<char> tempName(tempTemplate.begin(), tempTemplate.end());
@@ -153,7 +153,7 @@ int main(int argc, char* argv[]) {
         commandLine += " " + shellQuote("--seed") + " " + shellQuote(std::to_string(seed));
     }
     if (options.games) {
-        return runBatchMode(matchup, *options.games, seed, options.out, commandLine);
+        return runBatchMode(matchup, *options.games, seed, options.out, commandLine, options.threads);
     } else {
         runSingleGame(matchup, seed);
     }

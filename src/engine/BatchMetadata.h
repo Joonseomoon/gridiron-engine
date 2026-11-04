@@ -13,6 +13,7 @@ struct BatchMetadata {
     int games = 0;
     std::uint32_t batchSeed = 0;
     std::string commandLine;
+    int threads = 1;
 };
 
 } // namespace gridiron

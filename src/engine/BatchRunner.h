@@ -6,5 +6,5 @@
 
 namespace gridiron {
 std::vector<SimulationResult> runBatch(const TeamProfile& home, const TeamProfile& away, int games,
-                                       std::uint32_t batchSeed);
+                                       std::uint32_t batchSeed, int threads = 1);
 } // namespace gridiron
