@@ -6,7 +6,7 @@
 
 // M1.2 shared checkpoint: run many complete games across seeds and team
 // matchups, and check every intermediate state against the legal-state rules
-// in docs/DECISIONS.md — not just the final state.
+// in docs/decisions/M0.md — not just the final state.
 
 namespace {
 

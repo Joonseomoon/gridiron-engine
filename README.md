@@ -83,7 +83,7 @@ Games   BAL win rate
 ```
 
 `sd` is how much individual games vary; it doesn't shrink with more games. `95% CI` is the uncertainty of the average
-itself (normal approximation; see [docs/DECISIONS.md](docs/DECISIONS.md)), and it shrinks roughly with √N. With 100 or
+itself (normal approximation; see [docs/decisions/M2.md](docs/decisions/M2.md)), and it shrinks roughly with √N. With 100 or
 more games, the convergence table shows the estimate after the first 10, 100, 1,000, … games. More games only reduce
 this sampling noise: the interval tightens around what the model predicts, not around what would really happen, so it
 says nothing about whether the model's hand-set ratings and probabilities are right.
@@ -115,7 +115,7 @@ written to a temporary file and renamed into place, so a failed run leaves no pa
 
 ## Limitations
 
-A deliberately simplified game. The rules are decided in [docs/DECISIONS.md](docs/DECISIONS.md); this is what the
+A deliberately simplified game. The rules are decided in [docs/decisions/M0.md](docs/decisions/M0.md); this is what the
 simulation does **not** model.
 
 - **Rules:** no punts, penalties, timeouts, two-minute warning, two-point tries, or overtime; games can tie. No kickoffs:
@@ -136,7 +136,7 @@ simulation does **not** model.
 - [Project overview](docs/PROJECT_OVERVIEW.md): goals, architecture, and planned versions
 - [Roadmap](ROADMAP.md): milestones, rounds, and who builds what
 - [Working agreement](CONTRIBUTING.md): workflow, reviews, and issue format
-- [Decisions](docs/DECISIONS.md): design decisions, in the order they were made
+- [Decisions](docs/decisions/README.md): design decisions, one file per milestone
 - [Side tasks](docs/TASKS.md): bugs, tooling, and deferred tests
 - [Learning record](docs/LEARNING.md): who has implemented what
 

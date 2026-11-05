@@ -1,7 +1,7 @@
 # Project Overview
 
 What we are building and why. Task assignments and rounds are in [ROADMAP.md](../ROADMAP.md); how we work together is
-in [CONTRIBUTING.md](../CONTRIBUTING.md); specific design decisions are in [DECISIONS.md](DECISIONS.md).
+in [CONTRIBUTING.md](../CONTRIBUTING.md); specific design decisions are in [decisions/](decisions/README.md), one file per milestone.
 
 ## Purpose
 

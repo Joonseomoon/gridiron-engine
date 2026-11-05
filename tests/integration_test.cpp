@@ -51,7 +51,7 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
               << " distance=" << newState.distance << " ball_position=" << newState.ball_position
               << " home_score=" << newState.home_score << " away_score=" << newState.away_score << "\n";
 
-    // Legal-state bounds, matching the acceptance criteria in docs/DECISIONS.md.
+    // Legal-state bounds, matching the acceptance criteria in docs/decisions/M0.md.
     EXPECT_GE(newState.down, 1);
     EXPECT_LE(newState.down, 4);
     // At or past either goal line always resolves as a score or a touchback,
