@@ -2,6 +2,6 @@
 
 namespace gridiron {
 
-inline constexpr const char* kModelVersion = "m1-v1";
+inline constexpr const char* kModelVersion = "m3-v1";
 
 }
