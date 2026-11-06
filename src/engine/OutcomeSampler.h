@@ -2,19 +2,18 @@
 
 #include "GameState.h"
 #include "PlayOutcome.h"
+#include "RandomSource.h"
 #include "TeamProfile.h"
-
-#include <random>
 
 namespace gridiron {
 
-PlayOutcome samplePlayOutcome(const GameState& gameState, std::mt19937& rng);
+PlayOutcome samplePlayOutcome(const GameState& gameState, RandomSource& random);
 
-PlayType choosePlayType(const GameState& gameState, std::mt19937& rng);
+PlayType choosePlayType(const GameState& gameState, RandomSource& random);
 
-PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defense, std::mt19937& rng);
+PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random);
 
-PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, std::mt19937& rng);
+PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random);
 
-PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal, std::mt19937& rng);
+PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal, RandomSource& random);
 } // namespace gridiron

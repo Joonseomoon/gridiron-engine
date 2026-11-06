@@ -6,6 +6,7 @@
 #include "../src/engine/GameState.h"
 #include "../src/engine/OutcomeSampler.h"
 #include "../src/engine/PlayResult.h"
+#include "../src/engine/RandomSource.h"
 #include "../src/engine/TeamProfile.h"
 
 namespace {
@@ -39,7 +40,9 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
     state.away = defense;
 
     std::mt19937 rng(2000);
-    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, rng);
+
+    gridiron::RandomSource random{rng};
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, random);
     auto result = gridiron::applyOutcome(state, outcome);
     auto& newState = result.state;
 
@@ -73,7 +76,9 @@ TEST(IntegrationTest, FieldGoalAttemptRunsEndToEnd) {
     const auto state = gridiron::GameState{.home = kicking, .away = defending, .down = 4, .ball_position = 80};
 
     std::mt19937 rng(7);
-    const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, rng);
+
+    gridiron::RandomSource random{rng};
+    const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, random);
     ASSERT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
 
     auto result = gridiron::applyOutcome(state, outcome);
