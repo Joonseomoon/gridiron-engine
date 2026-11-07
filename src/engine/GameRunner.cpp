@@ -5,6 +5,7 @@
 #include "ApplyOutcome.h"
 #include "OutcomeSampler.h"
 #include "PlayResult.h"
+#include "RandomSource.h"
 
 namespace gridiron {
 
@@ -21,6 +22,9 @@ GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937
     state.opening_possession = coinToss(rng) ? Possession::Home : Possession::Away;
     state.possession = state.opening_possession;
 
+    // One random source per game, so no stored normal value carries over from another game.
+    RandomSource random{rng};
+
     // Each sampled play consumes at least 10 seconds of a 900-second quarter.
     constexpr int maximumPlays = (900 / 10) * 4;
     int plays = 0;
@@ -28,7 +32,7 @@ GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937
         if (plays >= maximumPlays) {
             throw std::runtime_error("Game exceeded maximum play count");
         }
-        const PlayOutcome outcome = samplePlayOutcome(state, rng);
+        const PlayOutcome outcome = samplePlayOutcome(state, random);
         PlayResult result = applyOutcome(state, outcome);
         if (onPlay) {
             onPlay(state, outcome, result);

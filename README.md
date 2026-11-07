@@ -4,7 +4,7 @@ A C++ NFL simulation engine: play seeded games, repeat matchups to estimate outc
 football decisions. See [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) for the goals and architecture.
 
 **Status:** M1 (one seeded game with a play-by-play log) and M2 (`--games N` batches with uncertainty estimates and CSV
-export) are complete. Next is M3: profiling and performance.
+export) are complete. M3 (profiling and performance) is in progress.
 
 ## Building and testing
 
@@ -50,12 +50,13 @@ game can be replayed.
 ```
 $ ./build/simulate BAL SEA --seed 1000
 Q1 15:00 - Game Start. BAL receives the football.
-Q1 14:34 - BAL run for 1 yards. 2nd & 9 on BAL 26.
+Q1 14:45 - BAL run for 1 yards. 2nd & 9 on BAL 26.
+Q1 14:24 - BAL run for 2 yards. 3rd & 7 on BAL 28.
 ...
 Q4 0:00 - Game End.
 Final Score
-BAL - 6
-SEA - 26
+BAL - 10
+SEA - 24
 
 Winner: SEA
 Seed: 1000
@@ -69,53 +70,46 @@ uses seed `batchSeed + i`, so game 2 below replays alone as `./build/simulate BA
 ```
 $ ./build/simulate BAL SEA --games 1000 --seed 1000
 BAL vs SEA, 1000 games, batch seed 1000
-BAL wins: 221   SEA wins: 756   Ties: 23
-Mean score: BAL 11.63   SEA 23.74
-Mean margin (BAL - SEA): -12.11 Mean total: 35.37
-Score sd: BAL 8.08      SEA 10.95       Margin sd: 16.90        Total sd: 9.22
-95% CI: BAL win rate 0.221 ± 0.026      Mean margin -12.11 ± 1.05
+BAL wins: 218   SEA wins: 755   Ties: 27
+Mean score: BAL 11.34   SEA 23.39
+Mean margin (BAL - SEA): -12.05 Mean total: 34.73
+Score sd: BAL 7.76      SEA 10.70       Margin sd: 16.39        Total sd: 9.00
+95% CI: BAL win rate 0.218 ± 0.026      Mean margin -12.05 ± 1.02
 
 Convergence:
 Games   BAL win rate
-10      0.400 ± 0.304
-100     0.250 ± 0.085
-1000    0.221 ± 0.026
+10      0.100 ± 0.186
+100     0.230 ± 0.082
+1000    0.218 ± 0.026
 ```
 
 `sd` is how much individual games vary; it doesn't shrink with more games. `95% CI` is the uncertainty of the average
-itself (normal approximation; see [docs/DECISIONS.md](docs/DECISIONS.md)), and it shrinks roughly with √N. With 100 or
-more games, the convergence table shows the estimate after the first 10, 100, 1,000, … games. More games only reduce
-this sampling noise: the interval tightens around what the model predicts, not around what would really happen, so it
-says nothing about whether the model's hand-set ratings and probabilities are right.
+(normal approximation; see [M2 decisions](docs/decisions/M2.md)) and shrinks roughly with √N. With 100 or more games,
+the convergence table shows the estimate after the first 10, 100, 1,000, … games. More games only reduce sampling
+noise: the interval tightens around what the model predicts, not what would really happen.
 
-**Parallel batches** (`--threads T`, requires `--games`) default to 1 thread.
-T must be between 1 and the hardware thread count reported by the system
-(maximum 1 if that information is unavailable). For example:
-
-./build/simulate BAL SEA --games 100000 --seed 1000 --threads 4
-
-Results remain in game order, and terminal output is identical across thread counts on the same build and platform. At
-most `min(T, N)` workers run. Small batches may be slower with multiple threads because starting threads adds
-overhead. CSV metadata records the requested thread count; compare game rows rather than whole files when comparing
-different thread counts.
+**Threads** (`--threads T`, batch only, default 1, at most the hardware thread count) split the batch across T threads.
+Output is identical for every T, because game `i` always uses seed `batchSeed + i`. Benchmarks and scaling are in [M3
+decisions](docs/decisions/M3.md).
 
 **Export** (`--out FILE`, batch only) also writes every game to a CSV. The file starts with `#` lines recording the
-model version, both teams' ratings, the game count and batch seed, the summary statistics (with the same values and
-precision as the terminal), and a `# command:` line. Then comes the table:
+model version, both teams' ratings, the game count, batch seed and thread count, the summary statistics (same values
+and precision as the terminal), and a `# command:` line. Then comes the table:
 
 ```csv
 game,seed,home_score,away_score,winner
-0,1000,6,26,away
-1,1001,3,32,away
+0,1000,10,24,away
+1,1001,0,51,away
 ```
 
-Rerunning the recorded command from the same directory gives a byte-identical file (same build and platform). It
-reproduces the run; it does not restore an older model or ratings. The parent directory must exist, and the file is
-written to a temporary file and renamed into place, so a failed run leaves no partial CSV.
+Rerunning the recorded command from the same directory gives a byte-identical file with the same build and platform; the
+`# model_version:` line says which model produced it, since a newer model gives different games for the same seed. The
+parent directory must exist, and the file is written to a temporary file and renamed into place, so a failed run leaves
+no partial CSV.
 
 ## Limitations
 
-A deliberately simplified game. The rules are decided in [docs/DECISIONS.md](docs/DECISIONS.md); this is what the
+A deliberately simplified game. The rules are decided in [docs/decisions/M0.md](docs/decisions/M0.md); this is what the
 simulation does **not** model.
 
 - **Rules:** no punts, penalties, timeouts, two-minute warning, two-point tries, or overtime; games can tie. No kickoffs:
@@ -136,7 +130,7 @@ simulation does **not** model.
 - [Project overview](docs/PROJECT_OVERVIEW.md): goals, architecture, and planned versions
 - [Roadmap](ROADMAP.md): milestones, rounds, and who builds what
 - [Working agreement](CONTRIBUTING.md): workflow, reviews, and issue format
-- [Decisions](docs/DECISIONS.md): design decisions, in the order they were made
+- [Decisions](docs/decisions/README.md): design decisions, one file per milestone
 - [Side tasks](docs/TASKS.md): bugs, tooling, and deferred tests
 - [Learning record](docs/LEARNING.md): who has implemented what
 

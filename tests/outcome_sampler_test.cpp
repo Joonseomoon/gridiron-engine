@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "../src/engine/OutcomeSampler.h"
+#include "../src/engine/RandomSource.h"
 
 namespace {
 
@@ -41,76 +42,87 @@ protected:
 
 TEST_F(OutcomeSamplerTest, RunSamplerReturnsRun) {
     std::mt19937 rng(42);
-    gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, rng);
+    gridiron::RandomSource random{rng};
+    gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, random);
     EXPECT_EQ(outcome.play_type, gridiron::PlayType::Run);
 }
 
 TEST_F(OutcomeSamplerTest, PassSamplerReturnsPass) {
     std::mt19937 rng(42);
-    gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, rng);
+    gridiron::RandomSource random{rng};
+    gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, random);
     EXPECT_EQ(outcome.play_type, gridiron::PlayType::Pass);
 }
 
 TEST_F(OutcomeSamplerTest, RunTurnoverRateOneAlwaysTurnover) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     offense.turnover_rate = 1.0;
-    gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, rng);
+    gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, random);
     EXPECT_EQ(outcome.outcome_type, gridiron::OutcomeType::Turnover);
 }
 
 TEST_F(OutcomeSamplerTest, RunTurnoverRateZeroNeverTurnover) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     offense.turnover_rate = 0.0;
-    gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, rng);
+    gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, random);
     EXPECT_EQ(outcome.outcome_type, gridiron::OutcomeType::Normal);
 }
 
 TEST_F(OutcomeSamplerTest, PassTurnoverRateOneAlwaysTurnover) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     offense.turnover_rate = 1.0;
-    gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, rng);
+    gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, random);
     EXPECT_EQ(outcome.outcome_type, gridiron::OutcomeType::Turnover);
 }
 
 TEST_F(OutcomeSamplerTest, PassTurnoverRateZeroNeverTurnover) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     offense.turnover_rate = 0.0;
-    gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, rng);
+    gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, random);
     EXPECT_EQ(outcome.outcome_type, gridiron::OutcomeType::Normal);
 }
 
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsFieldGoalAttempt) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 75};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, rng);
+    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
     EXPECT_EQ(playType, gridiron::PlayType::FieldGoalAttempt);
 }
 
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeAttemptsFieldGoalAtExactly40) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 60};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, rng);
+    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
     EXPECT_EQ(playType, gridiron::PlayType::FieldGoalAttempt);
 }
 
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsRunOrPassOn4thDownOutOfFieldGoalRange) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 59};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, rng);
+    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
     EXPECT_TRUE(playType == gridiron::PlayType::Run || playType == gridiron::PlayType::Pass);
 }
 
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsRunOrPassInFieldGoalRangeBeforeFourthDown) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.down = 3, .ball_position = 75};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, rng);
+    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
     EXPECT_TRUE(playType == gridiron::PlayType::Run || playType == gridiron::PlayType::Pass);
 }
 
 TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesFieldGoalAttempt) {
     std::mt19937 rng(42);
+    gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.home = offense, .away = defense, .down = 4, .ball_position = 75};
-    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, rng);
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, random);
     EXPECT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
 }
 
@@ -122,10 +134,11 @@ TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesFieldGoalAttempt) {
 TEST_F(OutcomeSamplerTest, RunYardageMatchesExpectedMeanAndSpread) {
     // expected = 2 + 10 * (0.7 run offense - 0.5 run defense) = 4.0, sd 3.0
     std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
     std::vector<int> yards;
     yards.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        yards.push_back(gridiron::sampleRunOutcome(offense, defense, rng).yards_gained);
+        yards.push_back(gridiron::sampleRunOutcome(offense, defense, random).yards_gained);
     }
     EXPECT_NEAR(mean(yards), 4.0, 0.2);
     EXPECT_NEAR(stddev(yards), 3.0, 0.2);
@@ -134,10 +147,11 @@ TEST_F(OutcomeSamplerTest, RunYardageMatchesExpectedMeanAndSpread) {
 TEST_F(OutcomeSamplerTest, PassYardageMatchesExpectedMeanAndSpread) {
     // expected = 4 + 15 * (0.8 pass offense - 0.9 pass defense) = 2.5, sd 5.0
     std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
     std::vector<int> yards;
     yards.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        yards.push_back(gridiron::samplePassOutcome(offense, defense, rng).yards_gained);
+        yards.push_back(gridiron::samplePassOutcome(offense, defense, random).yards_gained);
     }
     EXPECT_NEAR(mean(yards), 2.5, 0.3);
     EXPECT_NEAR(stddev(yards), 5.0, 0.3);
@@ -151,13 +165,15 @@ TEST_F(OutcomeSamplerTest, BetterRunOffenseGainsMoreOnAverage) {
     gridiron::TeamProfile weak{.name = "Weak", .offensive_run_rating = 0.3};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     std::vector<int> strongYards;
     std::vector<int> weakYards;
     strongYards.reserve(kSamples);
     weakYards.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        strongYards.push_back(gridiron::sampleRunOutcome(strong, defense, rng).yards_gained);
-        weakYards.push_back(gridiron::sampleRunOutcome(weak, defense, rng).yards_gained);
+        strongYards.push_back(gridiron::sampleRunOutcome(strong, defense, random).yards_gained);
+        weakYards.push_back(gridiron::sampleRunOutcome(weak, defense, random).yards_gained);
     }
     EXPECT_GT(mean(strongYards), mean(weakYards));
 }
@@ -167,13 +183,15 @@ TEST_F(OutcomeSamplerTest, BetterPassOffenseGainsMoreOnAverage) {
     gridiron::TeamProfile weak{.name = "Weak", .offensive_pass_rating = 0.3};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     std::vector<int> strongYards;
     std::vector<int> weakYards;
     strongYards.reserve(kSamples);
     weakYards.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        strongYards.push_back(gridiron::samplePassOutcome(strong, defense, rng).yards_gained);
-        weakYards.push_back(gridiron::samplePassOutcome(weak, defense, rng).yards_gained);
+        strongYards.push_back(gridiron::samplePassOutcome(strong, defense, random).yards_gained);
+        weakYards.push_back(gridiron::samplePassOutcome(weak, defense, random).yards_gained);
     }
     EXPECT_GT(mean(strongYards), mean(weakYards));
 }
@@ -186,9 +204,11 @@ TEST_F(OutcomeSamplerTest, RunTurnoverFrequencyMatchesRate) {
     fumbler.turnover_rate = 0.3;
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     int turnovers = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::sampleRunOutcome(fumbler, defense, rng).outcome_type == gridiron::OutcomeType::Turnover) {
+        if (gridiron::sampleRunOutcome(fumbler, defense, random).outcome_type == gridiron::OutcomeType::Turnover) {
             ++turnovers;
         }
     }
@@ -200,9 +220,11 @@ TEST_F(OutcomeSamplerTest, PassTurnoverFrequencyMatchesRate) {
     fumbler.turnover_rate = 0.3;
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     int turnovers = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::samplePassOutcome(fumbler, defense, rng).outcome_type == gridiron::OutcomeType::Turnover) {
+        if (gridiron::samplePassOutcome(fumbler, defense, random).outcome_type == gridiron::OutcomeType::Turnover) {
             ++turnovers;
         }
     }
@@ -211,16 +233,18 @@ TEST_F(OutcomeSamplerTest, PassTurnoverFrequencyMatchesRate) {
 
 TEST_F(OutcomeSamplerTest, RunTurnoverStillReportsRunPlayType) {
     std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
     offense.turnover_rate = 1.0;
-    const gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, rng);
+    const gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(offense, defense, random);
     EXPECT_EQ(outcome.outcome_type, gridiron::OutcomeType::Turnover);
     EXPECT_EQ(outcome.play_type, gridiron::PlayType::Run);
 }
 
 TEST_F(OutcomeSamplerTest, PassTurnoverStillReportsPassPlayType) {
     std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
     offense.turnover_rate = 1.0;
-    const gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, rng);
+    const gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, random);
     EXPECT_EQ(outcome.outcome_type, gridiron::OutcomeType::Turnover);
     EXPECT_EQ(outcome.play_type, gridiron::PlayType::Pass);
 }
@@ -233,10 +257,11 @@ TEST_F(OutcomeSamplerTest, PassTurnoverStillReportsPassPlayType) {
 TEST_F(OutcomeSamplerTest, NormalPlayTimeRespectsFloorAndMean) {
     // Fixture run yardage averages 4, so the over-20-yard branch never fires.
     std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
     std::vector<int> times;
     times.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        times.push_back(gridiron::sampleRunOutcome(offense, defense, rng).elapsed_seconds);
+        times.push_back(gridiron::sampleRunOutcome(offense, defense, random).elapsed_seconds);
     }
     for (const int time : times) {
         ASSERT_GE(time, 10);
@@ -251,10 +276,12 @@ TEST_F(OutcomeSamplerTest, BigPlayTimeUsesLongerDistribution) {
     gridiron::TeamProfile porous{.name = "Porous"};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     std::vector<int> times;
     times.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        const gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(explosive, porous, rng);
+        const gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(explosive, porous, random);
         ASSERT_GT(outcome.yards_gained, 20);
         times.push_back(outcome.elapsed_seconds);
     }
@@ -268,10 +295,11 @@ TEST_F(OutcomeSamplerTest, BigPlayTimeUsesLongerDistribution) {
 
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeSplitsRunAndPassRoughlyEvenly) {
     std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.home = offense, .away = defense};
     int runs = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::choosePlayType(gameState, rng) == gridiron::PlayType::Run) {
+        if (gridiron::choosePlayType(gameState, random) == gridiron::PlayType::Run) {
             ++runs;
         }
     }
@@ -280,10 +308,11 @@ TEST_F(OutcomeSamplerTest, ChoosePlayTypeSplitsRunAndPassRoughlyEvenly) {
 
 TEST_F(OutcomeSamplerTest, SamplePlayOutcomeProducesBothRunAndPass) {
     std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.home = offense, .away = defense};
     int runs = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::samplePlayOutcome(gameState, rng).play_type == gridiron::PlayType::Run) {
+        if (gridiron::samplePlayOutcome(gameState, random).play_type == gridiron::PlayType::Run) {
             ++runs;
         }
     }
@@ -299,8 +328,10 @@ TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesToTheChosenPlayType) {
     for (unsigned seed = 1; seed <= 50; ++seed) {
         std::mt19937 decisionRng(seed);
         std::mt19937 outcomeRng(seed);
-        const gridiron::PlayType chosen = gridiron::choosePlayType(gameState, decisionRng);
-        const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, outcomeRng);
+        gridiron::RandomSource decisionRandom{decisionRng};
+        gridiron::RandomSource outcomeRandom{outcomeRng};
+        const gridiron::PlayType chosen = gridiron::choosePlayType(gameState, decisionRandom);
+        const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, outcomeRandom);
         EXPECT_EQ(outcome.play_type, chosen) << "seed " << seed;
     }
 }
@@ -314,9 +345,11 @@ TEST_F(OutcomeSamplerTest, FieldGoalMakeRateMatchesFormula) {
     gridiron::TeamProfile kicker{.name = "Kicker", .field_goal_rating = 0.95};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     int makes = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::sampleFieldGoalOutcome(kicker, 23, rng).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
+        if (gridiron::sampleFieldGoalOutcome(kicker, 23, random).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
             ++makes;
         }
     }
@@ -327,13 +360,15 @@ TEST_F(OutcomeSamplerTest, FieldGoalsConvertLessOftenFromLongerRange) {
     gridiron::TeamProfile kicker{.name = "Kicker", .field_goal_rating = 0.95};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     int shortMakes = 0;
     int longMakes = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::sampleFieldGoalOutcome(kicker, 3, rng).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
+        if (gridiron::sampleFieldGoalOutcome(kicker, 3, random).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
             ++shortMakes;
         }
-        if (gridiron::sampleFieldGoalOutcome(kicker, 40, rng).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
+        if (gridiron::sampleFieldGoalOutcome(kicker, 40, random).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
             ++longMakes;
         }
     }
@@ -345,13 +380,15 @@ TEST_F(OutcomeSamplerTest, BetterKickerConvertsMoreFromTheSameSpot) {
     gridiron::TeamProfile poor{.name = "Poor", .field_goal_rating = 0.60};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     int goodMakes = 0;
     int poorMakes = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::sampleFieldGoalOutcome(good, 23, rng).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
+        if (gridiron::sampleFieldGoalOutcome(good, 23, random).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
             ++goodMakes;
         }
-        if (gridiron::sampleFieldGoalOutcome(poor, 23, rng).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
+        if (gridiron::sampleFieldGoalOutcome(poor, 23, random).outcome_type == gridiron::OutcomeType::FieldGoalMade) {
             ++poorMakes;
         }
     }
@@ -364,10 +401,12 @@ TEST_F(OutcomeSamplerTest, FieldGoalAlwaysReportsFieldGoalAttemptPlayType) {
     gridiron::TeamProfile kicker{.name = "Kicker", .field_goal_rating = 0.60};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     int makes = 0;
     int misses = 0;
     for (int i = 0; i < kSamples; ++i) {
-        const gridiron::PlayOutcome outcome = gridiron::sampleFieldGoalOutcome(kicker, 23, rng);
+        const gridiron::PlayOutcome outcome = gridiron::sampleFieldGoalOutcome(kicker, 23, random);
         ASSERT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
         if (outcome.outcome_type == gridiron::OutcomeType::FieldGoalMade) {
             ++makes;
@@ -385,10 +424,12 @@ TEST_F(OutcomeSamplerTest, FieldGoalClockRespectsFloorAndMean) {
     gridiron::TeamProfile kicker{.name = "Kicker", .field_goal_rating = 0.95};
 
     std::mt19937 rng(kSeed);
+
+    gridiron::RandomSource random{rng};
     std::vector<int> times;
     times.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        times.push_back(gridiron::sampleFieldGoalOutcome(kicker, 23, rng).elapsed_seconds);
+        times.push_back(gridiron::sampleFieldGoalOutcome(kicker, 23, random).elapsed_seconds);
     }
     for (const int time : times) {
         ASSERT_GE(time, 10);

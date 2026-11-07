@@ -24,7 +24,7 @@ TEST(BatchCsvTest, WritesMetadataAndRows) {
     std::ostringstream out;
     gridiron::writeBatchCsv(out, metadata, result, summary);
 
-    const std::string expected = "# model_version: m1-v1\n"
+    const std::string expected = "# model_version: m3-v1\n"
                                  "# home: BAL\n"
                                  "# home_offensive_pass_rating: 0.8\n"
                                  "# home_offensive_run_rating: 0.8\n"
