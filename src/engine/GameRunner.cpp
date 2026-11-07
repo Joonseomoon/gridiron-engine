@@ -33,11 +33,17 @@ GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937
             throw std::runtime_error("Game exceeded maximum play count");
         }
         const PlayOutcome outcome = samplePlayOutcome(state, random);
-        PlayResult result = applyOutcome(state, outcome);
         if (onPlay) {
-            onPlay(state, outcome, result);
+            const GameState before = state;
+
+            const PlaySummary summary = applyOutcomeInPlace(state, outcome);
+
+            const PlayResult result = {state, summary.event, summary.turnover, summary.period};
+
+            onPlay(before, outcome, result);
+        } else {
+            applyOutcomeInPlace(state, outcome);
         }
-        state = result.state;
         ++plays;
     }
     return state;

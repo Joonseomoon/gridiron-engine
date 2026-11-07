@@ -858,3 +858,54 @@ TEST(ApplyOutcomeTest, SafetyToEndHalfDoesNotKeepItsOwnKickoffWhenAwayOpened) {
     EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
     EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
+
+TEST(ApplyOutcomeInPlaceTest, UpdatesCallerState) {
+    gridiron::GameState state;
+    const gridiron::PlayOutcome outcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 6, 38};
+
+    const auto summary = gridiron::applyOutcomeInPlace(state, outcome);
+
+    EXPECT_EQ(state.ball_position, 31);
+    EXPECT_EQ(state.down, 2);
+    EXPECT_EQ(state.distance, 4);
+    EXPECT_EQ(state.time_remaining_seconds, 862);
+    EXPECT_EQ(summary.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(summary.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(summary.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, CopyingWrapperPreservesInput) {
+    gridiron::GameState state;
+    const gridiron::PlayOutcome outcome{gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 6, 38};
+    const auto result = gridiron::applyOutcome(state, outcome);
+
+    EXPECT_EQ(state.ball_position, 25);
+    EXPECT_EQ(state.down, 1);
+    EXPECT_EQ(state.distance, 10);
+    EXPECT_EQ(state.time_remaining_seconds, 900);
+
+    EXPECT_EQ(result.state.ball_position, 31);
+    EXPECT_EQ(result.state.down, 2);
+    EXPECT_EQ(result.state.distance, 4);
+    EXPECT_EQ(result.state.time_remaining_seconds, 862);
+}
+
+TEST(ApplyOutcomeInPlaceTest, SummaryResetsBetweenPlays) {
+    gridiron::GameState state;
+
+    const auto first =
+        gridiron::applyOutcomeInPlace(state, {gridiron::PlayType::Pass, gridiron::OutcomeType::Turnover, 0, 38});
+
+    EXPECT_EQ(first.turnover, gridiron::TurnoverKind::Interception);
+
+    const auto second =
+        gridiron::applyOutcomeInPlace(state, {gridiron::PlayType::Run, gridiron::OutcomeType::Normal, 3, 38});
+
+    EXPECT_EQ(state.ball_position, 78);
+    EXPECT_EQ(state.down, 2);
+    EXPECT_EQ(state.distance, 7);
+    EXPECT_EQ(state.time_remaining_seconds, 824);
+    EXPECT_EQ(second.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(second.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(second.period, gridiron::PeriodEvent::None);
+}
