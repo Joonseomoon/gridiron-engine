@@ -33,6 +33,7 @@ add_library(gridiron_core
         src/engine/BatchSummary.cpp
         src/engine/SimulationResult.cpp
         src/engine/BatchRunner.cpp
+        src/engine/ParallelFor.cpp
 )
 target_link_libraries(gridiron_core PRIVATE gridiron_warnings Threads::Threads)
 add_library(gridiron_cli
@@ -60,6 +61,7 @@ add_executable(gridiron_tests
         tests/batch_runner_test.cpp
         tests/batch_csv_test.cpp
         tests/cli_export_test.cpp
+        tests/parallel_for_test.cpp
 )
 add_dependencies(gridiron_tests simulate)
 target_compile_definitions(gridiron_tests PRIVATE

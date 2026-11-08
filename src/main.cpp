@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <exception>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -152,10 +153,14 @@ int main(int argc, char* argv[]) {
     if (!options.seed) {
         commandLine += " " + shellQuote("--seed") + " " + shellQuote(std::to_string(seed));
     }
-    if (options.games) {
-        return runBatchMode(matchup, *options.games, seed, options.out, commandLine, options.threads);
-    } else {
+    try {
+        if (options.games) {
+            return runBatchMode(matchup, *options.games, seed, options.out, commandLine, options.threads);
+        }
         runSingleGame(matchup, seed);
+    } catch (const std::exception& error) {
+        std::cerr << "error: " << error.what() << "\n";
+        return 1;
     }
     return 0;
 }
