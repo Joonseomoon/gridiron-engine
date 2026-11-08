@@ -26,6 +26,12 @@ before pushing:
   cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
   cmake --build build-asan && ctest --test-dir build-asan --output-on-failure
   ```
+- **Data races:**
+  ```
+  cmake -S . -B build-tsan -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer"
+  cmake --build build-tsan && ctest --test-dir build-tsan --output-on-failure
+  ./build-tsan/simulate BAL SEA --games 10000 --seed 1000 --threads "$(sysctl -n hw.ncpu)" > /dev/null
+  ```
 - **Unformatted code:** use the same pinned clang-format as CI, since versions format slightly differently.
   ```
   pip3 install clang-format==23.1.2
