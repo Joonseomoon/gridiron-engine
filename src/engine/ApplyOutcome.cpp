@@ -38,97 +38,106 @@ void touchback(GameState& state) {
     state.distance = 10;
 }
 
-PlayResult applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome) {
-    PlayResult result;
-    result.state = gameState;
+PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
+    PlaySummary result;
 
-    GameState& newState = result.state;
-
-    switch (playOutcome.outcome_type) {
+    switch (outcome.outcome_type) {
     case OutcomeType::Normal:
-        newState.ball_position += playOutcome.yards_gained;
-        if (newState.ball_position >= 100) {
+        state.ball_position += outcome.yards_gained;
+        if (state.ball_position >= 100) {
             // A gain that reaches or crosses the goal line scores,
             // regardless of down/distance.
             result.event = PlayEvent::TouchDown;
             result.turnover = TurnoverKind::None;
-            awardScoreAndKickoff(newState, newState.possession, 7, opponentOf(newState.possession));
-        } else if (newState.ball_position <= 0) {
+            awardScoreAndKickoff(state, state.possession, 7, opponentOf(state.possession));
+        } else if (state.ball_position <= 0) {
             // Tackled in the offense's own end zone: safety.
             result.event = PlayEvent::Safety;
             result.turnover = TurnoverKind::None;
-            awardScoreAndKickoff(newState, opponentOf(newState.possession), 2, opponentOf(newState.possession));
-        } else if (playOutcome.yards_gained >= newState.distance) {
+            awardScoreAndKickoff(state, opponentOf(state.possession), 2, opponentOf(state.possession));
+        } else if (outcome.yards_gained >= state.distance) {
             // First down conversion
             result.event = PlayEvent::FirstDown;
             result.turnover = TurnoverKind::None;
-            newState.distance = std::min(10, 100 - newState.ball_position);
-            newState.down = 1;
-        } else if (newState.down == 4 && playOutcome.yards_gained < newState.distance) {
+            state.distance = std::min(10, 100 - state.ball_position);
+            state.down = 1;
+        } else if (state.down == 4 && outcome.yards_gained < state.distance) {
             result.event = PlayEvent::Normal; // Check in on this why is it normal would it make sense to be a turnover?
             result.turnover = TurnoverKind::TurnoverOnDowns;
-            turnoverAtSpot(newState);
+            turnoverAtSpot(state);
         } else {
             result.event = PlayEvent::Normal;
             result.turnover = TurnoverKind::None;
-            newState.distance -= playOutcome.yards_gained;
-            newState.down++;
+            state.distance -= outcome.yards_gained;
+            state.down++;
         }
         break;
     case OutcomeType::Turnover:
-        if (playOutcome.play_type == PlayType::Pass) {
+        if (outcome.play_type == PlayType::Pass) {
             result.turnover = TurnoverKind::Interception;
-        } else if (playOutcome.play_type == PlayType::Run) {
+        } else if (outcome.play_type == PlayType::Run) {
             result.turnover = TurnoverKind::Fumble;
         } else {
             result.turnover = TurnoverKind::FieldGoalMissed;
         }
 
-        if (playOutcome.play_type != PlayType::FieldGoalAttempt) {
-            newState.ball_position += playOutcome.yards_gained;
+        if (outcome.play_type != PlayType::FieldGoalAttempt) {
+            state.ball_position += outcome.yards_gained;
         }
 
-        if (newState.ball_position <= 0) {
+        if (state.ball_position <= 0) {
             result.event = PlayEvent::DefensiveTouchdown;
-            awardScoreAndKickoff(newState, opponentOf(newState.possession), 7, newState.possession);
-        } else if (newState.ball_position >= 100) {
+            awardScoreAndKickoff(state, opponentOf(state.possession), 7, state.possession);
+        } else if (state.ball_position >= 100) {
             result.event = PlayEvent::Touchback;
-            touchback(newState);
+            touchback(state);
         } else {
             result.event = PlayEvent::Normal;
-            turnoverAtSpot(newState);
+            turnoverAtSpot(state);
         }
         break;
     case OutcomeType::FieldGoalMade:
         result.event = PlayEvent::FieldGoalGood;
         result.turnover = TurnoverKind::None;
-        awardScoreAndKickoff(newState, newState.possession, 3, opponentOf(newState.possession));
+        awardScoreAndKickoff(state, state.possession, 3, opponentOf(state.possession));
         break;
     }
 
-    newState.time_remaining_seconds -= playOutcome.elapsed_seconds;
+    state.time_remaining_seconds -= outcome.elapsed_seconds;
 
-    if (newState.time_remaining_seconds <= 0) {
-        if (newState.quarter == 2) {
+    if (state.time_remaining_seconds <= 0) {
+        if (state.quarter == 2) {
             result.period = PeriodEvent::Halftime;
         } else {
             result.period = PeriodEvent::EndQuarter;
         }
-        newState.quarter++;
-        newState.time_remaining_seconds = 900;
-        if (newState.quarter == 3) {
-            newState.down = 1;
-            newState.distance = 10;
-            newState.ball_position = 25;
-            newState.possession = opponentOf(newState.opening_possession);
+        state.quarter++;
+        state.time_remaining_seconds = 900;
+        if (state.quarter == 3) {
+            state.down = 1;
+            state.distance = 10;
+            state.ball_position = 25;
+            state.possession = opponentOf(state.opening_possession);
         }
-        if (newState.quarter > 4) {
+        if (state.quarter > 4) {
             result.period = PeriodEvent::EndofGame;
-            newState.quarter = 4;
-            newState.time_remaining_seconds = 0;
-            newState.game_over = true;
+            state.quarter = 4;
+            state.time_remaining_seconds = 0;
+            state.game_over = true;
         }
     }
+    return result;
+}
+
+PlayResult applyOutcome(const GameState& gameState, const PlayOutcome& playOutcome) {
+    PlayResult result;
+    result.state = gameState;
+
+    const PlaySummary summary = applyOutcomeInPlace(result.state, playOutcome);
+    result.event = summary.event;
+    result.turnover = summary.turnover;
+    result.period = summary.period;
+
     return result;
 }
 } // namespace gridiron

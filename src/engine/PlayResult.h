@@ -18,4 +18,9 @@ struct PlayResult {
     PeriodEvent period = PeriodEvent::None;
 };
 
+struct PlaySummary {
+    PlayEvent event = PlayEvent::Normal;
+    TurnoverKind turnover = TurnoverKind::None;
+    PeriodEvent period = PeriodEvent::None;
+};
 } // namespace gridiron
