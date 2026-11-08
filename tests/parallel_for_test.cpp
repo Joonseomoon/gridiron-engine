@@ -1,6 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <algorithm>
 #include <atomic>
 #include <cstddef>
 #include <stdexcept>
@@ -18,21 +17,19 @@ struct WorkerError : std::runtime_error {
 } // namespace
 
 TEST(ParallelForTest, RunsEveryIndexExactlyOnce) {
-    const std::vector<std::pair<int, int>> cases = {{8, 4}, {10, 3}, {7, 4}, {3, 8}, {1, 4}, {100, 1}};
+    const std::vector<std::pair<int, int>> cases = {{8, 4}, {10, 3},  {7, 4},    {3, 8},
+                                                    {1, 4}, {100, 1}, {1000, 4}, {1001, 3}};
 
     for (const auto& [count, threads] : cases) {
         SCOPED_TRACE("count " + std::to_string(count) + ", threads " + std::to_string(threads));
         std::vector<std::atomic<int>> hits(static_cast<std::size_t>(count));
-        std::atomic<int> blocks{0};
 
         gridiron::parallelFor(count, threads, [&](int begin, int end) {
-            ++blocks;
             for (int i = begin; i < end; ++i) {
                 ++hits[static_cast<std::size_t>(i)];
             }
         });
 
-        EXPECT_EQ(blocks.load(), std::min(count, threads));
         for (const auto& hit : hits) {
             EXPECT_EQ(hit.load(), 1);
         }
@@ -57,7 +54,7 @@ TEST(ParallelForTest, RejectsThreadCountBelowOneEvenWithNothingToDo) {
 TEST(ParallelForTest, WorkerExceptionReachesCallerWithTypeAndMessage) {
     for (const int threads : {1, 2, 4}) {
         SCOPED_TRACE(threads);
-        const int count = 8;
+        const int count = 1000;
 
         try {
             gridiron::parallelFor(count, threads, [&](int, int end) {
@@ -72,13 +69,14 @@ TEST(ParallelForTest, WorkerExceptionReachesCallerWithTypeAndMessage) {
     }
 }
 
-TEST(ParallelForTest, SeveralFailingWorkersGiveTheLowestNumberedWorkersException) {
-    // Repeated because which worker fails first in real time varies from run to run.
+TEST(ParallelForTest, SeveralFailuresGiveTheExceptionFromTheEarliestBlock) {
+    // Repeated because which block fails first in real time varies from run to run.
     for (int attempt = 0; attempt < 50; ++attempt) {
         SCOPED_TRACE(attempt);
 
         try {
-            gridiron::parallelFor(8, 4, [](int begin, int) { throw WorkerError("block at " + std::to_string(begin)); });
+            gridiron::parallelFor(1000, 4,
+                                  [](int begin, int) { throw WorkerError("block at " + std::to_string(begin)); });
             FAIL() << "expected a WorkerError";
         } catch (const WorkerError& error) {
             EXPECT_STREQ(error.what(), "block at 0");
@@ -86,17 +84,20 @@ TEST(ParallelForTest, SeveralFailingWorkersGiveTheLowestNumberedWorkersException
     }
 }
 
-TEST(ParallelForTest, OtherWorkersFinishWhenOneFails) {
+TEST(ParallelForTest, OtherBlocksStillRunWhenOneFails) {
+    const int count = 1000;
+    std::atomic<int> failedBlockSize{0};
     std::atomic<int> finished{0};
 
-    EXPECT_THROW(gridiron::parallelFor(8, 4,
-                                       [&](int begin, int) {
+    EXPECT_THROW(gridiron::parallelFor(count, 4,
+                                       [&](int begin, int end) {
                                            if (begin == 0) {
+                                               failedBlockSize = end;
                                                throw WorkerError("first block failed");
                                            }
-                                           ++finished;
+                                           finished += end - begin;
                                        }),
                  WorkerError);
 
-    EXPECT_EQ(finished.load(), 3);
+    EXPECT_EQ(finished.load(), count - failedBlockSize.load());
 }

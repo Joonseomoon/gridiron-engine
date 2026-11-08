@@ -1,6 +1,7 @@
 #include "ParallelFor.h"
 
 #include <algorithm>
+#include <atomic>
 #include <cstddef>
 #include <exception>
 #include <stdexcept>
@@ -26,25 +27,32 @@ void parallelFor(int count, int threads, const std::function<void(int begin, int
 
     std::vector<std::thread> pool;
     pool.reserve(static_cast<std::size_t>(workers));
-    std::vector<std::exception_ptr> errors(static_cast<std::size_t>(workers));
+    constexpr int kChunkSize = 64;
+    const int chunks = (count - 1) / kChunkSize + 1;
+    std::atomic<int> nextChunk{0};
+    std::vector<std::exception_ptr> errors(static_cast<std::size_t>(chunks));
 
-    const auto runBlock = [&work, &errors](int worker, int begin, int end) {
-        try {
-            work(begin, end);
-        } catch (...) {
-            errors[static_cast<std::size_t>(worker)] = std::current_exception();
+    const auto runWorker = [&]() {
+        while (true) {
+            const int chunk = nextChunk.fetch_add(1);
+            if (chunk >= chunks) {
+                return;
+            }
+
+            const int begin = chunk * kChunkSize;
+            const int end = begin + std::min(kChunkSize, count - begin);
+
+            try {
+                work(begin, end);
+            } catch (...) {
+                errors[static_cast<std::size_t>(chunk)] = std::current_exception();
+            }
         }
     };
 
     try {
-        int begin = 0;
-
         for (int worker = 0; worker < workers; ++worker) {
-            const int blockSize = count / workers + (worker < count % workers ? 1 : 0);
-            const int end = begin + blockSize;
-
-            pool.emplace_back(runBlock, worker, begin, end);
-            begin = end;
+            pool.emplace_back(runWorker);
         }
     } catch (...) {
         for (auto& worker : pool) {
