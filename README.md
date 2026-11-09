@@ -4,7 +4,8 @@ A C++ NFL simulation engine: play seeded games, repeat matchups to estimate outc
 football decisions. See [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) for the goals and architecture.
 
 **Status:** M1 (one seeded game with a play-by-play log) and M2 (`--games N` batches with uncertainty estimates and CSV
-export) are complete. M3 (profiling and performance) is in progress.
+export) are complete. M3 (profiling and performance) is implemented; its final benchmark on the second machine is
+pending.
 
 ## Building and testing
 
