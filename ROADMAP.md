@@ -74,11 +74,11 @@ Work outside these tables (bugs found, tooling, deferred tests) is tracked in [d
 
 ## M4 Compare football decisions
 
-**Shared prerequisite:** Together, agree the scenario format, candidate actions, policy interface, clock model, and comparison result in [M4](docs/decisions/M4.md), with one written example. Land the small shared commit first: teams out of `GameState`, new play and outcome types, timeout counters.
+**Shared prerequisite:** Together, agree the scenario format, candidate actions, policy interface, clock and overtime model, and comparison result in [M4](docs/decisions/M4.md), with one written example. Land the small shared commit first: teams out of `GameState`, new play and outcome types, timeout counters.
 
 | Round | Developer A | Developer B | Shared checkpoint |
 | --- | --- | --- | --- |
-| 4.1 Make the decisions real | Build punts, incomplete passes, and clock stops in the outcome sampler and rules, tested through direct outcomes. | Move play choice out of the sampler into the agreed policy interface, with a default policy that first reproduces the `m3-v1` fingerprints; add timeouts as a policy decision. | Enable punting in the default policy, retune the hand-set constants to plausible totals, record `m4-v1` fingerprints and sanity checks. |
+| 4.1 Make the decisions real | Build punts, incomplete passes, and clock stops in the outcome sampler and rules, tested through direct outcomes. | Move play choice out of the sampler into the agreed policy interface, with a default policy that leaves `main`'s output unchanged (same fingerprints before and after); add timeouts as a policy decision, then regular-season overtime. | Enable punting in the default policy, retune the hand-set constants to plausible totals, record `m4-v1` fingerprints and sanity checks. |
 | 4.2 Resume and choose | Build scenario validation, resuming a game from a scenario, and forcing the first action. | Build a late-game policy for later decisions, using example states and the agreed interface. | Resume one scenario under two actions and finish the game. |
 | 4.3 Switch areas | Extend the policy analysis with a controlled sensitivity comparison, such as conservative versus aggressive later decisions. | Build the scenario comparison runner, win-probability differences, paired uncertainty, and command-line output using the merged default policy. | Produce a report for the 27-24 example, including the sensitivity cases. |
 
