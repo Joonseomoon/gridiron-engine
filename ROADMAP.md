@@ -66,7 +66,7 @@ Work outside these tables (bugs found, tooling, deferred tests) is tracked in [d
 | Round | Developer A | Developer B | Shared checkpoint |
 | --- | --- | --- | --- |
 | 3.1 Improve separate bottlenecks (done) | Optimize one measured engine hot path; if it changes results, bump the model version and check distributions instead of exact output (as decided for normal sampling, see [M3](docs/decisions/M3.md)). | Add parallel batch execution with independent random streams and safe aggregation, using the unchanged engine interface. | Benchmark each change independently and then together; check correctness and distributions. |
-| 3.2 Switch areas (implemented; M1 Pro benchmark pending) | Extend the parallel runner with measured scheduling or batch-size improvements if profiling supports them. | Optimize a different measured engine bottleneck, such as allocation or data access (the per-play `GameState` copy measured in M3.1), if evidence supports it. | Compare against the same baseline and document what helped or did not help. |
+| 3.2 Switch areas (done) | Extend the parallel runner with measured scheduling or batch-size improvements if profiling supports them. | Optimize a different measured engine bottleneck, such as allocation or data access (the per-play `GameState` copy measured in M3.1), if evidence supports it. | Compare against the same baseline and document what helped or did not help. |
 
 **Parallel starting point:** A stable engine call lets runner work and internal engine work proceed independently. In 3.2 choose distinct files/components before starting. If no further optimization is justified, use that task to investigate and document the new area's limits instead of forcing a change.
 
