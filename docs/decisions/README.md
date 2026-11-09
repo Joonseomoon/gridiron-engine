@@ -11,5 +11,6 @@ add the new decision and mark the old one superseded.
 | M1 | [M1.md](M1.md) | Sampling assumptions, the command line, seeds, and built-in teams |
 | M2 | [M2.md](M2.md) | Batch runs, seed policy, uncertainty statistics, convergence, and CSV export |
 | M3 | [M3.md](M3.md) | Benchmark method, baselines, profiles, and parallel batches |
+| M4 | [M4.md](M4.md) | Scenarios, candidate actions, policies, the clock model, and decision comparisons |
 
 Start a new file when a new milestone's shared prerequisite begins, and add it to this table.
