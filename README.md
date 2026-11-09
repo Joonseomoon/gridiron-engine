@@ -3,8 +3,8 @@
 A C++ NFL simulation engine: play seeded games, repeat matchups to estimate outcome distributions, and later compare
 football decisions. See [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) for the goals and architecture.
 
-**Status:** M1 (one seeded game with a play-by-play log) and M2 (`--games N` batches with uncertainty estimates and CSV
-export) are complete. M3 (profiling and performance) is in progress.
+**Status:** M1 (one seeded game with a play-by-play log), M2 (`--games N` batches with uncertainty estimates and CSV
+export), and M3 (profiling and multi-threaded performance) are complete.
 
 ## Building and testing
 
@@ -25,6 +25,12 @@ before pushing:
   ```
   cmake -S . -B build-asan -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -fno-sanitize-recover=all"
   cmake --build build-asan && ctest --test-dir build-asan --output-on-failure
+  ```
+- **Data races:**
+  ```
+  cmake -S . -B build-tsan -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fsanitize=thread -fno-omit-frame-pointer"
+  cmake --build build-tsan && ctest --test-dir build-tsan --output-on-failure
+  ./build-tsan/simulate BAL SEA --games 10000 --seed 1000 --threads "$(sysctl -n hw.ncpu)" > /dev/null
   ```
 - **Unformatted code:** use the same pinned clang-format as CI, since versions format slightly differently.
   ```
