@@ -465,3 +465,41 @@ TEST_F(OutcomeSamplerTest, PuntYardageMatchesConstants) {
     EXPECT_NEAR(mean(yards), gridiron::kPuntNetMeanYards, 0.3);
     EXPECT_NEAR(stddev(yards), gridiron::kPuntNetSdYards, 0.3);
 }
+
+TEST_F(OutcomeSamplerTest, RunOutOfBoundsFrequencyMatchesRate) {
+    std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
+    int plays = 0;
+    int outOfBounds = 0;
+    for (int i = 0; i < kSamples; ++i) {
+        const auto outcome = gridiron::sampleRunOutcome(offense, defense, random);
+        if (outcome.outcome_type == gridiron::OutcomeType::Turnover) {
+            ASSERT_FALSE(outcome.out_of_bounds);
+            continue;
+        }
+        ++plays;
+        if (outcome.out_of_bounds) {
+            ++outOfBounds;
+        }
+    }
+    EXPECT_NEAR(static_cast<double>(outOfBounds) / plays, gridiron::kOutOfBoundsRate, 0.02);
+}
+
+TEST_F(OutcomeSamplerTest, PassOutOfBoundsFrequencyMatchesRate) {
+    std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
+    int plays = 0;
+    int outOfBounds = 0;
+    for (int i = 0; i < kSamples; ++i) {
+        const auto outcome = gridiron::samplePassOutcome(offense, defense, random);
+        if (outcome.outcome_type == gridiron::OutcomeType::Turnover) {
+            ASSERT_FALSE(outcome.out_of_bounds);
+            continue;
+        }
+        ++plays;
+        if (outcome.out_of_bounds) {
+            ++outOfBounds;
+        }
+    }
+    EXPECT_NEAR(static_cast<double>(outOfBounds) / plays, gridiron::kOutOfBoundsRate, 0.02);
+}

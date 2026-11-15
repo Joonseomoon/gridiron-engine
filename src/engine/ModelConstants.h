@@ -10,4 +10,5 @@ constexpr int kPuntSeconds = 6;
 constexpr int kSnapSeconds = 6;
 constexpr int kTwoMinuteWarningSeconds = 120;
 constexpr int kLateQ4OutOfBoundsSeconds = 300;
+constexpr double kOutOfBoundsRate = 0.2;
 } // namespace gridiron

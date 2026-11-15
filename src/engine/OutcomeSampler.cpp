@@ -10,6 +10,7 @@ namespace gridiron {
 
 using NormalParams = std::normal_distribution<double>::param_type;
 
+namespace {
 // Bigger gains take longer to run and to reset from.
 int samplePlayTime(const int yardsGained, RandomSource& random) {
     if (yardsGained > 20) {
@@ -17,6 +18,12 @@ int samplePlayTime(const int yardsGained, RandomSource& random) {
     }
     return std::max(10, static_cast<int>(std::round(random.normal(random.rng, NormalParams{20, 5}))));
 }
+
+bool sampleOutOfBounds(RandomSource& random) {
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    return distribution(random.rng) < kOutOfBoundsRate;
+}
+} // namespace
 
 PlayType choosePlayType(const GameState& gameState, RandomSource& random) {
     const int distanceToGoal = 100 - gameState.ball_position;
@@ -37,7 +44,7 @@ PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defe
     const int playTime = samplePlayTime(playYards, random);
 
     std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
-    bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
+    const bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
 
     if (turnover) {
         return PlayOutcome{.play_type = PlayType::Run,
@@ -50,7 +57,8 @@ PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defe
                        .outcome_type = OutcomeType::Normal,
                        .yards_gained = playYards,
                        .elapsed_seconds = kSnapSeconds,
-                       .runoff_seconds = playTime - kSnapSeconds};
+                       .runoff_seconds = playTime - kSnapSeconds,
+                       .out_of_bounds = sampleOutOfBounds(random)};
 }
 
 PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random) {
@@ -60,7 +68,7 @@ PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& def
     const int playTime = samplePlayTime(playYards, random);
 
     std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
-    bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
+    const bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
 
     if (turnover) {
         return PlayOutcome{.play_type = PlayType::Pass,
@@ -73,7 +81,8 @@ PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& def
                        .outcome_type = OutcomeType::Normal,
                        .yards_gained = playYards,
                        .elapsed_seconds = kSnapSeconds,
-                       .runoff_seconds = playTime - kSnapSeconds};
+                       .runoff_seconds = playTime - kSnapSeconds,
+                       .out_of_bounds = sampleOutOfBounds(random)};
 }
 
 PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal, RandomSource& random) {
