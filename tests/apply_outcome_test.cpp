@@ -1059,7 +1059,8 @@ TEST(ApplyOutcomeTest, AwayTeamPunting) {
 }
 
 TEST(ApplyOutcomeTest, PuntEndsHalf) {
-    auto curr_state = gridiron::GameState{.quarter = 2, .time_remaining_seconds = 4};
+    auto curr_state = gridiron::GameState{
+        .quarter = 2, .time_remaining_seconds = 4, .opening_possession = gridiron::Possession::Away};
     auto playOutcome =
         gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
     auto result = applyOutcome(curr_state, playOutcome);
@@ -1067,7 +1068,7 @@ TEST(ApplyOutcomeTest, PuntEndsHalf) {
 
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
-    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
     EXPECT_EQ(newState.ball_position, gridiron::kKickoffSpot);
