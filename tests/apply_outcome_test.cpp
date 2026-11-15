@@ -1079,3 +1079,125 @@ TEST(ApplyOutcomeTest, PuntEndsHalf) {
     EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
     EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }
+
+namespace {
+
+// A 3-yard run from the default spot: no first down, no score, so only the clock matters.
+gridiron::PlayOutcome timedPlay(int runoff, bool outOfBounds = false,
+                                gridiron::OutcomeType type = gridiron::OutcomeType::Normal) {
+    return gridiron::PlayOutcome{.play_type = gridiron::PlayType::Run,
+                                 .outcome_type = type,
+                                 .yards_gained = 3,
+                                 .elapsed_seconds = gridiron::kSnapSeconds,
+                                 .runoff_seconds = runoff,
+                                 .out_of_bounds = outOfBounds};
+}
+
+gridiron::GameState stateAt(int quarter, int timeRemaining) {
+    return gridiron::GameState{.quarter = quarter, .time_remaining_seconds = timeRemaining};
+}
+
+int clockAfter(int quarter, int timeRemaining, const gridiron::PlayOutcome& outcome) {
+    return gridiron::applyOutcome(stateAt(quarter, timeRemaining), outcome).state.time_remaining_seconds;
+}
+
+} // namespace
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsInsideTwoMinutesOfQ2StopsClock) {
+    EXPECT_EQ(clockAfter(2, 90, timedPlay(20, true)), 84);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsOutsideTwoMinutesOfQ2RunsClock) {
+    EXPECT_EQ(clockAfter(2, 180, timedPlay(20, true)), 154);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsAtExactlyFiveMinutesOfQ4StopsClock) {
+    EXPECT_EQ(clockAfter(4, 306, timedPlay(20, true)), 300);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsJustOutsideFiveMinutesOfQ4RunsClock) {
+    EXPECT_EQ(clockAfter(4, 307, timedPlay(20, true)), 281);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsInQ1NeverStopsClock) {
+    EXPECT_EQ(clockAfter(1, 90, timedPlay(20, true)), 64);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsInQ3NeverStopsClock) {
+    EXPECT_EQ(clockAfter(3, 90, timedPlay(20, true)), 64);
+}
+
+TEST(ApplyOutcomeClockTest, RunoffStopsAtTwoMinuteWarningInQ4) {
+    EXPECT_EQ(clockAfter(4, 130, timedPlay(20)), gridiron::kTwoMinuteWarningSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, RunoffStopsAtTwoMinuteWarningInQ2) {
+    EXPECT_EQ(clockAfter(2, 130, timedPlay(20)), gridiron::kTwoMinuteWarningSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsOutsideTwoMinutesStillStopsAtWarning) {
+    // Out of bounds does not stop the clock at 2:04 in Q2, but the warning still does.
+    EXPECT_EQ(clockAfter(2, 130, timedPlay(20, true)), gridiron::kTwoMinuteWarningSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, PlayCrossingTwoMinutesStopsClockWhereItEnds) {
+    EXPECT_EQ(clockAfter(2, 123, timedPlay(20)), 117);
+}
+
+TEST(ApplyOutcomeClockTest, PlayEndingExactlyAtTwoMinutesStopsClock) {
+    EXPECT_EQ(clockAfter(4, 126, timedPlay(20)), 120);
+}
+
+TEST(ApplyOutcomeClockTest, RunoffEndingExactlyAtTwoMinutesRunsInFull) {
+    EXPECT_EQ(clockAfter(4, 146, timedPlay(20)), 120);
+}
+
+TEST(ApplyOutcomeClockTest, PlayStartingAtTwoMinutesRunsNormally) {
+    // The warning has already happened, so the clock runs.
+    EXPECT_EQ(clockAfter(4, 120, timedPlay(20)), 94);
+}
+
+TEST(ApplyOutcomeClockTest, InsideTwoMinutesClockRuns) {
+    EXPECT_EQ(clockAfter(4, 110, timedPlay(20)), 84);
+}
+
+TEST(ApplyOutcomeClockTest, NoTwoMinuteWarningInQ1OrQ3) {
+    EXPECT_EQ(clockAfter(1, 130, timedPlay(20)), 104);
+    EXPECT_EQ(clockAfter(3, 130, timedPlay(20)), 104);
+}
+
+TEST(ApplyOutcomeClockTest, StoppedClockStillEndsTheGame) {
+    const auto result = gridiron::applyOutcome(stateAt(4, 4), timedPlay(20, true));
+    EXPECT_TRUE(result.state.game_over);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
+}
+
+TEST(ClockStopsTest, IncompletePassStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(0, false, gridiron::OutcomeType::Incomplete)));
+}
+
+TEST(ClockStopsTest, ZeroYardCompletionDoesNotStop) {
+    auto outcome = timedPlay(20);
+    outcome.play_type = gridiron::PlayType::Pass;
+    outcome.yards_gained = 0;
+    EXPECT_FALSE(gridiron::clockStops(stateAt(1, 600), outcome));
+}
+
+TEST(ClockStopsTest, NormalPlayEarlyDoesNotStop) {
+    EXPECT_FALSE(gridiron::clockStops(stateAt(1, 600), timedPlay(20)));
+}
+
+TEST(ClockStopsTest, OutOfBoundsQ4BoundaryAtFiveMinutes) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(4, 306), timedPlay(20, true)));
+    EXPECT_FALSE(gridiron::clockStops(stateAt(4, 307), timedPlay(20, true)));
+}
+
+TEST(ClockStopsTest, OutOfBoundsQ2BoundaryAtTwoMinutes) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(2, 126), timedPlay(20, true)));
+    EXPECT_FALSE(gridiron::clockStops(stateAt(2, 127), timedPlay(20, true)));
+}
+
+TEST(ClockStopsTest, RunoffAloneCrossingTwoMinutesIsNotAStop) {
+    // The clock runs down to 2:00 here; timeouts in 4.1 B still apply.
+    EXPECT_FALSE(gridiron::clockStops(stateAt(4, 130), timedPlay(20)));
+}
