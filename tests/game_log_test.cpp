@@ -564,3 +564,48 @@ TEST(GameLogTest, PuntReturnTouchdown) {
     EXPECT_EQ(output.str(), "Q2 6:34 - BAL punt returned for a touchdown by SEA! SEA +7.\n"
                             "Q2 6:34 - BAL ball on BAL 25, 1st & 10 (kickoff).\n");
 }
+
+TEST(GameLogTest, IncompletePass) {
+    gridiron::GameState before;
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
+    before.possession = gridiron::Possession::Home;
+    before.quarter = 2;
+    before.time_remaining_seconds = 400;
+    before.down = 2;
+    before.distance = 10;
+    before.ball_position = 40;
+
+    gridiron::PlayOutcome outcome{.play_type = gridiron::PlayType::Pass,
+                                  .outcome_type = gridiron::OutcomeType::Incomplete,
+                                  .elapsed_seconds = gridiron::kSnapSeconds};
+
+    const auto result = gridiron::applyOutcome(before, outcome);
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q2 6:34 - BAL pass incomplete. 3rd & 10 on BAL 40.\n");
+}
+
+TEST(GameLogTest, IncompletePassOnFourthDown) {
+    gridiron::GameState before;
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
+    before.possession = gridiron::Possession::Home;
+    before.quarter = 2;
+    before.time_remaining_seconds = 400;
+    before.down = 4;
+    before.distance = 3;
+    before.ball_position = 60;
+
+    gridiron::PlayOutcome outcome{.play_type = gridiron::PlayType::Pass,
+                                  .outcome_type = gridiron::OutcomeType::Incomplete,
+                                  .elapsed_seconds = gridiron::kSnapSeconds};
+
+    const auto result = gridiron::applyOutcome(before, outcome);
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q2 6:34 - BAL pass incomplete. Turnover on downs.\n"
+                            "Q2 6:34 - SEA ball on SEA 40, 1st & 10.\n");
+}

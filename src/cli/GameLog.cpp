@@ -3,10 +3,8 @@
 #include "../engine/PlayOutcome.h"
 #include "../engine/PlayResult.h"
 #include "../engine/SimulationResult.h"
-#include <algorithm>
 #include <iomanip>
 #include <ostream>
-#include <stdexcept>
 #include <string>
 
 namespace gridiron {
@@ -38,6 +36,12 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
     case PlayType::FieldGoalAttempt: play_name = "field goal attempt"; break;
     case PlayType::Punt: play_name = "punt"; break;
     }
+
+    // "BAL pass incomplete" or "BAL run for 6 yards"
+    const bool incomplete = outcome.outcome_type == OutcomeType::Incomplete;
+    const std::string playText = incomplete
+                                     ? offense + " pass incomplete"
+                                     : offense + " " + play_name + " for " + std::to_string(yards_gained) + " yards";
 
     std::string down = "";
     switch (result.state.down) {
@@ -153,8 +157,7 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
                 << distanceText << ".\n";
         }
     } else if (result.turnover == TurnoverKind::TurnoverOnDowns) {
-        out << offense << " " << play_name << " for " << yards_gained
-            << " yards. Short of the first down. Turnover on downs.\n";
+        out << playText << (incomplete ? "" : ". Short of the first down") << ". Turnover on downs.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
                 << std::setfill(' ') << " - " << afterOffense << " ball on " << fieldPosition << ", 1st & "
@@ -183,10 +186,9 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         }
     } else if (result.event == PlayEvent::Normal) {
         if (result.period == PeriodEvent::None) {
-            out << offense << " " << play_name << " for " << yards_gained << " yards. " << down << " & " << distanceText
-                << " on " << fieldPosition << ".\n";
+            out << playText << ". " << down << " & " << distanceText << " on " << fieldPosition << ".\n";
         } else {
-            out << offense << " " << play_name << " for " << yards_gained << " yards.\n";
+            out << playText << ".\n";
         }
     }
 
