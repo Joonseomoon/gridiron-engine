@@ -126,7 +126,16 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
         result.turnover = TurnoverKind::None;
         awardScoreAndKickoff(state, state.possession, 3, opponentOf(state.possession));
         break;
-    case OutcomeType::Incomplete: throw std::logic_error("incomplete not implemented");
+    case OutcomeType::Incomplete:
+        if (state.down < 4) {
+            state.down++;
+            result.event = PlayEvent::Normal;
+            result.turnover = TurnoverKind::None;
+        } else {
+            result.turnover = TurnoverKind::TurnoverOnDowns;
+            changePossessionAtSpot(state);
+        }
+        break;
     case OutcomeType::Punted:
         result.turnover = TurnoverKind::None;
         state.ball_position += outcome.yards_gained;

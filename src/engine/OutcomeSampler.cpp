@@ -64,11 +64,23 @@ PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defe
 PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random) {
     const int baseYards{4};
     const double expectedYards{baseYards + 15 * (offense.offensive_pass_rating - defense.defensive_pass_rating)};
-    const int playYards = static_cast<int>(std::round(random.normal(random.rng, NormalParams{expectedYards, 5.0})));
-    const int playTime = samplePlayTime(playYards, random);
 
     std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
     const bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
+
+    if (!turnover) {
+        std::uniform_real_distribution<double> incompleteDistribution(0.0, 1.0);
+        if (incompleteDistribution(random.rng) < kIncompleteRate) {
+            return PlayOutcome{.play_type = PlayType::Pass,
+                               .outcome_type = OutcomeType::Incomplete,
+                               .yards_gained = 0,
+                               .elapsed_seconds = kSnapSeconds,
+                               .runoff_seconds = 0};
+        }
+    }
+
+    const int playYards = static_cast<int>(std::round(random.normal(random.rng, NormalParams{expectedYards, 5.0})));
+    const int playTime = samplePlayTime(playYards, random);
 
     if (turnover) {
         return PlayOutcome{.play_type = PlayType::Pass,

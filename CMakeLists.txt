@@ -21,7 +21,7 @@ enable_testing()
 # compiler's new warning doesn't block a build.
 option(GRIDIRON_WERROR "Treat compiler warnings as errors" OFF)
 add_library(gridiron_warnings INTERFACE)
-target_compile_options(gridiron_warnings INTERFACE -Wall -Wextra -Wpedantic -Wshadow -Wconversion)
+target_compile_options(gridiron_warnings INTERFACE -Wall -Wextra -Wpedantic -Wshadow -Wconversion -Wimplicit-fallthrough)
 if (GRIDIRON_WERROR)
     target_compile_options(gridiron_warnings INTERFACE -Werror)
 endif ()
@@ -65,7 +65,7 @@ add_executable(gridiron_tests
 )
 add_dependencies(gridiron_tests simulate)
 target_compile_definitions(gridiron_tests PRIVATE
-    SIMULATE_PATH="$<TARGET_FILE:simulate>"
+        SIMULATE_PATH="$<TARGET_FILE:simulate>"
 )
 target_link_libraries(simulate PRIVATE gridiron_cli gridiron_core gridiron_warnings)
 target_link_libraries(gridiron_tests PRIVATE gtest_main gridiron_cli gridiron_core gridiron_warnings)

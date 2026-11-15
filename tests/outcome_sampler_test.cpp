@@ -84,7 +84,7 @@ TEST_F(OutcomeSamplerTest, PassTurnoverRateZeroNeverTurnover) {
     gridiron::RandomSource random{rng};
     offense.turnover_rate = 0.0;
     gridiron::PlayOutcome outcome = gridiron::samplePassOutcome(offense, defense, random);
-    EXPECT_EQ(outcome.outcome_type, gridiron::OutcomeType::Normal);
+    EXPECT_NE(outcome.outcome_type, gridiron::OutcomeType::Turnover);
 }
 
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsFieldGoalAttempt) {
@@ -147,13 +147,16 @@ TEST_F(OutcomeSamplerTest, RunYardageMatchesExpectedMeanAndSpread) {
 }
 
 TEST_F(OutcomeSamplerTest, PassYardageMatchesExpectedMeanAndSpread) {
-    // expected = 4 + 15 * (0.8 pass offense - 0.9 pass defense) = 2.5, sd 5.0
+    // expected = 4 + 15 * (0.8 pass offense - 0.9 pass defense) = 2.5, sd 5.0, for completions only
     std::mt19937 rng(kSeed);
     gridiron::RandomSource random{rng};
     std::vector<int> yards;
     yards.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        yards.push_back(gridiron::samplePassOutcome(offense, defense, random).yards_gained);
+        const auto outcome = gridiron::samplePassOutcome(offense, defense, random);
+        if (outcome.outcome_type == gridiron::OutcomeType::Normal) {
+            yards.push_back(outcome.yards_gained);
+        }
     }
     EXPECT_NEAR(mean(yards), 2.5, 0.3);
     EXPECT_NEAR(stddev(yards), 5.0, 0.3);
@@ -492,7 +495,8 @@ TEST_F(OutcomeSamplerTest, PassOutOfBoundsFrequencyMatchesRate) {
     int outOfBounds = 0;
     for (int i = 0; i < kSamples; ++i) {
         const auto outcome = gridiron::samplePassOutcome(offense, defense, random);
-        if (outcome.outcome_type == gridiron::OutcomeType::Turnover) {
+        if (outcome.outcome_type == gridiron::OutcomeType::Turnover ||
+            outcome.outcome_type == gridiron::OutcomeType::Incomplete) {
             ASSERT_FALSE(outcome.out_of_bounds);
             continue;
         }

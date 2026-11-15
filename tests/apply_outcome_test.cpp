@@ -1201,3 +1201,91 @@ TEST(ClockStopsTest, RunoffAloneCrossingTwoMinutesIsNotAStop) {
     // The clock runs down to 2:00 here; timeouts in 4.1 B still apply.
     EXPECT_FALSE(gridiron::clockStops(stateAt(4, 130), timedPlay(20)));
 }
+
+namespace {
+
+gridiron::PlayOutcome incompletePass() {
+    return gridiron::PlayOutcome{.play_type = gridiron::PlayType::Pass,
+                                 .outcome_type = gridiron::OutcomeType::Incomplete,
+                                 .yards_gained = 0,
+                                 .elapsed_seconds = gridiron::kSnapSeconds,
+                                 .runoff_seconds = 0};
+}
+
+} // namespace
+
+TEST(ApplyOutcomeIncompleteTest, FirstDownIncompleteBecomesSecondDownAtSameSpot) {
+    const auto before = gridiron::GameState{.down = 1, .distance = 10, .ball_position = 40};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Home);
+    EXPECT_EQ(result.state.down, 2);
+    EXPECT_EQ(result.state.distance, 10);
+    EXPECT_EQ(result.state.ball_position, 40);
+    EXPECT_EQ(result.state.time_remaining_seconds, 900 - gridiron::kSnapSeconds);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+}
+
+TEST(ApplyOutcomeIncompleteTest, ThirdDownIncompleteBecomesFourthDownWithSameDistance) {
+    const auto before = gridiron::GameState{.down = 3, .distance = 7, .ball_position = 40};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Home);
+    EXPECT_EQ(result.state.down, 4);
+    EXPECT_EQ(result.state.distance, 7);
+    EXPECT_EQ(result.state.ball_position, 40);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+}
+
+TEST(ApplyOutcomeIncompleteTest, FourthDownIncompleteIsTurnoverOnDownsAtTheSpot) {
+    const auto before = gridiron::GameState{.down = 4, .distance = 3, .ball_position = 60};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Away);
+    EXPECT_EQ(result.state.down, 1);
+    EXPECT_EQ(result.state.distance, 10);
+    EXPECT_EQ(result.state.ball_position, 40);
+    EXPECT_EQ(result.state.home_score, 0);
+    EXPECT_EQ(result.state.away_score, 0);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+}
+
+TEST(ApplyOutcomeIncompleteTest, FourthDownIncompleteByAwayNearGoalGivesHomeTheBallDeep) {
+    const auto before =
+        gridiron::GameState{.possession = gridiron::Possession::Away, .down = 4, .distance = 2, .ball_position = 98};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Home);
+    EXPECT_EQ(result.state.ball_position, 2);
+    EXPECT_EQ(result.state.down, 1);
+    EXPECT_EQ(result.state.distance, 10);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+}
+
+TEST(ApplyOutcomeIncompleteTest, IncompleteLateInQ4StopsTheClock) {
+    const auto before = gridiron::GameState{.quarter = 4, .time_remaining_seconds = 60, .down = 2};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.time_remaining_seconds, 60 - gridiron::kSnapSeconds);
+    EXPECT_EQ(result.state.down, 3);
+    EXPECT_FALSE(result.state.game_over);
+}
+
+TEST(ApplyOutcomeIncompleteTest, IncompleteIgnoresAnyRunoffItCarries) {
+    // The sampler never sets runoff on an incomplete pass, but the rule must not depend on that.
+    auto outcome = incompletePass();
+    outcome.runoff_seconds = 30;
+    const auto result = gridiron::applyOutcome(gridiron::GameState{.time_remaining_seconds = 600}, outcome);
+
+    EXPECT_EQ(result.state.time_remaining_seconds, 600 - gridiron::kSnapSeconds);
+}
+
+TEST(ApplyOutcomeIncompleteTest, IncompleteOnFinalSnapEndsTheGame) {
+    const auto before = gridiron::GameState{.quarter = 4, .time_remaining_seconds = 4};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_TRUE(result.state.game_over);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
+}
