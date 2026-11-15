@@ -45,8 +45,21 @@ bool clockStops(const GameState& before, const PlayOutcome& outcome) {
     const bool q2 = before.quarter == 2;
     const bool q4 = before.quarter == 4;
 
-    if (outcome.outcome_type == OutcomeType::Incomplete) {
-        return true;
+    // Incompletions, scores, and changes of possession stop the clock until the next snap.
+    switch (outcome.outcome_type) {
+    case OutcomeType::Incomplete:
+    case OutcomeType::Turnover:
+    case OutcomeType::FieldGoalMade:
+    case OutcomeType::Punted: return true;
+    case OutcomeType::Normal: {
+        const int spot = before.ball_position + outcome.yards_gained;
+        const bool touchdownOrSafety = spot >= 100 || spot <= 0;
+        const bool turnoverOnDowns = before.down == 4 && outcome.yards_gained < before.distance;
+        if (touchdownOrSafety || turnoverOnDowns) {
+            return true;
+        }
+        break;
+    }
     }
 
     if (outcome.out_of_bounds &&

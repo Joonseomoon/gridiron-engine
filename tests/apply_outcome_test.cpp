@@ -1289,3 +1289,74 @@ TEST(ApplyOutcomeIncompleteTest, IncompleteOnFinalSnapEndsTheGame) {
     EXPECT_TRUE(result.state.game_over);
     EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
 }
+
+// Scores and changes of possession stop the clock (NFL: it restarts on the next snap), so no runoff.
+
+TEST(ClockStopsTest, TouchdownStops) {
+    auto outcome = timedPlay(20);
+    outcome.yards_gained = 80; // from the 25 to the 105
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), outcome));
+}
+
+TEST(ClockStopsTest, GainToExactlyTheGoalLineStops) {
+    auto state = stateAt(1, 600);
+    state.ball_position = 97;
+    EXPECT_TRUE(gridiron::clockStops(state, timedPlay(20))); // 3 yards to the 100
+}
+
+TEST(ClockStopsTest, GainShortOfTheGoalLineDoesNotStop) {
+    auto state = stateAt(1, 600);
+    state.ball_position = 96;
+    EXPECT_FALSE(gridiron::clockStops(state, timedPlay(20))); // to the 99
+}
+
+TEST(ClockStopsTest, SafetyStops) {
+    auto state = stateAt(1, 600);
+    state.ball_position = 2;
+    auto outcome = timedPlay(20);
+    outcome.yards_gained = -2;
+    EXPECT_TRUE(gridiron::clockStops(state, outcome));
+}
+
+TEST(ClockStopsTest, TurnoverStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(20, false, gridiron::OutcomeType::Turnover)));
+}
+
+TEST(ClockStopsTest, FieldGoalMadeStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(20, false, gridiron::OutcomeType::FieldGoalMade)));
+}
+
+TEST(ClockStopsTest, PuntStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(0, false, gridiron::OutcomeType::Punted)));
+}
+
+TEST(ClockStopsTest, FourthDownShortIsTurnoverOnDownsAndStops) {
+    auto state = stateAt(1, 600);
+    state.down = 4;
+    state.distance = 4;
+    EXPECT_TRUE(gridiron::clockStops(state, timedPlay(20))); // 3 yards, needed 4
+}
+
+TEST(ClockStopsTest, FourthDownConversionDoesNotStop) {
+    auto state = stateAt(1, 600);
+    state.down = 4;
+    state.distance = 3;
+    EXPECT_FALSE(gridiron::clockStops(state, timedPlay(20))); // exactly 3 yards: first down
+}
+
+TEST(ApplyOutcomeClockTest, TouchdownTakesOnlyTheSnap) {
+    auto outcome = timedPlay(20);
+    outcome.yards_gained = 80;
+    const auto result = gridiron::applyOutcome(stateAt(1, 600), outcome);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.state.time_remaining_seconds, 600 - gridiron::kSnapSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, TurnoverOnDownsTakesOnlyTheSnap) {
+    auto state = stateAt(1, 600);
+    state.down = 4;
+    state.distance = 4;
+    const auto result = gridiron::applyOutcome(state, timedPlay(20));
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+    EXPECT_EQ(result.state.time_remaining_seconds, 600 - gridiron::kSnapSeconds);
+}
