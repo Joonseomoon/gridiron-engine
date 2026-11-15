@@ -263,7 +263,8 @@ TEST_F(OutcomeSamplerTest, NormalPlayTimeRespectsFloorAndMean) {
     std::vector<int> times;
     times.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        times.push_back(gridiron::sampleRunOutcome(offense, defense, random).elapsed_seconds);
+        const auto outcome = gridiron::sampleRunOutcome(offense, defense, random);
+        times.push_back(outcome.elapsed_seconds + outcome.runoff_seconds);
     }
     for (const int time : times) {
         ASSERT_GE(time, 10);
@@ -285,7 +286,7 @@ TEST_F(OutcomeSamplerTest, BigPlayTimeUsesLongerDistribution) {
     for (int i = 0; i < kSamples; ++i) {
         const gridiron::PlayOutcome outcome = gridiron::sampleRunOutcome(explosive, porous, random);
         ASSERT_GT(outcome.yards_gained, 20);
-        times.push_back(outcome.elapsed_seconds);
+        times.push_back(outcome.elapsed_seconds + outcome.runoff_seconds);
     }
     for (const int time : times) {
         ASSERT_GE(time, 15);
@@ -433,7 +434,8 @@ TEST_F(OutcomeSamplerTest, FieldGoalClockRespectsFloorAndMean) {
     std::vector<int> times;
     times.reserve(kSamples);
     for (int i = 0; i < kSamples; ++i) {
-        times.push_back(gridiron::sampleFieldGoalOutcome(kicker, 23, random).elapsed_seconds);
+        const auto outcome = gridiron::sampleFieldGoalOutcome(kicker, 23, random);
+        times.push_back(outcome.elapsed_seconds + outcome.runoff_seconds);
     }
     for (const int time : times) {
         ASSERT_GE(time, 10);

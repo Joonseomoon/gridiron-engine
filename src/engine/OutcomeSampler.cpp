@@ -40,9 +40,17 @@ PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defe
     bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
 
     if (turnover) {
-        return PlayOutcome{PlayType::Run, OutcomeType::Turnover, playYards, playTime};
+        return PlayOutcome{.play_type = PlayType::Run,
+                           .outcome_type = OutcomeType::Turnover,
+                           .yards_gained = playYards,
+                           .elapsed_seconds = kSnapSeconds,
+                           .runoff_seconds = playTime - kSnapSeconds};
     }
-    return PlayOutcome{PlayType::Run, OutcomeType::Normal, playYards, playTime};
+    return PlayOutcome{.play_type = PlayType::Run,
+                       .outcome_type = OutcomeType::Normal,
+                       .yards_gained = playYards,
+                       .elapsed_seconds = kSnapSeconds,
+                       .runoff_seconds = playTime - kSnapSeconds};
 }
 
 PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random) {
@@ -55,9 +63,17 @@ PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& def
     bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
 
     if (turnover) {
-        return PlayOutcome{PlayType::Pass, OutcomeType::Turnover, playYards, playTime};
+        return PlayOutcome{.play_type = PlayType::Pass,
+                           .outcome_type = OutcomeType::Turnover,
+                           .yards_gained = playYards,
+                           .elapsed_seconds = kSnapSeconds,
+                           .runoff_seconds = playTime - kSnapSeconds};
     }
-    return PlayOutcome{PlayType::Pass, OutcomeType::Normal, playYards, playTime};
+    return PlayOutcome{.play_type = PlayType::Pass,
+                       .outcome_type = OutcomeType::Normal,
+                       .yards_gained = playYards,
+                       .elapsed_seconds = kSnapSeconds,
+                       .runoff_seconds = playTime - kSnapSeconds};
 }
 
 PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal, RandomSource& random) {
@@ -69,7 +85,8 @@ PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal
 
     return PlayOutcome{.play_type = PlayType::FieldGoalAttempt,
                        .outcome_type = made ? OutcomeType::FieldGoalMade : OutcomeType::Turnover,
-                       .elapsed_seconds = samplePlayTime(0, random)};
+                       .elapsed_seconds = kSnapSeconds,
+                       .runoff_seconds = samplePlayTime(0, random) - kSnapSeconds};
 }
 
 PlayOutcome samplePuntOutcome(RandomSource& random) {

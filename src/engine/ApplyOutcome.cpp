@@ -121,6 +121,7 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
     }
 
     state.time_remaining_seconds -= outcome.elapsed_seconds;
+    state.time_remaining_seconds -= outcome.runoff_seconds;
 
     if (state.time_remaining_seconds <= 0) {
         if (state.quarter == 2) {

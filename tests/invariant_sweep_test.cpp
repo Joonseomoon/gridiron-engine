@@ -4,6 +4,7 @@
 
 #include "../src/engine/GameRunner.h"
 #include "../src/engine/Matchup.h"
+#include "../src/engine/ModelConstants.h"
 
 // M1.2 shared checkpoint: run many complete games across seeds and team
 // matchups, and check every intermediate state against the legal-state rules
@@ -71,7 +72,8 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                     expectLegal(after.state);
                 }
                 EXPECT_FALSE(before.game_over);
-                EXPECT_GE(outcome.elapsed_seconds, 10);
+                EXPECT_EQ(outcome.elapsed_seconds, gridiron::kSnapSeconds);
+                EXPECT_GE(outcome.runoff_seconds, 0);
 
                 // Field goal decision rule: kick exactly when it is 4th down
                 // within 40 yards of the goal line.

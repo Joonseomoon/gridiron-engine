@@ -22,7 +22,7 @@ Possession other(Possession side) {
 
 void printPlay(std::ostream& out, const GameState& before, const Matchup& matchup, const PlayOutcome& outcome,
                const PlayResult& result) {
-    int play_time_consumed = outcome.elapsed_seconds;
+    int seconds_left = result.period == PeriodEvent::None ? result.state.time_remaining_seconds : 0;
     int yards_gained = outcome.yards_gained;
     // These are for before the play
     const std::string& offense = teamName(matchup, before.possession);
@@ -58,7 +58,6 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         fieldPosition = "midfield";
     }
 
-    int seconds_left = std::max(0, before.time_remaining_seconds - play_time_consumed);
     int minutes = seconds_left / 60;
     int seconds = seconds_left % 60;
     int fieldGoalDistance = 100 - before.ball_position + 17; // Only for field goal position
