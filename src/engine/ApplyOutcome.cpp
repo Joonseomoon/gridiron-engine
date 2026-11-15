@@ -40,8 +40,31 @@ void touchback(GameState& state, int spot) {
     state.distance = 10;
 }
 
+bool clockStops(const GameState& before, const PlayOutcome& outcome) {
+    const int afterPlay = before.time_remaining_seconds - outcome.elapsed_seconds;
+    const bool q2 = before.quarter == 2;
+    const bool q4 = before.quarter == 4;
+
+    if (outcome.outcome_type == OutcomeType::Incomplete) {
+        return true;
+    }
+
+    if (outcome.out_of_bounds &&
+        ((q2 && afterPlay <= kTwoMinuteWarningSeconds) || (q4 && afterPlay <= kLateQ4OutOfBoundsSeconds))) {
+        return true;
+    }
+
+    if ((q2 || q4) && before.time_remaining_seconds > kTwoMinuteWarningSeconds &&
+        afterPlay <= kTwoMinuteWarningSeconds) {
+        return true;
+    }
+    return false;
+}
+
 PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
     PlaySummary result;
+
+    const bool stopped = clockStops(state, outcome);
 
     switch (outcome.outcome_type) {
     case OutcomeType::Normal:
@@ -121,7 +144,14 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
     }
 
     state.time_remaining_seconds -= outcome.elapsed_seconds;
-    state.time_remaining_seconds -= outcome.runoff_seconds;
+    if (!stopped) {
+        if ((state.quarter == 2 || state.quarter == 4) && state.time_remaining_seconds > kTwoMinuteWarningSeconds &&
+            state.time_remaining_seconds - outcome.runoff_seconds < kTwoMinuteWarningSeconds) {
+            state.time_remaining_seconds = kTwoMinuteWarningSeconds;
+        } else {
+            state.time_remaining_seconds -= outcome.runoff_seconds;
+        }
+    }
 
     if (state.time_remaining_seconds <= 0) {
         if (state.quarter == 2) {

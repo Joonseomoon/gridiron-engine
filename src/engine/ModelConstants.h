@@ -8,4 +8,6 @@ constexpr int kKickoffSpot = 25;
 constexpr int kTurnoverTouchbackSpot = 25;
 constexpr int kPuntSeconds = 6;
 constexpr int kSnapSeconds = 6;
+constexpr int kTwoMinuteWarningSeconds = 120;
+constexpr int kLateQ4OutOfBoundsSeconds = 300;
 } // namespace gridiron
