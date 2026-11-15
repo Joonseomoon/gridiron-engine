@@ -17,4 +17,6 @@ PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defe
 PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random);
 
 PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal, RandomSource& random);
+
+PlayOutcome samplePuntOutcome(RandomSource& random);
 } // namespace gridiron

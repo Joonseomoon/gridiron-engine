@@ -1,4 +1,5 @@
 #include "OutcomeSampler.h"
+#include "ModelConstants.h"
 
 #include <algorithm>
 #include <cmath>
@@ -71,6 +72,16 @@ PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal
                        .elapsed_seconds = samplePlayTime(0, random)};
 }
 
+PlayOutcome samplePuntOutcome(RandomSource& random) {
+    const int puntYards =
+        static_cast<int>(std::round(random.normal(random.rng, NormalParams{kPuntNetMeanYards, kPuntNetSdYards})));
+
+    return PlayOutcome{.play_type = PlayType::Punt,
+                       .outcome_type = OutcomeType::Punted,
+                       .yards_gained = puntYards,
+                       .elapsed_seconds = kPuntSeconds};
+}
+
 PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random) {
     PlayType playType = choosePlayType(gameState, random);
     const TeamProfile& offense = (gameState.possession == Possession::Home) ? matchup.home : matchup.away;
@@ -83,7 +94,7 @@ PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup
         const int distanceToGoal = 100 - gameState.ball_position;
         return sampleFieldGoalOutcome(offense, distanceToGoal, random);
     }
-    case PlayType::Punt: throw std::logic_error("punt not implemented");
+    case PlayType::Punt: return samplePuntOutcome(random);
     }
     throw std::logic_error("unhandled PlayType in samplePlayOutcome");
 }

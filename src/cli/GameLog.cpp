@@ -36,7 +36,7 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
     case PlayType::Run: play_name = "run"; break;
     case PlayType::Pass: play_name = "pass"; break;
     case PlayType::FieldGoalAttempt: play_name = "field goal attempt"; break;
-    case PlayType::Punt: throw std::logic_error("punt not implemented");
+    case PlayType::Punt: play_name = "punt"; break;
     }
 
     std::string down = "";
@@ -77,7 +77,23 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
     out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
         << std::setfill(' ') << " - ";
 
-    if (result.event == PlayEvent::TouchDown) {
+    if (outcome.play_type == PlayType::Punt) {
+        std::string how = "";
+        if (result.event == PlayEvent::PuntReturnTouchdown) {
+            out << offense << " punt returned for a touchdown by " << defense << "! " << defense << " +7.\n";
+            how = " (kickoff)";
+        } else if (result.event == PlayEvent::Touchback) {
+            out << offense << " punts into the end zone. Touchback.\n";
+            how = " (touchback)";
+        } else {
+            out << offense << " punts " << yards_gained << " yards net.\n";
+        }
+        if (result.period == PeriodEvent::None) {
+            out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
+                << std::setfill(' ') << " - " << afterOffense << " ball on " << fieldPosition << ", 1st & "
+                << distanceText << how << ".\n";
+        }
+    } else if (result.event == PlayEvent::TouchDown) {
         out << offense << " " << play_name << " for " << yards_gained << " yards. Touchdown! " << offense << " +7.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
