@@ -12,18 +12,19 @@
 namespace {
 const gridiron::TeamProfile kHome{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.95};
 const gridiron::TeamProfile kAway{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.95};
+const gridiron::Matchup kMatchup{.home = kHome, .away = kAway};
 } // namespace
 
 TEST(BatchRunnerTest, EachGameMatchesStandaloneGameWithItsSeed) {
     const std::uint32_t batchSeed = 1000;
-    const auto results = gridiron::runBatch(kHome, kAway, 10, batchSeed);
+    const auto results = gridiron::runBatch(kMatchup, 10, batchSeed);
     ASSERT_EQ(results.size(), 10u);
 
     for (std::size_t i = 0; i < results.size(); ++i) {
         SCOPED_TRACE(i);
         const std::uint32_t seed = batchSeed + static_cast<std::uint32_t>(i);
         std::mt19937 rng(seed);
-        const auto alone = gridiron::runGame(kHome, kAway, rng);
+        const auto alone = gridiron::runGame(kMatchup, rng);
 
         EXPECT_EQ(results[i].home_score, alone.home_score);
         EXPECT_EQ(results[i].away_score, alone.away_score);
@@ -33,8 +34,8 @@ TEST(BatchRunnerTest, EachGameMatchesStandaloneGameWithItsSeed) {
 
 TEST(BatchRunnerTest, RunBatchTwiceWithSameArgumentsIsSame) {
     const std::uint32_t batchSeed = 1000;
-    const auto results1 = gridiron::runBatch(kHome, kAway, 10, batchSeed);
-    const auto results2 = gridiron::runBatch(kHome, kAway, 10, batchSeed);
+    const auto results1 = gridiron::runBatch(kMatchup, 10, batchSeed);
+    const auto results2 = gridiron::runBatch(kMatchup, 10, batchSeed);
     ASSERT_EQ(results1.size(), 10u);
     ASSERT_EQ(results2.size(), 10u);
 
@@ -49,7 +50,7 @@ TEST(BatchRunnerTest, RunBatchTwiceWithSameArgumentsIsSame) {
 
 TEST(BatchRunnerTest, RunBatchWithLargeSeed) {
     const std::uint32_t batchSeed = std::numeric_limits<std::uint32_t>::max();
-    const auto results = gridiron::runBatch(kHome, kAway, 3, batchSeed);
+    const auto results = gridiron::runBatch(kMatchup, 3, batchSeed);
     ASSERT_EQ(results.size(), 3u);
 
     EXPECT_EQ(results[0].seed, batchSeed);
@@ -59,11 +60,11 @@ TEST(BatchRunnerTest, RunBatchWithLargeSeed) {
 
 TEST(BatchRunnerTest, GameCountEdgeCases) {
     const std::uint32_t batchSeed = 1000;
-    const auto results1 = gridiron::runBatch(kHome, kAway, 0, batchSeed);
+    const auto results1 = gridiron::runBatch(kMatchup, 0, batchSeed);
     EXPECT_TRUE(results1.empty());
-    const auto results2 = gridiron::runBatch(kHome, kAway, -3, batchSeed);
+    const auto results2 = gridiron::runBatch(kMatchup, -3, batchSeed);
     EXPECT_TRUE(results2.empty());
-    const auto results3 = gridiron::runBatch(kHome, kAway, 5, batchSeed);
+    const auto results3 = gridiron::runBatch(kMatchup, 5, batchSeed);
     EXPECT_EQ(results3.size(), 5u);
 }
 
@@ -73,11 +74,11 @@ TEST(BatchRunnerTest, ThreadCountsPreserveResultsAndOrder) {
             SCOPED_TRACE(games);
             SCOPED_TRACE(seed);
 
-            const auto expected = gridiron::runBatch(kHome, kAway, games, seed, 1);
+            const auto expected = gridiron::runBatch(kMatchup, games, seed, 1);
 
             for (const int threads : {2, 4, 8}) {
                 SCOPED_TRACE(threads);
-                const auto actual = gridiron::runBatch(kHome, kAway, games, seed, threads);
+                const auto actual = gridiron::runBatch(kMatchup, games, seed, threads);
 
                 ASSERT_EQ(actual.size(), expected.size());
 
@@ -94,11 +95,11 @@ TEST(BatchRunnerTest, ThreadCountsPreserveResultsAndOrder) {
 }
 
 TEST(BatchRunnerTest, RejectsNonpositiveThreadCounts) {
-    EXPECT_THROW(gridiron::runBatch(kHome, kAway, 10, 1000, 0), std::invalid_argument);
-    EXPECT_THROW(gridiron::runBatch(kHome, kAway, 10, 1000, -1), std::invalid_argument);
+    EXPECT_THROW(gridiron::runBatch(kMatchup, 10, 1000, 0), std::invalid_argument);
+    EXPECT_THROW(gridiron::runBatch(kMatchup, 10, 1000, -1), std::invalid_argument);
 }
 
 TEST(BatchRunnerTest, EmptyBatchesWithMultipleThreads) {
-    EXPECT_TRUE(gridiron::runBatch(kHome, kAway, 0, 1000, 8).empty());
-    EXPECT_TRUE(gridiron::runBatch(kHome, kAway, -3, 1000, 8).empty());
+    EXPECT_TRUE(gridiron::runBatch(kMatchup, 0, 1000, 8).empty());
+    EXPECT_TRUE(gridiron::runBatch(kMatchup, -3, 1000, 8).empty());
 }

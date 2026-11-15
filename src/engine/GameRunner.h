@@ -4,9 +4,9 @@
 #include <random>
 
 #include "GameState.h"
+#include "Matchup.h"
 #include "PlayOutcome.h"
 #include "PlayResult.h"
-#include "TeamProfile.h"
 
 namespace gridiron {
 
@@ -15,10 +15,10 @@ namespace gridiron {
 using PlayObserver = std::function<void(const GameState& before, const PlayOutcome& outcome, const PlayResult& after)>;
 
 // Simulate four quarters using the caller's random engine; ties are allowed.
-GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng);
+GameState runGame(const Matchup& matchup, std::mt19937& rng);
 
 // Same as above, but reports every play to onPlay. Draws the same random
 // numbers, so a given seed produces the same game with or without an observer.
-GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng, const PlayObserver& onPlay);
+GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver& onPlay);
 
 } // namespace gridiron

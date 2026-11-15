@@ -6,9 +6,10 @@
 TEST(GameRunTest, GameOverTrue) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = home, .away = away};
     std::mt19937 rng(2000);
 
-    gridiron::GameState playGame = gridiron::runGame(home, away, rng);
+    gridiron::GameState playGame = gridiron::runGame(matchup, rng);
 
     EXPECT_TRUE(playGame.game_over);
     EXPECT_EQ(playGame.quarter, 4);
@@ -18,11 +19,12 @@ TEST(GameRunTest, GameOverTrue) {
 TEST(GameRunTest, SameSeedFinalState) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = home, .away = away};
     std::mt19937 rng1(2000);
     std::mt19937 rng2(2000);
 
-    gridiron::GameState playGame1 = gridiron::runGame(home, away, rng1);
-    gridiron::GameState playGame2 = gridiron::runGame(home, away, rng2);
+    gridiron::GameState playGame1 = gridiron::runGame(matchup, rng1);
+    gridiron::GameState playGame2 = gridiron::runGame(matchup, rng2);
 
     EXPECT_EQ(playGame1.home_score, playGame2.home_score);
     EXPECT_EQ(playGame1.away_score, playGame2.away_score);
@@ -40,11 +42,12 @@ TEST(GameRunTest, SameSeedFinalState) {
 TEST(GameRunTest, DifferentSeedFinalState) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = home, .away = away};
     std::mt19937 rng1(2000);
     std::mt19937 rng2(4891);
 
-    gridiron::GameState playGame1 = gridiron::runGame(home, away, rng1);
-    gridiron::GameState playGame2 = gridiron::runGame(home, away, rng2);
+    gridiron::GameState playGame1 = gridiron::runGame(matchup, rng1);
+    gridiron::GameState playGame2 = gridiron::runGame(matchup, rng2);
 
     EXPECT_NE(playGame1.home_score, playGame2.home_score);
     EXPECT_NE(playGame1.away_score, playGame2.away_score);
@@ -58,13 +61,14 @@ TEST(GameRunTest, DifferentSeedFinalState) {
 TEST(GameRunTest, RepeatAfterUnrelated) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = home, .away = away};
     std::mt19937 rng1(2000);
     std::mt19937 rng2(4891);
     std::mt19937 rng3(2000);
 
-    gridiron::GameState playGame1 = gridiron::runGame(home, away, rng1);
-    gridiron::GameState playGame2 = gridiron::runGame(home, away, rng2);
-    gridiron::GameState playGame3 = gridiron::runGame(home, away, rng3);
+    gridiron::GameState playGame1 = gridiron::runGame(matchup, rng1);
+    gridiron::runGame(matchup, rng2);
+    gridiron::GameState playGame3 = gridiron::runGame(matchup, rng3);
 
     EXPECT_EQ(playGame1.home_score, playGame3.home_score);
     EXPECT_EQ(playGame1.away_score, playGame3.away_score);
@@ -82,10 +86,11 @@ TEST(GameRunTest, RepeatAfterUnrelated) {
 TEST(GameRunTest, MultiSeedTermination) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = home, .away = away};
     for (unsigned seed : {2000u, 3500u, 5420u, 1290u, 9832u}) {
         SCOPED_TRACE(seed);
         std::mt19937 rng(seed);
-        const auto state = gridiron::runGame(home, away, rng);
+        const auto state = gridiron::runGame(matchup, rng);
         EXPECT_TRUE(state.game_over);
         EXPECT_EQ(state.quarter, 4);
         EXPECT_EQ(state.time_remaining_seconds, 0);
@@ -103,12 +108,13 @@ TEST(GameRunTest, MultiSeedTermination) {
 TEST(GameRunTest, OpeningCoinToss) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = home, .away = away};
     bool sawHome = false;
     bool sawAway = false;
     for (unsigned i = 0; i < 50; ++i) {
 
         std::mt19937 rng(i);
-        gridiron::GameState playGame = gridiron::runGame(home, away, rng);
+        gridiron::GameState playGame = gridiron::runGame(matchup, rng);
         if (playGame.opening_possession == gridiron::Possession::Home) {
             sawHome = true;
         } else if (playGame.opening_possession == gridiron::Possession::Away) {
@@ -119,35 +125,13 @@ TEST(GameRunTest, OpeningCoinToss) {
     EXPECT_TRUE(sawAway);
 }
 
-TEST(GameRunTest, PreserveTeamIdentity) {
-    gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
-    gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
-    std::mt19937 rng(2000);
-
-    gridiron::GameState playGame = gridiron::runGame(home, away, rng);
-
-    EXPECT_EQ(playGame.home.name, home.name);
-    EXPECT_EQ(playGame.home.offensive_pass_rating, home.offensive_pass_rating);
-    EXPECT_EQ(playGame.home.defensive_pass_rating, home.defensive_pass_rating);
-    EXPECT_EQ(playGame.home.defensive_run_rating, home.defensive_run_rating);
-    EXPECT_EQ(playGame.home.offensive_run_rating, home.offensive_run_rating);
-    EXPECT_EQ(playGame.home.turnover_rate, home.turnover_rate);
-    EXPECT_EQ(playGame.home.field_goal_rating, home.field_goal_rating);
-    EXPECT_EQ(playGame.away.name, away.name);
-    EXPECT_EQ(playGame.away.offensive_pass_rating, away.offensive_pass_rating);
-    EXPECT_EQ(playGame.away.defensive_pass_rating, away.defensive_pass_rating);
-    EXPECT_EQ(playGame.away.defensive_run_rating, away.defensive_run_rating);
-    EXPECT_EQ(playGame.away.offensive_run_rating, away.offensive_run_rating);
-    EXPECT_EQ(playGame.away.turnover_rate, away.turnover_rate);
-    EXPECT_EQ(playGame.away.field_goal_rating, away.field_goal_rating);
-}
-
 TEST(GameRunTest, AdvancesCallerRng) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = home, .away = away};
     std::mt19937 rng(2000);
 
-    gridiron::GameState playGame = gridiron::runGame(home, away, rng);
+    gridiron::runGame(matchup, rng);
 
     std::mt19937 newRng(2000);
 
@@ -158,9 +142,10 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
     // Best home possible team vs worst away possible team
     gridiron::TeamProfile homeBest{"BAL", 1.0, 1.0, 1.0, 1.0, 0.0, 1.0};
     gridiron::TeamProfile awayWorst{"SEA", 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
+    gridiron::Matchup matchup1{.home = homeBest, .away = awayWorst};
     std::mt19937 rng1(2000);
 
-    gridiron::GameState playGameBestWorst = gridiron::runGame(homeBest, awayWorst, rng1);
+    gridiron::GameState playGameBestWorst = gridiron::runGame(matchup1, rng1);
 
     EXPECT_TRUE(playGameBestWorst.game_over);
     EXPECT_EQ(playGameBestWorst.quarter, 4);
@@ -169,9 +154,10 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
     // Best away possible team vs worst home possible team
     gridiron::TeamProfile homeWorst{"SEA", 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
     gridiron::TeamProfile awayBest{"BAL", 1.0, 1.0, 1.0, 1.0, 0.0, 1.0};
+    gridiron::Matchup matchup2{.home = homeWorst, .away = awayBest};
     std::mt19937 rng2(2000);
 
-    gridiron::GameState playGameWorstBest = gridiron::runGame(homeWorst, awayBest, rng2);
+    gridiron::GameState playGameWorstBest = gridiron::runGame(matchup2, rng2);
 
     EXPECT_TRUE(playGameWorstBest.game_over);
     EXPECT_EQ(playGameWorstBest.quarter, 4);
@@ -180,9 +166,10 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
     // Turnover rates at highest
     gridiron::TeamProfile homeTurnover{"BAL", 0.8, 0.7, 0.8, 0.7, 1.0, 0.8};
     gridiron::TeamProfile awayTurnover{"SEA", 0.7, 0.9, 0.9, 0.5, 1.0, 0.8};
+    gridiron::Matchup matchup3{.home = homeTurnover, .away = awayTurnover};
     std::mt19937 rng3(2000);
 
-    gridiron::GameState playGameTurnover = gridiron::runGame(homeTurnover, awayTurnover, rng3);
+    gridiron::GameState playGameTurnover = gridiron::runGame(matchup3, rng3);
 
     EXPECT_TRUE(playGameTurnover.game_over);
     EXPECT_EQ(playGameTurnover.quarter, 4);
@@ -191,9 +178,10 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
     // Turnover rates at lowest
     gridiron::TeamProfile homeNoTurnover{"BAL", 0.8, 0.7, 0.8, 0.7, 0.0, 0.8};
     gridiron::TeamProfile awayNoTurnover{"SEA", 0.7, 0.9, 0.9, 0.5, 0.0, 0.8};
+    gridiron::Matchup matchup4{.home = homeNoTurnover, .away = awayNoTurnover};
     std::mt19937 rng4(2000);
 
-    gridiron::GameState playGameNoTurnover = gridiron::runGame(homeNoTurnover, awayNoTurnover, rng4);
+    gridiron::GameState playGameNoTurnover = gridiron::runGame(matchup4, rng4);
 
     EXPECT_TRUE(playGameNoTurnover.game_over);
     EXPECT_EQ(playGameNoTurnover.quarter, 4);

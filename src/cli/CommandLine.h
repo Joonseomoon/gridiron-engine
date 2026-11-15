@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../engine/TeamProfile.h"
+#include "../engine/Matchup.h"
 
 #include <cstdint>
 #include <optional>
@@ -16,11 +16,6 @@ struct Options {
     std::optional<int> games;
     std::optional<std::string> out;
     int threads = 1;
-};
-
-struct Matchup {
-    TeamProfile home;
-    TeamProfile away;
 };
 
 constexpr int kMaxGames = 1'000'000;

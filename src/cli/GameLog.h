@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../engine/GameState.h"
+#include "../engine/Matchup.h"
 #include "../engine/PlayOutcome.h"
 #include "../engine/PlayResult.h"
 #include "../engine/SimulationResult.h"
@@ -9,7 +10,8 @@
 
 namespace gridiron {
 
-void printPlay(std::ostream& out, const GameState& before, const PlayOutcome& outcome, const PlayResult& result);
+void printPlay(std::ostream& out, const GameState& before, const Matchup& matchup, const PlayOutcome& outcome,
+               const PlayResult& result);
 
 void printFinalResult(std::ostream& out, const std::string& homeName, const std::string& awayName,
                       const SimulationResult& result);

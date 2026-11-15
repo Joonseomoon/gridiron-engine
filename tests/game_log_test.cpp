@@ -6,8 +6,7 @@
 
 TEST(GameLogTest, HomeTeamBallFirstAndPlay) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 1;
     before.time_remaining_seconds = 900;
@@ -17,7 +16,7 @@ TEST(GameLogTest, HomeTeamBallFirstAndPlay) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q1 15:00 - Game Start. BAL receives the football.\n"
                             "Q1 14:32 - BAL run for 6 yards. 2nd & 4 on BAL 31.\n");
@@ -25,8 +24,7 @@ TEST(GameLogTest, HomeTeamBallFirstAndPlay) {
 
 TEST(GameLogTest, AwayTeamBallFirstAndPlay) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Away;
     before.quarter = 1;
     before.time_remaining_seconds = 900;
@@ -36,7 +34,7 @@ TEST(GameLogTest, AwayTeamBallFirstAndPlay) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q1 15:00 - Game Start. SEA receives the football.\n"
                             "Q1 14:32 - SEA run for 6 yards. 2nd & 4 on SEA 31.\n");
@@ -44,8 +42,7 @@ TEST(GameLogTest, AwayTeamBallFirstAndPlay) {
 
 TEST(GameLogTest, RunPlay) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Away;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -58,15 +55,14 @@ TEST(GameLogTest, RunPlay) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - SEA run for 6 yards. 3rd & 2 on SEA 46.\n");
 }
 
 TEST(GameLogTest, PassPlay) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -79,15 +75,14 @@ TEST(GameLogTest, PassPlay) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for 6 yards. 3rd & 2 on BAL 46.\n");
 }
 
 TEST(GameLogTest, FirstDown) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -100,15 +95,14 @@ TEST(GameLogTest, FirstDown) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for 6 yards. First down! 1st & 10 on BAL 31.\n");
 }
 
 TEST(GameLogTest, FieldGoalGood) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -121,7 +115,7 @@ TEST(GameLogTest, FieldGoalGood) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL field goal attempt from 47 yards: GOOD. BAL +3.\n"
                             "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (kickoff).\n");
@@ -129,8 +123,7 @@ TEST(GameLogTest, FieldGoalGood) {
 
 TEST(GameLogTest, FieldGoalMissed) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -143,7 +136,7 @@ TEST(GameLogTest, FieldGoalMissed) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL field goal attempt from 47 yards: MISSED. Turnover.\n"
                             "Q3 12:07 - SEA ball on SEA 30, 1st & 10.\n");
@@ -151,8 +144,7 @@ TEST(GameLogTest, FieldGoalMissed) {
 
 TEST(GameLogTest, TurnoveronDowns) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -165,7 +157,7 @@ TEST(GameLogTest, TurnoveronDowns) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for 0 yards. Short of the first down. Turnover on downs.\n"
                             "Q3 12:07 - SEA ball on midfield, 1st & 10.\n");
@@ -173,8 +165,7 @@ TEST(GameLogTest, TurnoveronDowns) {
 
 TEST(GameLogTest, Safety) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -187,7 +178,7 @@ TEST(GameLogTest, Safety) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for -2 yards. Safety! SEA +2.\n"
                             "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (kickoff).\n");
@@ -195,8 +186,7 @@ TEST(GameLogTest, Safety) {
 
 TEST(GameLogTest, FumbleNormal) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -209,7 +199,7 @@ TEST(GameLogTest, FumbleNormal) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL fumble recovered by SEA. Turnover.\n"
                             "Q3 12:07 - SEA ball on BAL 40, 1st & 10.\n");
@@ -217,8 +207,7 @@ TEST(GameLogTest, FumbleNormal) {
 
 TEST(GameLogTest, FumbleTouchBack) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -231,7 +220,7 @@ TEST(GameLogTest, FumbleTouchBack) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL fumble recovered by SEA. Touchback.\n"
                             "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (touchback).\n");
@@ -239,8 +228,7 @@ TEST(GameLogTest, FumbleTouchBack) {
 
 TEST(GameLogTest, FumbleDefensiveTouchdown) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -253,7 +241,7 @@ TEST(GameLogTest, FumbleDefensiveTouchdown) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL fumble recovered by SEA. Defensive touchdown! SEA +7.\n"
                             "Q3 12:07 - BAL ball on BAL 25, 1st & 10 (kickoff).\n");
@@ -261,8 +249,7 @@ TEST(GameLogTest, FumbleDefensiveTouchdown) {
 
 TEST(GameLogTest, InterceptionNormal) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -275,7 +262,7 @@ TEST(GameLogTest, InterceptionNormal) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass intercepted by SEA. Turnover.\n"
                             "Q3 12:07 - SEA ball on BAL 40, 1st & 10.\n");
@@ -283,8 +270,7 @@ TEST(GameLogTest, InterceptionNormal) {
 
 TEST(GameLogTest, InterceptionTouchBack) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -297,7 +283,7 @@ TEST(GameLogTest, InterceptionTouchBack) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass intercepted by SEA. Touchback.\n"
                             "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (touchback).\n");
@@ -305,8 +291,7 @@ TEST(GameLogTest, InterceptionTouchBack) {
 
 TEST(GameLogTest, InterceptionDefensiveTouchdown) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -319,7 +304,7 @@ TEST(GameLogTest, InterceptionDefensiveTouchdown) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass intercepted by SEA. Defensive touchdown! SEA +7.\n"
                             "Q3 12:07 - BAL ball on BAL 25, 1st & 10 (kickoff).\n");
@@ -327,8 +312,7 @@ TEST(GameLogTest, InterceptionDefensiveTouchdown) {
 
 TEST(GameLogTest, OffenseTouchdown) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -341,7 +325,7 @@ TEST(GameLogTest, OffenseTouchdown) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for 5 yards. Touchdown! BAL +7.\n"
                             "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (kickoff).\n");
@@ -349,8 +333,7 @@ TEST(GameLogTest, OffenseTouchdown) {
 
 TEST(GameLogTest, DownAndGoal) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 760;
@@ -363,15 +346,14 @@ TEST(GameLogTest, DownAndGoal) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for 5 yards. First down! 1st & goal on SEA 7.\n");
 }
 
 TEST(GameLogTest, QuarterEnd) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.possession = gridiron::Possession::Home;
     before.quarter = 3;
     before.time_remaining_seconds = 20;
@@ -384,7 +366,7 @@ TEST(GameLogTest, QuarterEnd) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 0:00 - BAL pass for 5 yards.\n"
                             "Q3 0:00 - End of quarter.\n"
@@ -393,8 +375,7 @@ TEST(GameLogTest, QuarterEnd) {
 
 TEST(GameLogTest, HalftimeRegular) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.opening_possession = gridiron::Possession::Home;
     before.possession = gridiron::Possession::Home;
     before.quarter = 2;
@@ -408,7 +389,7 @@ TEST(GameLogTest, HalftimeRegular) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q2 0:00 - BAL pass for 5 yards.\n"
                             "Q2 0:00 - Halftime.\n"
@@ -417,8 +398,7 @@ TEST(GameLogTest, HalftimeRegular) {
 
 TEST(GameLogTest, HalftimeTouchdown) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.opening_possession = gridiron::Possession::Away;
     before.possession = gridiron::Possession::Home;
     before.quarter = 2;
@@ -432,7 +412,7 @@ TEST(GameLogTest, HalftimeTouchdown) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q2 0:00 - BAL pass for 5 yards. Touchdown! BAL +7.\n"
                             "Q2 0:00 - Halftime.\n"
@@ -441,8 +421,7 @@ TEST(GameLogTest, HalftimeTouchdown) {
 
 TEST(GameLogTest, EndofGame) {
     gridiron::GameState before;
-    before.home.name = "BAL";
-    before.away.name = "SEA";
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
     before.opening_possession = gridiron::Possession::Away;
     before.possession = gridiron::Possession::Home;
     before.quarter = 4;
@@ -456,7 +435,7 @@ TEST(GameLogTest, EndofGame) {
     const auto result = gridiron::applyOutcome(before, outcome);
 
     std::ostringstream output;
-    gridiron::printPlay(output, before, outcome, result);
+    gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q4 0:00 - BAL pass for 5 yards.\n"
                             "Q4 0:00 - Game End.\n");

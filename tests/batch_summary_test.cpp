@@ -249,8 +249,9 @@ TEST(BatchSummaryTest, ConvergenceLastPointMatchesAggregate) {
 TEST(BatchSummaryTest, ConvergenceIntervalNarrowsWithMoreGames) {
     const gridiron::TeamProfile home{"BAL", 0.8, 0.8, 0.8, 0.7, 0.03, 0.94};
     const gridiron::TeamProfile away{"SEA", 0.7, 0.8, 0.9, 0.8, 0.02, 0.95};
+    const gridiron::Matchup matchup{.home = home, .away = away};
 
-    const auto points = gridiron::convergence(gridiron::runBatch(home, away, 2500, 1000));
+    const auto points = gridiron::convergence(gridiron::runBatch(matchup, 2500, 1000));
     ASSERT_EQ(stopsOf(points), (std::vector<int>{10, 100, 1000, 2500}));
 
     // 25x the games should shrink the interval about 5x (sqrt(25)); allow slack because p itself moves.

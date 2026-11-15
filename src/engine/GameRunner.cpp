@@ -9,14 +9,12 @@
 
 namespace gridiron {
 
-GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng) {
-    return runGame(home, away, rng, PlayObserver{});
+GameState runGame(const Matchup& matchup, std::mt19937& rng) {
+    return runGame(matchup, rng, PlayObserver{});
 }
 
-GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937& rng, const PlayObserver& onPlay) {
+GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver& onPlay) {
     GameState state;
-    state.home = home;
-    state.away = away;
 
     std::bernoulli_distribution coinToss(0.5);
     state.opening_possession = coinToss(rng) ? Possession::Home : Possession::Away;
@@ -32,7 +30,7 @@ GameState runGame(const TeamProfile& home, const TeamProfile& away, std::mt19937
         if (plays >= maximumPlays) {
             throw std::runtime_error("Game exceeded maximum play count");
         }
-        const PlayOutcome outcome = samplePlayOutcome(state, random);
+        const PlayOutcome outcome = samplePlayOutcome(state, matchup, random);
         if (onPlay) {
             const GameState before = state;
 

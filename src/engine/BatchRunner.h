@@ -1,10 +1,9 @@
 #pragma once
 
+#include "Matchup.h"
 #include "SimulationResult.h"
-#include "TeamProfile.h"
 #include <vector>
 
 namespace gridiron {
-std::vector<SimulationResult> runBatch(const TeamProfile& home, const TeamProfile& away, int games,
-                                       std::uint32_t batchSeed, int threads = 1);
+std::vector<SimulationResult> runBatch(const Matchup& matchup, int games, std::uint32_t batchSeed, int threads = 1);
 } // namespace gridiron

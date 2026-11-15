@@ -42,10 +42,12 @@ std::string shellQuote(const std::string& argument) {
 
 void runSingleGame(const gridiron::Matchup& matchup, std::uint32_t seed) {
     std::mt19937 rng(seed);
-    const gridiron::GameState result = gridiron::runGame(
-        matchup.home, matchup.away, rng,
-        [](const gridiron::GameState& before, const gridiron::PlayOutcome& outcome,
-           const gridiron::PlayResult& playResult) { gridiron::printPlay(std::cout, before, outcome, playResult); });
+    const gridiron::GameState result =
+        gridiron::runGame(matchup, rng,
+                          [&matchup](const gridiron::GameState& before, const gridiron::PlayOutcome& outcome,
+                                     const gridiron::PlayResult& playResult) {
+                              gridiron::printPlay(std::cout, before, matchup, outcome, playResult);
+                          });
 
     const auto summary = gridiron::toResult(result, seed);
 
@@ -56,7 +58,7 @@ int runBatchMode(const gridiron::Matchup& matchup, int games, std::uint32_t batc
                  const std::optional<std::string>& outputPath, const std::string& commandLine, int threads) {
     std::cout << matchup.home.name << " vs " << matchup.away.name << ", " << games << " games, batch seed " << batchSeed
               << "\n";
-    const auto results = gridiron::runBatch(matchup.home, matchup.away, games, batchSeed, threads);
+    const auto results = gridiron::runBatch(matchup, games, batchSeed, threads);
     const auto summary = gridiron::aggregate(results);
     gridiron::printBatchSummary(std::cout, matchup.home.name, matchup.away.name, summary);
 

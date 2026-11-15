@@ -15,6 +15,7 @@ const char* toString(gridiron::PlayType type) {
     case gridiron::PlayType::Run: return "Run";
     case gridiron::PlayType::Pass: return "Pass";
     case gridiron::PlayType::FieldGoalAttempt: return "FieldGoalAttempt";
+    case gridiron::PlayType::Punt: return "Punt";
     }
     return "Unknown";
 }
@@ -24,6 +25,8 @@ const char* toString(gridiron::OutcomeType type) {
     case gridiron::OutcomeType::Normal: return "Normal";
     case gridiron::OutcomeType::Turnover: return "Turnover";
     case gridiron::OutcomeType::FieldGoalMade: return "FieldGoalMade";
+    case gridiron::OutcomeType::Incomplete: return "Incomplete";
+    case gridiron::OutcomeType::Punted: return "Punted";
     }
     return "Unknown";
 }
@@ -34,15 +37,14 @@ const char* toString(gridiron::OutcomeType type) {
 TEST(IntegrationTest, SampleOneEventAndApplyIt) {
     gridiron::TeamProfile offense{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile defense{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    gridiron::Matchup matchup{.home = offense, .away = defense};
 
     gridiron::GameState state;
-    state.home = offense;
-    state.away = defense;
 
     std::mt19937 rng(2000);
 
     gridiron::RandomSource random{rng};
-    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, random);
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, matchup, random);
     auto result = gridiron::applyOutcome(state, outcome);
     auto& newState = result.state;
 
@@ -70,15 +72,16 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
 TEST(IntegrationTest, FieldGoalAttemptRunsEndToEnd) {
     gridiron::TeamProfile kicking{.name = "BAL", .field_goal_rating = 0.95};
     gridiron::TeamProfile defending{.name = "SEA"};
+    gridiron::Matchup matchup{.home = kicking, .away = defending};
 
     // 20 yards to the goal is a 37 yard kick, so a make and a miss leave the
     // ball on different yard lines (25 versus 20) and are distinguishable.
-    const auto state = gridiron::GameState{.home = kicking, .away = defending, .down = 4, .ball_position = 80};
+    const auto state = gridiron::GameState{.down = 4, .ball_position = 80};
 
     std::mt19937 rng(7);
 
     gridiron::RandomSource random{rng};
-    const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, random);
+    const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, matchup, random);
     ASSERT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
 
     auto result = gridiron::applyOutcome(state, outcome);

@@ -71,10 +71,10 @@ PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal
                        .elapsed_seconds = samplePlayTime(0, random)};
 }
 
-PlayOutcome samplePlayOutcome(const GameState& gameState, RandomSource& random) {
+PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random) {
     PlayType playType = choosePlayType(gameState, random);
-    const TeamProfile& offense = (gameState.possession == Possession::Home) ? gameState.home : gameState.away;
-    const TeamProfile& defense = (gameState.possession == Possession::Home) ? gameState.away : gameState.home;
+    const TeamProfile& offense = (gameState.possession == Possession::Home) ? matchup.home : matchup.away;
+    const TeamProfile& defense = (gameState.possession == Possession::Home) ? matchup.away : matchup.home;
 
     switch (playType) {
     case PlayType::Pass: return samplePassOutcome(offense, defense, random);
@@ -83,6 +83,7 @@ PlayOutcome samplePlayOutcome(const GameState& gameState, RandomSource& random) 
         const int distanceToGoal = 100 - gameState.ball_position;
         return sampleFieldGoalOutcome(offense, distanceToGoal, random);
     }
+    case PlayType::Punt: throw std::logic_error("punt not implemented");
     }
     throw std::logic_error("unhandled PlayType in samplePlayOutcome");
 }
