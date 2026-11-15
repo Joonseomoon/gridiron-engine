@@ -1,5 +1,6 @@
 #include "../src/engine/ApplyOutcome.h"
 #include "../src/engine/GameState.h"
+#include "../src/engine/ModelConstants.h"
 #include "../src/engine/PlayOutcome.h"
 #include "../src/engine/PlayResult.h"
 #include <gtest/gtest.h>
@@ -908,4 +909,172 @@ TEST(ApplyOutcomeInPlaceTest, SummaryResetsBetweenPlays) {
     EXPECT_EQ(second.event, gridiron::PlayEvent::Normal);
     EXPECT_EQ(second.turnover, gridiron::TurnoverKind::None);
     EXPECT_EQ(second.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntFromMidfield) {
+    auto curr_state = gridiron::GameState{.ball_position = 50};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 9);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntLandsAt99Yards) {
+    auto curr_state = gridiron::GameState{.ball_position = 60};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 39, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 1);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntLandsAtExactly100Yards) {
+    auto curr_state = gridiron::GameState{.ball_position = 59};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, gridiron::kPuntTouchbackSpot);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Touchback);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, DownedInsideThe10) {
+    auto curr_state = gridiron::GameState{.ball_position = 50};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 45, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 5);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, LandingAtExactly0Yards) {
+    auto curr_state = gridiron::GameState{.ball_position = 10};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, -10, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, gridiron::kKickoffSpot);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 7);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::PuntReturnTouchdown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, LandingAtExactly1Yard) {
+    auto curr_state = gridiron::GameState{.ball_position = 10};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, -9, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 1);
+    EXPECT_EQ(newState.ball_position, 99);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, AwayTeamPunting) {
+    auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 34);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntEndsHalf) {
+    auto curr_state = gridiron::GameState{.quarter = 2, .time_remaining_seconds = 4};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 3);
+    EXPECT_EQ(newState.time_remaining_seconds, 900);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, gridiron::kKickoffSpot);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
 }

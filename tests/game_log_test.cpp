@@ -1,5 +1,6 @@
 #include "../src/cli/GameLog.h"
 #include "../src/engine/ApplyOutcome.h"
+#include "../src/engine/ModelConstants.h"
 
 #include <gtest/gtest.h>
 #include <sstream>
@@ -502,4 +503,64 @@ TEST(GameLogTest, PrintFinalResultTie) {
                             "\n"
                             "Winner: Tie\n"
                             "Seed: 2000\n");
+}
+
+TEST(GameLogTest, Punt) {
+    gridiron::GameState before;
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
+    before.possession = gridiron::Possession::Home;
+    before.quarter = 2;
+    before.time_remaining_seconds = 400;
+    before.down = 4;
+    before.ball_position = 50;
+
+    gridiron::PlayOutcome outcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+
+    const auto result = gridiron::applyOutcome(before, outcome);
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q2 6:34 - BAL punts 41 yards net.\n"
+                            "Q2 6:34 - SEA ball on SEA 9, 1st & 10.\n");
+}
+
+TEST(GameLogTest, PuntTouchBack) {
+    gridiron::GameState before;
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
+    before.possession = gridiron::Possession::Home;
+    before.quarter = 2;
+    before.time_remaining_seconds = 400;
+    before.down = 4;
+    before.ball_position = 59;
+
+    gridiron::PlayOutcome outcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+
+    const auto result = gridiron::applyOutcome(before, outcome);
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q2 6:34 - BAL punts into the end zone. Touchback.\n"
+                            "Q2 6:34 - SEA ball on SEA 20, 1st & 10 (touchback).\n");
+}
+
+TEST(GameLogTest, PuntReturnTouchdown) {
+    gridiron::GameState before;
+    const gridiron::Matchup matchup{.home = {.name = "BAL"}, .away = {.name = "SEA"}};
+    before.possession = gridiron::Possession::Home;
+    before.quarter = 2;
+    before.time_remaining_seconds = 400;
+    before.down = 4;
+    before.ball_position = 10;
+
+    gridiron::PlayOutcome outcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, -15, gridiron::kPuntSeconds};
+
+    const auto result = gridiron::applyOutcome(before, outcome);
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q2 6:34 - BAL punt returned for a touchdown by SEA! SEA +7.\n"
+                            "Q2 6:34 - BAL ball on BAL 25, 1st & 10 (kickoff).\n");
 }

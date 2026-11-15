@@ -3,6 +3,7 @@
 #include <cmath>
 #include <vector>
 
+#include "../src/engine/ModelConstants.h"
 #include "../src/engine/OutcomeSampler.h"
 #include "../src/engine/RandomSource.h"
 
@@ -438,4 +439,27 @@ TEST_F(OutcomeSamplerTest, FieldGoalClockRespectsFloorAndMean) {
         ASSERT_GE(time, 10);
     }
     EXPECT_NEAR(mean(times), 20.0, 0.5);
+}
+
+TEST_F(OutcomeSamplerTest, PuntAlwaysReportsPuntWithFixedPlayTime) {
+    std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
+    for (int i = 0; i < kSamples; ++i) {
+        const gridiron::PlayOutcome outcome = gridiron::samplePuntOutcome(random);
+        ASSERT_EQ(outcome.play_type, gridiron::PlayType::Punt);
+        ASSERT_EQ(outcome.outcome_type, gridiron::OutcomeType::Punted);
+        ASSERT_EQ(outcome.elapsed_seconds, gridiron::kPuntSeconds);
+    }
+}
+
+TEST_F(OutcomeSamplerTest, PuntYardageMatchesConstants) {
+    std::mt19937 rng(kSeed);
+    gridiron::RandomSource random{rng};
+    std::vector<int> yards;
+    yards.reserve(kSamples);
+    for (int i = 0; i < kSamples; ++i) {
+        yards.push_back(gridiron::samplePuntOutcome(random).yards_gained);
+    }
+    EXPECT_NEAR(mean(yards), gridiron::kPuntNetMeanYards, 0.3);
+    EXPECT_NEAR(stddev(yards), gridiron::kPuntNetSdYards, 0.3);
 }
