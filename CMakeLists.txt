@@ -34,6 +34,7 @@ add_library(gridiron_core
         src/engine/SimulationResult.cpp
         src/engine/BatchRunner.cpp
         src/engine/ParallelFor.cpp
+        src/engine/DefaultPolicy.cpp
 )
 target_link_libraries(gridiron_core PRIVATE gridiron_warnings Threads::Threads)
 add_library(gridiron_cli

@@ -7,6 +7,7 @@
 #include "Matchup.h"
 #include "PlayOutcome.h"
 #include "PlayResult.h"
+#include "Policy.h"
 
 namespace gridiron {
 
@@ -20,5 +21,7 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng);
 // Same as above, but reports every play to onPlay. Draws the same random
 // numbers, so a given seed produces the same game with or without an observer.
 GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver& onPlay);
+
+GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& policies, const PlayObserver& onPlay);
 
 } // namespace gridiron
