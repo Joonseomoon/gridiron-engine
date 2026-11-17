@@ -119,10 +119,11 @@ TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsRunOrPassInFieldGoalRangeBeforeF
 }
 
 TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesFieldGoalAttempt) {
+    gridiron::Matchup matchup{.home = offense, .away = defense};
     std::mt19937 rng(42);
     gridiron::RandomSource random{rng};
-    auto gameState = gridiron::GameState{.home = offense, .away = defense, .down = 4, .ball_position = 75};
-    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, random);
+    auto gameState = gridiron::GameState{.down = 4, .ball_position = 75};
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, matchup, random);
     EXPECT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
 }
 
@@ -296,7 +297,7 @@ TEST_F(OutcomeSamplerTest, BigPlayTimeUsesLongerDistribution) {
 TEST_F(OutcomeSamplerTest, ChoosePlayTypeSplitsRunAndPassRoughlyEvenly) {
     std::mt19937 rng(kSeed);
     gridiron::RandomSource random{rng};
-    auto gameState = gridiron::GameState{.home = offense, .away = defense};
+    gridiron::GameState gameState;
     int runs = 0;
     for (int i = 0; i < kSamples; ++i) {
         if (gridiron::choosePlayType(gameState, random) == gridiron::PlayType::Run) {
@@ -307,12 +308,13 @@ TEST_F(OutcomeSamplerTest, ChoosePlayTypeSplitsRunAndPassRoughlyEvenly) {
 }
 
 TEST_F(OutcomeSamplerTest, SamplePlayOutcomeProducesBothRunAndPass) {
+    gridiron::Matchup matchup{.home = offense, .away = defense};
     std::mt19937 rng(kSeed);
     gridiron::RandomSource random{rng};
-    auto gameState = gridiron::GameState{.home = offense, .away = defense};
+    gridiron::GameState gameState;
     int runs = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::samplePlayOutcome(gameState, random).play_type == gridiron::PlayType::Run) {
+        if (gridiron::samplePlayOutcome(gameState, matchup, random).play_type == gridiron::PlayType::Run) {
             ++runs;
         }
     }
@@ -324,14 +326,15 @@ TEST_F(OutcomeSamplerTest, SamplePlayOutcomeProducesBothRunAndPass) {
 // the split is symmetric and the reported play type follows whichever sampler
 // ran, so swapping is invisible in aggregate.
 TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesToTheChosenPlayType) {
-    auto gameState = gridiron::GameState{.home = offense, .away = defense};
+    gridiron::Matchup matchup{.home = offense, .away = defense};
+    gridiron::GameState gameState;
     for (unsigned seed = 1; seed <= 50; ++seed) {
         std::mt19937 decisionRng(seed);
         std::mt19937 outcomeRng(seed);
         gridiron::RandomSource decisionRandom{decisionRng};
         gridiron::RandomSource outcomeRandom{outcomeRng};
         const gridiron::PlayType chosen = gridiron::choosePlayType(gameState, decisionRandom);
-        const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, outcomeRandom);
+        const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, matchup, outcomeRandom);
         EXPECT_EQ(outcome.play_type, chosen) << "seed " << seed;
     }
 }

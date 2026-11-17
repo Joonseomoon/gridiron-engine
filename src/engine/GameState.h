@@ -1,17 +1,15 @@
 #pragma once
 
-#include "TeamProfile.h"
-
 namespace gridiron {
 
 enum class Possession { Home, Away };
 
 struct GameState {
-    TeamProfile home;
-    TeamProfile away;
-
     int quarter = 1;
     int time_remaining_seconds = 15 * 60;
+
+    int home_timeouts = 3;
+    int away_timeouts = 3;
 
     Possession opening_possession = Possession::Home;
     Possession possession = Possession::Home;

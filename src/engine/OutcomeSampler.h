@@ -1,13 +1,14 @@
 #pragma once
 
 #include "GameState.h"
+#include "Matchup.h"
 #include "PlayOutcome.h"
 #include "RandomSource.h"
 #include "TeamProfile.h"
 
 namespace gridiron {
 
-PlayOutcome samplePlayOutcome(const GameState& gameState, RandomSource& random);
+PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random);
 
 PlayType choosePlayType(const GameState& gameState, RandomSource& random);
 

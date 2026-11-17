@@ -1,5 +1,6 @@
 #include "ApplyOutcome.h"
 #include <algorithm>
+#include <stdexcept>
 
 namespace gridiron {
 Possession opponentOf(const Possession possession) {
@@ -101,6 +102,8 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
         result.turnover = TurnoverKind::None;
         awardScoreAndKickoff(state, state.possession, 3, opponentOf(state.possession));
         break;
+    case OutcomeType::Incomplete: throw std::logic_error("incomplete not implemented");
+    case OutcomeType::Punted: throw std::logic_error("punted not implemented");
     }
 
     state.time_remaining_seconds -= outcome.elapsed_seconds;

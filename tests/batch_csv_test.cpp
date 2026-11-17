@@ -72,9 +72,9 @@ TEST(BatchCsvTest, ReproducibleBatches) {
                                      1000u,
                                      "./build/simulate BAL SEA --games 3 --seed 1000 --out results.csv"};
     std::vector<gridiron::SimulationResult> firstResult =
-        gridiron::runBatch(metadata.home, metadata.away, metadata.games, metadata.batchSeed);
+        gridiron::runBatch({metadata.home, metadata.away}, metadata.games, metadata.batchSeed);
     std::vector<gridiron::SimulationResult> secondResult =
-        gridiron::runBatch(metadata.home, metadata.away, metadata.games, metadata.batchSeed);
+        gridiron::runBatch({metadata.home, metadata.away}, metadata.games, metadata.batchSeed);
 
     gridiron::BatchSummary firstSummary = gridiron::aggregate(firstResult);
     gridiron::BatchSummary secondSummary = gridiron::aggregate(secondResult);
@@ -95,7 +95,7 @@ TEST(BatchCsvTest, RestoresStreamFormatting) {
                                      1000u,
                                      "./build/simulate BAL SEA --games 3 --seed 1000 --out results.csv"};
     std::vector<gridiron::SimulationResult> result =
-        gridiron::runBatch(metadata.home, metadata.away, metadata.games, metadata.batchSeed);
+        gridiron::runBatch({metadata.home, metadata.away}, metadata.games, metadata.batchSeed);
 
     gridiron::BatchSummary summary = gridiron::aggregate(result);
 

@@ -3,6 +3,7 @@
 #include <vector>
 
 #include "../src/engine/GameRunner.h"
+#include "../src/engine/Matchup.h"
 
 // M1.2 shared checkpoint: run many complete games across seeds and team
 // matchups, and check every intermediate state against the legal-state rules
@@ -10,21 +11,20 @@
 
 namespace {
 
-struct Matchup {
+struct SweepCase {
     const char* label;
-    gridiron::TeamProfile home;
-    gridiron::TeamProfile away;
+    gridiron::Matchup matchup;
 };
 
-const std::vector<Matchup>& matchups() {
-    static const std::vector<Matchup> all = {
-        {"typical", {"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.95}, {"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.95}},
-        {"best home vs worst away", {"BAL", 1.0, 1.0, 1.0, 1.0, 0.0, 1.0}, {"SEA", 0.0, 0.0, 0.0, 0.0, 1.0, 0.0}},
-        {"worst home vs best away", {"BAL", 0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, {"SEA", 1.0, 1.0, 1.0, 1.0, 0.0, 1.0}},
-        {"turnover heavy", {"BAL", 0.8, 0.7, 0.8, 0.7, 0.3, 0.95}, {"SEA", 0.7, 0.9, 0.9, 0.5, 0.3, 0.95}},
+const std::vector<SweepCase>& sweepCases() {
+    static const std::vector<SweepCase> all = {
+        {"typical", {{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.95}, {"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.95}}},
+        {"best home vs worst away", {{"BAL", 1.0, 1.0, 1.0, 1.0, 0.0, 1.0}, {"SEA", 0.0, 0.0, 0.0, 0.0, 1.0, 0.0}}},
+        {"worst home vs best away", {{"BAL", 0.0, 0.0, 0.0, 0.0, 1.0, 0.0}, {"SEA", 1.0, 1.0, 1.0, 1.0, 0.0, 1.0}}},
+        {"turnover heavy", {{"BAL", 0.8, 0.7, 0.8, 0.7, 0.3, 0.95}, {"SEA", 0.7, 0.9, 0.9, 0.5, 0.3, 0.95}}},
         // Both offenses stall, so most drives end on 4th down: exercises the
         // field goal decision and turnover on downs heavily.
-        {"defensive struggle", {"BAL", 0.2, 0.2, 0.9, 0.9, 0.02, 0.9}, {"SEA", 0.2, 0.2, 0.9, 0.9, 0.02, 0.9}},
+        {"defensive struggle", {{"BAL", 0.2, 0.2, 0.9, 0.9, 0.02, 0.9}, {"SEA", 0.2, 0.2, 0.9, 0.9, 0.02, 0.9}}},
     };
     return all;
 }
@@ -54,9 +54,9 @@ gridiron::Possession opponentOf(gridiron::Possession p) {
 } // namespace
 
 TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
-    for (const Matchup& m : matchups()) {
+    for (const SweepCase& c : sweepCases()) {
         for (unsigned seed = 0; seed < kSeedsPerMatchup; ++seed) {
-            SCOPED_TRACE(testing::Message() << m.label << ", seed " << seed);
+            SCOPED_TRACE(testing::Message() << c.label << ", seed " << seed);
             std::mt19937 rng(seed);
 
             int plays = 0;
@@ -114,7 +114,7 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                 EXPECT_EQ(after.state.opening_possession, before.opening_possession);
             };
 
-            const gridiron::GameState final = gridiron::runGame(m.home, m.away, rng, onPlay);
+            const gridiron::GameState final = gridiron::runGame(c.matchup, rng, onPlay);
 
             EXPECT_TRUE(final.game_over);
             EXPECT_EQ(final.quarter, 4);
@@ -133,15 +133,14 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
 
 // Attaching an observer must not change the game: it draws no random numbers.
 TEST(InvariantSweepTest, ObserverDoesNotChangeTheGame) {
-    const Matchup& m = matchups().front();
+    const SweepCase& c = sweepCases().front();
     for (unsigned seed = 0; seed < 50; ++seed) {
         SCOPED_TRACE(seed);
         std::mt19937 rngPlain(seed);
         std::mt19937 rngObserved(seed);
 
-        const auto plain = gridiron::runGame(m.home, m.away, rngPlain);
-        const auto observed =
-            gridiron::runGame(m.home, m.away, rngObserved, [](const auto&, const auto&, const auto&) {});
+        const auto plain = gridiron::runGame(c.matchup, rngPlain);
+        const auto observed = gridiron::runGame(c.matchup, rngObserved, [](const auto&, const auto&, const auto&) {});
 
         EXPECT_EQ(plain.home_score, observed.home_score);
         EXPECT_EQ(plain.away_score, observed.away_score);
@@ -153,11 +152,11 @@ TEST(InvariantSweepTest, ObserverDoesNotChangeTheGame) {
 // Same seed, same teams reproduces an identical play sequence, not just an
 // identical final score.
 TEST(InvariantSweepTest, SameSeedReproducesEveryPlay) {
-    const Matchup& m = matchups().front();
+    const SweepCase& c = sweepCases().front();
     const auto record = [&](unsigned seed) {
         std::vector<gridiron::PlayOutcome> plays;
         std::mt19937 rng(seed);
-        gridiron::runGame(m.home, m.away, rng, [&](const auto&, const gridiron::PlayOutcome& outcome, const auto&) {
+        gridiron::runGame(c.matchup, rng, [&](const auto&, const gridiron::PlayOutcome& outcome, const auto&) {
             plays.push_back(outcome);
         });
         return plays;

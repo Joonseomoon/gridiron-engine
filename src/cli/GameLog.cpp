@@ -6,26 +6,37 @@
 #include <algorithm>
 #include <iomanip>
 #include <ostream>
+#include <stdexcept>
 #include <string>
 
 namespace gridiron {
+namespace {
+const std::string& teamName(const Matchup& matchup, Possession side) {
+    return side == Possession::Home ? matchup.home.name : matchup.away.name;
+}
 
-void printPlay(std::ostream& out, const GameState& before, const PlayOutcome& outcome, const PlayResult& result) {
+Possession other(Possession side) {
+    return side == Possession::Home ? Possession::Away : Possession::Home;
+}
+} // namespace
+
+void printPlay(std::ostream& out, const GameState& before, const Matchup& matchup, const PlayOutcome& outcome,
+               const PlayResult& result) {
     int play_time_consumed = outcome.elapsed_seconds;
     int yards_gained = outcome.yards_gained;
     // These are for before the play
-    const std::string& offense = (before.possession == Possession::Home ? before.home.name : before.away.name);
-    const std::string& defense = (before.possession == Possession::Home ? before.away.name : before.home.name);
+    const std::string& offense = teamName(matchup, before.possession);
+    const std::string& defense = teamName(matchup, other(before.possession));
 
     // These are for after the play (used for kickoffs)
-    const std::string& afterOffense =
-        (result.state.possession == Possession::Home ? result.state.home.name : result.state.away.name);
+    const std::string& afterOffense = teamName(matchup, result.state.possession);
 
     std::string play_name = "";
     switch (outcome.play_type) {
     case PlayType::Run: play_name = "run"; break;
     case PlayType::Pass: play_name = "pass"; break;
     case PlayType::FieldGoalAttempt: play_name = "field goal attempt"; break;
+    case PlayType::Punt: throw std::logic_error("punt not implemented");
     }
 
     std::string down = "";
@@ -36,10 +47,8 @@ void printPlay(std::ostream& out, const GameState& before, const PlayOutcome& ou
     case 4: down = "4th"; break;
     }
 
-    const std::string& possessing_team =
-        (result.state.possession == Possession::Home ? result.state.home.name : result.state.away.name);
-    const std::string& opposing_team =
-        (result.state.possession == Possession::Home ? result.state.away.name : result.state.home.name);
+    const std::string& possessing_team = teamName(matchup, result.state.possession);
+    const std::string& opposing_team = teamName(matchup, other(result.state.possession));
     std::string fieldPosition = "";
     if (result.state.ball_position > 50) {
         fieldPosition = opposing_team + " " + std::to_string(100 - result.state.ball_position);
