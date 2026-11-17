@@ -5,7 +5,16 @@
 
 namespace gridiron {
 
-enum class PlayEvent { Normal, FirstDown, TouchDown, FieldGoalGood, Safety, Touchback, DefensiveTouchdown };
+enum class PlayEvent {
+    Normal,
+    FirstDown,
+    TouchDown,
+    FieldGoalGood,
+    Safety,
+    Touchback,
+    DefensiveTouchdown,
+    PuntReturnTouchdown
+};
 
 enum class TurnoverKind { None, TurnoverOnDowns, FieldGoalMissed, Interception, Fumble };
 

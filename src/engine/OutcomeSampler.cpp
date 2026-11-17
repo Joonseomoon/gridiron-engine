@@ -1,4 +1,5 @@
 #include "OutcomeSampler.h"
+#include "ModelConstants.h"
 
 #include <algorithm>
 #include <cmath>
@@ -9,6 +10,7 @@ namespace gridiron {
 
 using NormalParams = std::normal_distribution<double>::param_type;
 
+namespace {
 // Bigger gains take longer to run and to reset from.
 int samplePlayTime(const int yardsGained, RandomSource& random) {
     if (yardsGained > 20) {
@@ -16,6 +18,12 @@ int samplePlayTime(const int yardsGained, RandomSource& random) {
     }
     return std::max(10, static_cast<int>(std::round(random.normal(random.rng, NormalParams{20, 5}))));
 }
+
+bool sampleOutOfBounds(RandomSource& random) {
+    std::uniform_real_distribution<double> distribution(0.0, 1.0);
+    return distribution(random.rng) < kOutOfBoundsRate;
+}
+} // namespace
 
 PlayType choosePlayType(const GameState& gameState, RandomSource& random) {
     const int distanceToGoal = 100 - gameState.ball_position;
@@ -36,27 +44,57 @@ PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defe
     const int playTime = samplePlayTime(playYards, random);
 
     std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
-    bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
+    const bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
 
     if (turnover) {
-        return PlayOutcome{PlayType::Run, OutcomeType::Turnover, playYards, playTime};
+        return PlayOutcome{.play_type = PlayType::Run,
+                           .outcome_type = OutcomeType::Turnover,
+                           .yards_gained = playYards,
+                           .elapsed_seconds = kSnapSeconds,
+                           .runoff_seconds = playTime - kSnapSeconds};
     }
-    return PlayOutcome{PlayType::Run, OutcomeType::Normal, playYards, playTime};
+    return PlayOutcome{.play_type = PlayType::Run,
+                       .outcome_type = OutcomeType::Normal,
+                       .yards_gained = playYards,
+                       .elapsed_seconds = kSnapSeconds,
+                       .runoff_seconds = playTime - kSnapSeconds,
+                       .out_of_bounds = sampleOutOfBounds(random)};
 }
 
 PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random) {
     const int baseYards{4};
     const double expectedYards{baseYards + 15 * (offense.offensive_pass_rating - defense.defensive_pass_rating)};
+
+    std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
+    const bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
+
+    if (!turnover) {
+        std::uniform_real_distribution<double> incompleteDistribution(0.0, 1.0);
+        if (incompleteDistribution(random.rng) < kIncompleteRate) {
+            return PlayOutcome{.play_type = PlayType::Pass,
+                               .outcome_type = OutcomeType::Incomplete,
+                               .yards_gained = 0,
+                               .elapsed_seconds = kSnapSeconds,
+                               .runoff_seconds = 0};
+        }
+    }
+
     const int playYards = static_cast<int>(std::round(random.normal(random.rng, NormalParams{expectedYards, 5.0})));
     const int playTime = samplePlayTime(playYards, random);
 
-    std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
-    bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
-
     if (turnover) {
-        return PlayOutcome{PlayType::Pass, OutcomeType::Turnover, playYards, playTime};
+        return PlayOutcome{.play_type = PlayType::Pass,
+                           .outcome_type = OutcomeType::Turnover,
+                           .yards_gained = playYards,
+                           .elapsed_seconds = kSnapSeconds,
+                           .runoff_seconds = playTime - kSnapSeconds};
     }
-    return PlayOutcome{PlayType::Pass, OutcomeType::Normal, playYards, playTime};
+    return PlayOutcome{.play_type = PlayType::Pass,
+                       .outcome_type = OutcomeType::Normal,
+                       .yards_gained = playYards,
+                       .elapsed_seconds = kSnapSeconds,
+                       .runoff_seconds = playTime - kSnapSeconds,
+                       .out_of_bounds = sampleOutOfBounds(random)};
 }
 
 PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal, RandomSource& random) {
@@ -68,7 +106,18 @@ PlayOutcome sampleFieldGoalOutcome(const TeamProfile& kicker, int distanceToGoal
 
     return PlayOutcome{.play_type = PlayType::FieldGoalAttempt,
                        .outcome_type = made ? OutcomeType::FieldGoalMade : OutcomeType::Turnover,
-                       .elapsed_seconds = samplePlayTime(0, random)};
+                       .elapsed_seconds = kSnapSeconds,
+                       .runoff_seconds = samplePlayTime(0, random) - kSnapSeconds};
+}
+
+PlayOutcome samplePuntOutcome(RandomSource& random) {
+    const int puntYards =
+        static_cast<int>(std::round(random.normal(random.rng, NormalParams{kPuntNetMeanYards, kPuntNetSdYards})));
+
+    return PlayOutcome{.play_type = PlayType::Punt,
+                       .outcome_type = OutcomeType::Punted,
+                       .yards_gained = puntYards,
+                       .elapsed_seconds = kPuntSeconds};
 }
 
 PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random) {
@@ -83,7 +132,7 @@ PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup
         const int distanceToGoal = 100 - gameState.ball_position;
         return sampleFieldGoalOutcome(offense, distanceToGoal, random);
     }
-    case PlayType::Punt: throw std::logic_error("punt not implemented");
+    case PlayType::Punt: return samplePuntOutcome(random);
     }
     throw std::logic_error("unhandled PlayType in samplePlayOutcome");
 }

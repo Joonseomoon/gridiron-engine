@@ -1,4 +1,5 @@
 #include "ApplyOutcome.h"
+#include "ModelConstants.h"
 #include <algorithm>
 #include <stdexcept>
 
@@ -20,27 +21,63 @@ void awardScoreAndKickoff(GameState& state, const Possession scoringTeam, const 
     }
 
     state.possession = receivingTeam;
-    state.ball_position = 25;
+    state.ball_position = kKickoffSpot;
     state.down = 1;
     state.distance = 10;
 }
 
-void turnoverAtSpot(GameState& state) {
+void changePossessionAtSpot(GameState& state) {
     state.possession = opponentOf(state.possession);
     state.ball_position = 100 - state.ball_position;
     state.down = 1;
     state.distance = std::min(10, 100 - state.ball_position);
 }
 
-void touchback(GameState& state) {
+void touchback(GameState& state, int spot) {
     state.possession = opponentOf(state.possession);
-    state.ball_position = 25;
+    state.ball_position = spot;
     state.down = 1;
     state.distance = 10;
 }
 
+bool clockStops(const GameState& before, const PlayOutcome& outcome) {
+    const int afterPlay = before.time_remaining_seconds - outcome.elapsed_seconds;
+    const bool q2 = before.quarter == 2;
+    const bool q4 = before.quarter == 4;
+
+    // Incompletions, scores, and changes of possession stop the clock until the next snap.
+    switch (outcome.outcome_type) {
+    case OutcomeType::Incomplete:
+    case OutcomeType::Turnover:
+    case OutcomeType::FieldGoalMade:
+    case OutcomeType::Punted: return true;
+    case OutcomeType::Normal: {
+        const int spot = before.ball_position + outcome.yards_gained;
+        const bool touchdownOrSafety = spot >= 100 || spot <= 0;
+        const bool turnoverOnDowns = before.down == 4 && outcome.yards_gained < before.distance;
+        if (touchdownOrSafety || turnoverOnDowns) {
+            return true;
+        }
+        break;
+    }
+    }
+
+    if (outcome.out_of_bounds &&
+        ((q2 && afterPlay <= kTwoMinuteWarningSeconds) || (q4 && afterPlay <= kLateQ4OutOfBoundsSeconds))) {
+        return true;
+    }
+
+    if ((q2 || q4) && before.time_remaining_seconds > kTwoMinuteWarningSeconds &&
+        afterPlay <= kTwoMinuteWarningSeconds) {
+        return true;
+    }
+    return false;
+}
+
 PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
     PlaySummary result;
+
+    const bool stopped = clockStops(state, outcome);
 
     switch (outcome.outcome_type) {
     case OutcomeType::Normal:
@@ -65,7 +102,7 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
         } else if (state.down == 4 && outcome.yards_gained < state.distance) {
             result.event = PlayEvent::Normal; // Check in on this why is it normal would it make sense to be a turnover?
             result.turnover = TurnoverKind::TurnoverOnDowns;
-            turnoverAtSpot(state);
+            changePossessionAtSpot(state);
         } else {
             result.event = PlayEvent::Normal;
             result.turnover = TurnoverKind::None;
@@ -91,10 +128,10 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
             awardScoreAndKickoff(state, opponentOf(state.possession), 7, state.possession);
         } else if (state.ball_position >= 100) {
             result.event = PlayEvent::Touchback;
-            touchback(state);
+            touchback(state, kTurnoverTouchbackSpot);
         } else {
             result.event = PlayEvent::Normal;
-            turnoverAtSpot(state);
+            changePossessionAtSpot(state);
         }
         break;
     case OutcomeType::FieldGoalMade:
@@ -102,11 +139,41 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
         result.turnover = TurnoverKind::None;
         awardScoreAndKickoff(state, state.possession, 3, opponentOf(state.possession));
         break;
-    case OutcomeType::Incomplete: throw std::logic_error("incomplete not implemented");
-    case OutcomeType::Punted: throw std::logic_error("punted not implemented");
+    case OutcomeType::Incomplete:
+        if (state.down < 4) {
+            state.down++;
+            result.event = PlayEvent::Normal;
+            result.turnover = TurnoverKind::None;
+        } else {
+            result.turnover = TurnoverKind::TurnoverOnDowns;
+            changePossessionAtSpot(state);
+        }
+        break;
+    case OutcomeType::Punted:
+        result.turnover = TurnoverKind::None;
+        state.ball_position += outcome.yards_gained;
+        if (state.ball_position >= 100) {
+            result.event = PlayEvent::Touchback;
+            touchback(state, kPuntTouchbackSpot);
+        } else if (state.ball_position <= 0) {
+            result.event = PlayEvent::PuntReturnTouchdown;
+            awardScoreAndKickoff(state, opponentOf(state.possession), 7, state.possession);
+        } else {
+            result.event = PlayEvent::Normal;
+            changePossessionAtSpot(state);
+        }
+        break;
     }
 
     state.time_remaining_seconds -= outcome.elapsed_seconds;
+    if (!stopped) {
+        if ((state.quarter == 2 || state.quarter == 4) && state.time_remaining_seconds > kTwoMinuteWarningSeconds &&
+            state.time_remaining_seconds - outcome.runoff_seconds < kTwoMinuteWarningSeconds) {
+            state.time_remaining_seconds = kTwoMinuteWarningSeconds;
+        } else {
+            state.time_remaining_seconds -= outcome.runoff_seconds;
+        }
+    }
 
     if (state.time_remaining_seconds <= 0) {
         if (state.quarter == 2) {
@@ -119,7 +186,7 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
         if (state.quarter == 3) {
             state.down = 1;
             state.distance = 10;
-            state.ball_position = 25;
+            state.ball_position = kKickoffSpot;
             state.possession = opponentOf(state.opening_possession);
         }
         if (state.quarter > 4) {

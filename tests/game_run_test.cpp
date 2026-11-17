@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 #include <random>
+#include <tuple>
 
 #include "../src/engine/GameRunner.h"
 
@@ -49,10 +50,12 @@ TEST(GameRunTest, DifferentSeedFinalState) {
     gridiron::GameState playGame1 = gridiron::runGame(matchup, rng1);
     gridiron::GameState playGame2 = gridiron::runGame(matchup, rng2);
 
-    EXPECT_NE(playGame1.home_score, playGame2.home_score);
-    EXPECT_NE(playGame1.away_score, playGame2.away_score);
-    EXPECT_NE(playGame1.distance, playGame2.distance);
-    EXPECT_NE(playGame1.ball_position, playGame2.ball_position);
+    // Different seeds give different games. Any single field can match by chance (e.g. both end 1st & 10),
+    // so compare the final state as a whole.
+    const auto summary = [](const gridiron::GameState& s) {
+        return std::tuple{s.home_score, s.away_score, s.possession, s.down, s.distance, s.ball_position};
+    };
+    EXPECT_NE(summary(playGame1), summary(playGame2));
     EXPECT_EQ(playGame1.quarter, playGame2.quarter);
     EXPECT_EQ(playGame1.time_remaining_seconds, playGame2.time_remaining_seconds);
     EXPECT_NE(rng1, rng2);

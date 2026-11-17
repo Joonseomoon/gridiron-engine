@@ -1,5 +1,6 @@
 #include "../src/engine/ApplyOutcome.h"
 #include "../src/engine/GameState.h"
+#include "../src/engine/ModelConstants.h"
 #include "../src/engine/PlayOutcome.h"
 #include "../src/engine/PlayResult.h"
 #include <gtest/gtest.h>
@@ -908,4 +909,454 @@ TEST(ApplyOutcomeInPlaceTest, SummaryResetsBetweenPlays) {
     EXPECT_EQ(second.event, gridiron::PlayEvent::Normal);
     EXPECT_EQ(second.turnover, gridiron::TurnoverKind::None);
     EXPECT_EQ(second.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntFromMidfield) {
+    auto curr_state = gridiron::GameState{.ball_position = 50};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 9);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntLandsAt99Yards) {
+    auto curr_state = gridiron::GameState{.ball_position = 60};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 39, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 1);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntLandsAtExactly100Yards) {
+    auto curr_state = gridiron::GameState{.ball_position = 59};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, gridiron::kPuntTouchbackSpot);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Touchback);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, DownedInsideThe10) {
+    auto curr_state = gridiron::GameState{.ball_position = 50};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 45, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 5);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, LandingAtExactly0Yards) {
+    auto curr_state = gridiron::GameState{.ball_position = 10};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, -10, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, gridiron::kKickoffSpot);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 7);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::PuntReturnTouchdown);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, LandingAtExactly1Yard) {
+    auto curr_state = gridiron::GameState{.ball_position = 10};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, -9, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Away);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 1);
+    EXPECT_EQ(newState.ball_position, 99);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, AwayTeamPunting) {
+    auto curr_state = gridiron::GameState{.possession = gridiron::Possession::Away};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 1);
+    EXPECT_EQ(newState.time_remaining_seconds, 900 - gridiron::kPuntSeconds);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, 34);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::None);
+}
+
+TEST(ApplyOutcomeTest, PuntEndsHalf) {
+    auto curr_state = gridiron::GameState{
+        .quarter = 2, .time_remaining_seconds = 4, .opening_possession = gridiron::Possession::Away};
+    auto playOutcome =
+        gridiron::PlayOutcome{gridiron::PlayType::Punt, gridiron::OutcomeType::Punted, 41, gridiron::kPuntSeconds};
+    auto result = applyOutcome(curr_state, playOutcome);
+    auto& newState = result.state;
+
+    EXPECT_EQ(newState.quarter, 3);
+    EXPECT_EQ(newState.time_remaining_seconds, 900);
+    EXPECT_EQ(newState.possession, gridiron::Possession::Home);
+    EXPECT_EQ(newState.down, 1);
+    EXPECT_EQ(newState.distance, 10);
+    EXPECT_EQ(newState.ball_position, gridiron::kKickoffSpot);
+    EXPECT_EQ(newState.home_score, 0);
+    EXPECT_EQ(newState.away_score, 0);
+    EXPECT_FALSE(newState.game_over);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
+}
+
+namespace {
+
+// A 3-yard run from the default spot: no first down, no score, so only the clock matters.
+gridiron::PlayOutcome timedPlay(int runoff, bool outOfBounds = false,
+                                gridiron::OutcomeType type = gridiron::OutcomeType::Normal) {
+    return gridiron::PlayOutcome{.play_type = gridiron::PlayType::Run,
+                                 .outcome_type = type,
+                                 .yards_gained = 3,
+                                 .elapsed_seconds = gridiron::kSnapSeconds,
+                                 .runoff_seconds = runoff,
+                                 .out_of_bounds = outOfBounds};
+}
+
+gridiron::GameState stateAt(int quarter, int timeRemaining) {
+    return gridiron::GameState{.quarter = quarter, .time_remaining_seconds = timeRemaining};
+}
+
+int clockAfter(int quarter, int timeRemaining, const gridiron::PlayOutcome& outcome) {
+    return gridiron::applyOutcome(stateAt(quarter, timeRemaining), outcome).state.time_remaining_seconds;
+}
+
+} // namespace
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsInsideTwoMinutesOfQ2StopsClock) {
+    EXPECT_EQ(clockAfter(2, 90, timedPlay(20, true)), 84);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsOutsideTwoMinutesOfQ2RunsClock) {
+    EXPECT_EQ(clockAfter(2, 180, timedPlay(20, true)), 154);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsAtExactlyFiveMinutesOfQ4StopsClock) {
+    EXPECT_EQ(clockAfter(4, 306, timedPlay(20, true)), 300);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsJustOutsideFiveMinutesOfQ4RunsClock) {
+    EXPECT_EQ(clockAfter(4, 307, timedPlay(20, true)), 281);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsInQ1NeverStopsClock) {
+    EXPECT_EQ(clockAfter(1, 90, timedPlay(20, true)), 64);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsInQ3NeverStopsClock) {
+    EXPECT_EQ(clockAfter(3, 90, timedPlay(20, true)), 64);
+}
+
+TEST(ApplyOutcomeClockTest, RunoffStopsAtTwoMinuteWarningInQ4) {
+    EXPECT_EQ(clockAfter(4, 130, timedPlay(20)), gridiron::kTwoMinuteWarningSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, RunoffStopsAtTwoMinuteWarningInQ2) {
+    EXPECT_EQ(clockAfter(2, 130, timedPlay(20)), gridiron::kTwoMinuteWarningSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, OutOfBoundsOutsideTwoMinutesStillStopsAtWarning) {
+    // Out of bounds does not stop the clock at 2:04 in Q2, but the warning still does.
+    EXPECT_EQ(clockAfter(2, 130, timedPlay(20, true)), gridiron::kTwoMinuteWarningSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, PlayCrossingTwoMinutesStopsClockWhereItEnds) {
+    EXPECT_EQ(clockAfter(2, 123, timedPlay(20)), 117);
+}
+
+TEST(ApplyOutcomeClockTest, PlayEndingExactlyAtTwoMinutesStopsClock) {
+    EXPECT_EQ(clockAfter(4, 126, timedPlay(20)), 120);
+}
+
+TEST(ApplyOutcomeClockTest, RunoffEndingExactlyAtTwoMinutesRunsInFull) {
+    EXPECT_EQ(clockAfter(4, 146, timedPlay(20)), 120);
+}
+
+TEST(ApplyOutcomeClockTest, PlayStartingAtTwoMinutesRunsNormally) {
+    // The warning has already happened, so the clock runs.
+    EXPECT_EQ(clockAfter(4, 120, timedPlay(20)), 94);
+}
+
+TEST(ApplyOutcomeClockTest, InsideTwoMinutesClockRuns) {
+    EXPECT_EQ(clockAfter(4, 110, timedPlay(20)), 84);
+}
+
+TEST(ApplyOutcomeClockTest, NoTwoMinuteWarningInQ1OrQ3) {
+    EXPECT_EQ(clockAfter(1, 130, timedPlay(20)), 104);
+    EXPECT_EQ(clockAfter(3, 130, timedPlay(20)), 104);
+}
+
+TEST(ApplyOutcomeClockTest, StoppedClockStillEndsTheGame) {
+    const auto result = gridiron::applyOutcome(stateAt(4, 4), timedPlay(20, true));
+    EXPECT_TRUE(result.state.game_over);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
+}
+
+TEST(ClockStopsTest, IncompletePassStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(0, false, gridiron::OutcomeType::Incomplete)));
+}
+
+TEST(ClockStopsTest, ZeroYardCompletionDoesNotStop) {
+    auto outcome = timedPlay(20);
+    outcome.play_type = gridiron::PlayType::Pass;
+    outcome.yards_gained = 0;
+    EXPECT_FALSE(gridiron::clockStops(stateAt(1, 600), outcome));
+}
+
+TEST(ClockStopsTest, NormalPlayEarlyDoesNotStop) {
+    EXPECT_FALSE(gridiron::clockStops(stateAt(1, 600), timedPlay(20)));
+}
+
+TEST(ClockStopsTest, OutOfBoundsQ4BoundaryAtFiveMinutes) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(4, 306), timedPlay(20, true)));
+    EXPECT_FALSE(gridiron::clockStops(stateAt(4, 307), timedPlay(20, true)));
+}
+
+TEST(ClockStopsTest, OutOfBoundsQ2BoundaryAtTwoMinutes) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(2, 126), timedPlay(20, true)));
+    EXPECT_FALSE(gridiron::clockStops(stateAt(2, 127), timedPlay(20, true)));
+}
+
+TEST(ClockStopsTest, RunoffAloneCrossingTwoMinutesIsNotAStop) {
+    // The clock runs down to 2:00 here; timeouts in 4.1 B still apply.
+    EXPECT_FALSE(gridiron::clockStops(stateAt(4, 130), timedPlay(20)));
+}
+
+namespace {
+
+gridiron::PlayOutcome incompletePass() {
+    return gridiron::PlayOutcome{.play_type = gridiron::PlayType::Pass,
+                                 .outcome_type = gridiron::OutcomeType::Incomplete,
+                                 .yards_gained = 0,
+                                 .elapsed_seconds = gridiron::kSnapSeconds,
+                                 .runoff_seconds = 0};
+}
+
+} // namespace
+
+TEST(ApplyOutcomeIncompleteTest, FirstDownIncompleteBecomesSecondDownAtSameSpot) {
+    const auto before = gridiron::GameState{.down = 1, .distance = 10, .ball_position = 40};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Home);
+    EXPECT_EQ(result.state.down, 2);
+    EXPECT_EQ(result.state.distance, 10);
+    EXPECT_EQ(result.state.ball_position, 40);
+    EXPECT_EQ(result.state.time_remaining_seconds, 900 - gridiron::kSnapSeconds);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+}
+
+TEST(ApplyOutcomeIncompleteTest, ThirdDownIncompleteBecomesFourthDownWithSameDistance) {
+    const auto before = gridiron::GameState{.down = 3, .distance = 7, .ball_position = 40};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Home);
+    EXPECT_EQ(result.state.down, 4);
+    EXPECT_EQ(result.state.distance, 7);
+    EXPECT_EQ(result.state.ball_position, 40);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
+}
+
+TEST(ApplyOutcomeIncompleteTest, FourthDownIncompleteIsTurnoverOnDownsAtTheSpot) {
+    const auto before = gridiron::GameState{.down = 4, .distance = 3, .ball_position = 60};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Away);
+    EXPECT_EQ(result.state.down, 1);
+    EXPECT_EQ(result.state.distance, 10);
+    EXPECT_EQ(result.state.ball_position, 40);
+    EXPECT_EQ(result.state.home_score, 0);
+    EXPECT_EQ(result.state.away_score, 0);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::Normal);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+}
+
+TEST(ApplyOutcomeIncompleteTest, FourthDownIncompleteByAwayNearGoalGivesHomeTheBallDeep) {
+    const auto before =
+        gridiron::GameState{.possession = gridiron::Possession::Away, .down = 4, .distance = 2, .ball_position = 98};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.possession, gridiron::Possession::Home);
+    EXPECT_EQ(result.state.ball_position, 2);
+    EXPECT_EQ(result.state.down, 1);
+    EXPECT_EQ(result.state.distance, 10);
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+}
+
+TEST(ApplyOutcomeIncompleteTest, IncompleteLateInQ4StopsTheClock) {
+    const auto before = gridiron::GameState{.quarter = 4, .time_remaining_seconds = 60, .down = 2};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_EQ(result.state.time_remaining_seconds, 60 - gridiron::kSnapSeconds);
+    EXPECT_EQ(result.state.down, 3);
+    EXPECT_FALSE(result.state.game_over);
+}
+
+TEST(ApplyOutcomeIncompleteTest, IncompleteIgnoresAnyRunoffItCarries) {
+    // The sampler never sets runoff on an incomplete pass, but the rule must not depend on that.
+    auto outcome = incompletePass();
+    outcome.runoff_seconds = 30;
+    const auto result = gridiron::applyOutcome(gridiron::GameState{.time_remaining_seconds = 600}, outcome);
+
+    EXPECT_EQ(result.state.time_remaining_seconds, 600 - gridiron::kSnapSeconds);
+}
+
+TEST(ApplyOutcomeIncompleteTest, IncompleteOnFinalSnapEndsTheGame) {
+    const auto before = gridiron::GameState{.quarter = 4, .time_remaining_seconds = 4};
+    const auto result = gridiron::applyOutcome(before, incompletePass());
+
+    EXPECT_TRUE(result.state.game_over);
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
+}
+
+// Scores and changes of possession stop the clock (NFL: it restarts on the next snap), so no runoff.
+
+TEST(ClockStopsTest, TouchdownStops) {
+    auto outcome = timedPlay(20);
+    outcome.yards_gained = 80; // from the 25 to the 105
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), outcome));
+}
+
+TEST(ClockStopsTest, GainToExactlyTheGoalLineStops) {
+    auto state = stateAt(1, 600);
+    state.ball_position = 97;
+    EXPECT_TRUE(gridiron::clockStops(state, timedPlay(20))); // 3 yards to the 100
+}
+
+TEST(ClockStopsTest, GainShortOfTheGoalLineDoesNotStop) {
+    auto state = stateAt(1, 600);
+    state.ball_position = 96;
+    EXPECT_FALSE(gridiron::clockStops(state, timedPlay(20))); // to the 99
+}
+
+TEST(ClockStopsTest, SafetyStops) {
+    auto state = stateAt(1, 600);
+    state.ball_position = 2;
+    auto outcome = timedPlay(20);
+    outcome.yards_gained = -2;
+    EXPECT_TRUE(gridiron::clockStops(state, outcome));
+}
+
+TEST(ClockStopsTest, TurnoverStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(20, false, gridiron::OutcomeType::Turnover)));
+}
+
+TEST(ClockStopsTest, FieldGoalMadeStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(20, false, gridiron::OutcomeType::FieldGoalMade)));
+}
+
+TEST(ClockStopsTest, PuntStops) {
+    EXPECT_TRUE(gridiron::clockStops(stateAt(1, 600), timedPlay(0, false, gridiron::OutcomeType::Punted)));
+}
+
+TEST(ClockStopsTest, FourthDownShortIsTurnoverOnDownsAndStops) {
+    auto state = stateAt(1, 600);
+    state.down = 4;
+    state.distance = 4;
+    EXPECT_TRUE(gridiron::clockStops(state, timedPlay(20))); // 3 yards, needed 4
+}
+
+TEST(ClockStopsTest, FourthDownConversionDoesNotStop) {
+    auto state = stateAt(1, 600);
+    state.down = 4;
+    state.distance = 3;
+    EXPECT_FALSE(gridiron::clockStops(state, timedPlay(20))); // exactly 3 yards: first down
+}
+
+TEST(ApplyOutcomeClockTest, TouchdownTakesOnlyTheSnap) {
+    auto outcome = timedPlay(20);
+    outcome.yards_gained = 80;
+    const auto result = gridiron::applyOutcome(stateAt(1, 600), outcome);
+    EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
+    EXPECT_EQ(result.state.time_remaining_seconds, 600 - gridiron::kSnapSeconds);
+}
+
+TEST(ApplyOutcomeClockTest, TurnoverOnDownsTakesOnlyTheSnap) {
+    auto state = stateAt(1, 600);
+    state.down = 4;
+    state.distance = 4;
+    const auto result = gridiron::applyOutcome(state, timedPlay(20));
+    EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
+    EXPECT_EQ(result.state.time_remaining_seconds, 600 - gridiron::kSnapSeconds);
 }

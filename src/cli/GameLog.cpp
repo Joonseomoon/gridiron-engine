@@ -3,10 +3,8 @@
 #include "../engine/PlayOutcome.h"
 #include "../engine/PlayResult.h"
 #include "../engine/SimulationResult.h"
-#include <algorithm>
 #include <iomanip>
 #include <ostream>
-#include <stdexcept>
 #include <string>
 
 namespace gridiron {
@@ -22,7 +20,7 @@ Possession other(Possession side) {
 
 void printPlay(std::ostream& out, const GameState& before, const Matchup& matchup, const PlayOutcome& outcome,
                const PlayResult& result) {
-    int play_time_consumed = outcome.elapsed_seconds;
+    int seconds_left = result.period == PeriodEvent::None ? result.state.time_remaining_seconds : 0;
     int yards_gained = outcome.yards_gained;
     // These are for before the play
     const std::string& offense = teamName(matchup, before.possession);
@@ -36,8 +34,14 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
     case PlayType::Run: play_name = "run"; break;
     case PlayType::Pass: play_name = "pass"; break;
     case PlayType::FieldGoalAttempt: play_name = "field goal attempt"; break;
-    case PlayType::Punt: throw std::logic_error("punt not implemented");
+    case PlayType::Punt: play_name = "punt"; break;
     }
+
+    // "BAL pass incomplete" or "BAL run for 6 yards"
+    const bool incomplete = outcome.outcome_type == OutcomeType::Incomplete;
+    const std::string playText = incomplete
+                                     ? offense + " pass incomplete"
+                                     : offense + " " + play_name + " for " + std::to_string(yards_gained) + " yards";
 
     std::string down = "";
     switch (result.state.down) {
@@ -58,7 +62,6 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         fieldPosition = "midfield";
     }
 
-    int seconds_left = std::max(0, before.time_remaining_seconds - play_time_consumed);
     int minutes = seconds_left / 60;
     int seconds = seconds_left % 60;
     int fieldGoalDistance = 100 - before.ball_position + 17; // Only for field goal position
@@ -77,7 +80,23 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
     out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
         << std::setfill(' ') << " - ";
 
-    if (result.event == PlayEvent::TouchDown) {
+    if (outcome.play_type == PlayType::Punt) {
+        std::string how = "";
+        if (result.event == PlayEvent::PuntReturnTouchdown) {
+            out << offense << " punt returned for a touchdown by " << defense << "! " << defense << " +7.\n";
+            how = " (kickoff)";
+        } else if (result.event == PlayEvent::Touchback) {
+            out << offense << " punts into the end zone. Touchback.\n";
+            how = " (touchback)";
+        } else {
+            out << offense << " punts " << yards_gained << " yards net.\n";
+        }
+        if (result.period == PeriodEvent::None) {
+            out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
+                << std::setfill(' ') << " - " << afterOffense << " ball on " << fieldPosition << ", 1st & "
+                << distanceText << how << ".\n";
+        }
+    } else if (result.event == PlayEvent::TouchDown) {
         out << offense << " " << play_name << " for " << yards_gained << " yards. Touchdown! " << offense << " +7.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
@@ -138,8 +157,7 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
                 << distanceText << ".\n";
         }
     } else if (result.turnover == TurnoverKind::TurnoverOnDowns) {
-        out << offense << " " << play_name << " for " << yards_gained
-            << " yards. Short of the first down. Turnover on downs.\n";
+        out << playText << (incomplete ? "" : ". Short of the first down") << ". Turnover on downs.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
                 << std::setfill(' ') << " - " << afterOffense << " ball on " << fieldPosition << ", 1st & "
@@ -168,10 +186,9 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         }
     } else if (result.event == PlayEvent::Normal) {
         if (result.period == PeriodEvent::None) {
-            out << offense << " " << play_name << " for " << yards_gained << " yards. " << down << " & " << distanceText
-                << " on " << fieldPosition << ".\n";
+            out << playText << ". " << down << " & " << distanceText << " on " << fieldPosition << ".\n";
         } else {
-            out << offense << " " << play_name << " for " << yards_gained << " yards.\n";
+            out << playText << ".\n";
         }
     }
 

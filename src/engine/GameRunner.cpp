@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "ApplyOutcome.h"
+#include "ModelConstants.h"
 #include "OutcomeSampler.h"
 #include "PlayResult.h"
 #include "RandomSource.h"
@@ -23,8 +24,8 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver&
     // One random source per game, so no stored normal value carries over from another game.
     RandomSource random{rng};
 
-    // Each sampled play consumes at least 10 seconds of a 900-second quarter.
-    constexpr int maximumPlays = (900 / 10) * 4;
+    // Each sampled play consumes at least kSnapSeconds seconds of a 900-second quarter.
+    constexpr int maximumPlays = (900 / kSnapSeconds) * 4;
     int plays = 0;
     while (!state.game_over) {
         if (plays >= maximumPlays) {
