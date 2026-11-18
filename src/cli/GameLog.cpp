@@ -20,7 +20,7 @@ Possession other(Possession side) {
 
 void printPlay(std::ostream& out, const GameState& before, const Matchup& matchup, const PlayOutcome& outcome,
                const PlayResult& result) {
-    int seconds_left = result.period == PeriodEvent::None ? result.state.time_remaining_seconds : 0;
+    int seconds_left = before.quarter == result.state.quarter ? result.state.time_remaining_seconds : 0;
     int yards_gained = outcome.yards_gained;
     // These are for before the play
     const std::string& offense = teamName(matchup, before.possession);
@@ -191,7 +191,13 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
             out << playText << ".\n";
         }
     }
+    if (result.timeout_called.has_value()) {
+        const Possession caller = *result.timeout_called;
+        const int remaining = caller == Possession::Home ? result.state.home_timeouts : result.state.away_timeouts;
 
+        out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
+            << std::setfill(' ') << " - " << teamName(matchup, caller) << " timeout. " << remaining << " remaining.\n";
+    }
     if (result.period == PeriodEvent::EndQuarter) {
         out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
             << std::setfill(' ') << " - End of quarter.\n";
@@ -201,6 +207,10 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
             << std::setfill(' ') << " - Halftime.\n";
         out << "Q3 15:00 - " << afterOffense << " ball on " << afterOffense << " 25, 1st & 10 (second-half kickoff).\n";
+    } else if (result.period == PeriodEvent::OvertimeStart) {
+        out << "Q4 0:00 - Regulation ends tied.\n";
+        out << "Q5 10:00 - Overtime begins. " << afterOffense << " receives the football. "
+            << "Each team has 2 timeouts.\n";
     } else if (result.period == PeriodEvent::EndofGame) {
         out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
             << std::setfill(' ') << " - Game End.\n";

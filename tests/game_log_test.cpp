@@ -609,3 +609,105 @@ TEST(GameLogTest, IncompletePassOnFourthDown) {
     EXPECT_EQ(output.str(), "Q2 6:34 - BAL pass incomplete. Turnover on downs.\n"
                             "Q2 6:34 - SEA ball on SEA 40, 1st & 10.\n");
 }
+
+TEST(GameLogTest, PrintsDefensiveTimeoutAndRemainingCount) {
+    gridiron::GameState before;
+    before.quarter = 4;
+    before.time_remaining_seconds = 100;
+    before.possession = gridiron::Possession::Home;
+
+    const gridiron::Matchup matchup{
+        .home = {.name = "BAL"},
+        .away = {.name = "SEA"},
+    };
+
+    const gridiron::PlayOutcome outcome{
+        .play_type = gridiron::PlayType::Run,
+        .outcome_type = gridiron::OutcomeType::Normal,
+        .yards_gained = 1,
+        .elapsed_seconds = 6,
+        .runoff_seconds = 0,
+    };
+
+    auto result = gridiron::applyOutcome(before, outcome);
+    result.state.away_timeouts = 2;
+    result.timeout_called = gridiron::Possession::Away;
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q4 1:34 - BAL run for 1 yards. 2nd & 9 on BAL 26.\n"
+                            "Q4 1:34 - SEA timeout. 2 remaining.\n");
+}
+
+TEST(GameLogTest, AnnouncesOvertimeStart) {
+    gridiron::GameState before;
+    before.quarter = 4;
+    before.time_remaining_seconds = 6;
+    before.home_score = 24;
+    before.away_score = 24;
+
+    const gridiron::Matchup matchup{
+        .home = {.name = "BAL"},
+        .away = {.name = "SEA"},
+    };
+
+    const gridiron::PlayOutcome outcome{
+        .play_type = gridiron::PlayType::Run,
+        .outcome_type = gridiron::OutcomeType::Normal,
+        .yards_gained = 1,
+        .elapsed_seconds = 6,
+    };
+
+    auto result = gridiron::applyOutcome(before, outcome);
+    result.state.quarter = 5;
+    result.state.time_remaining_seconds = 600;
+    result.state.possession = gridiron::Possession::Away;
+    result.state.home_timeouts = 2;
+    result.state.away_timeouts = 2;
+    result.state.down = 1;
+    result.state.distance = 10;
+    result.state.ball_position = 25;
+    result.state.game_over = false;
+    result.period = gridiron::PeriodEvent::OvertimeStart;
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q4 0:00 - BAL run for 1 yards.\n"
+                            "Q4 0:00 - Regulation ends tied.\n"
+                            "Q5 10:00 - Overtime begins. SEA receives the football. "
+                            "Each team has 2 timeouts.\n");
+}
+
+TEST(GameLogTest, OvertimeWinPrintsActualRemainingTime) {
+    gridiron::GameState before;
+    before.quarter = 5;
+    before.time_remaining_seconds = 300;
+    before.home_score = 27;
+    before.away_score = 27;
+    before.down = 4;
+    before.ball_position = 75;
+    before.overtime_possessions_completed = 2;
+
+    const gridiron::Matchup matchup{
+        .home = {.name = "BAL"},
+        .away = {.name = "SEA"},
+    };
+
+    const gridiron::PlayOutcome outcome{
+        .play_type = gridiron::PlayType::FieldGoalAttempt,
+        .outcome_type = gridiron::OutcomeType::FieldGoalMade,
+        .elapsed_seconds = 6,
+    };
+
+    auto result = gridiron::applyOutcome(before, outcome);
+    result.state.game_over = true;
+    result.period = gridiron::PeriodEvent::EndofGame;
+
+    std::ostringstream output;
+    gridiron::printPlay(output, before, matchup, outcome, result);
+
+    EXPECT_EQ(output.str(), "Q5 4:54 - BAL field goal attempt from 42 yards: GOOD. BAL +3.\n"
+                            "Q5 4:54 - Game End.\n");
+}

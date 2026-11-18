@@ -1360,3 +1360,144 @@ TEST(ApplyOutcomeClockTest, TurnoverOnDownsTakesOnlyTheSnap) {
     EXPECT_EQ(result.turnover, gridiron::TurnoverKind::TurnoverOnDowns);
     EXPECT_EQ(result.state.time_remaining_seconds, 600 - gridiron::kSnapSeconds);
 }
+
+TEST(ApplyOutcomeTest, HalftimeResetsBothTeamsTimeouts) {
+    gridiron::GameState state;
+    state.quarter = 2;
+    state.time_remaining_seconds = 6;
+    state.home_timeouts = 0;
+    state.away_timeouts = 1;
+
+    const gridiron::PlayOutcome outcome{
+        .play_type = gridiron::PlayType::Run,
+        .outcome_type = gridiron::OutcomeType::Normal,
+        .yards_gained = 1,
+        .elapsed_seconds = 6,
+        .runoff_seconds = 20,
+    };
+
+    const auto result = gridiron::applyOutcome(state, outcome);
+
+    EXPECT_EQ(result.period, gridiron::PeriodEvent::Halftime);
+    EXPECT_EQ(result.state.quarter, 3);
+    EXPECT_EQ(result.state.home_timeouts, 3);
+    EXPECT_EQ(result.state.away_timeouts, 3);
+}
+
+TEST(ApplyOutcomeTest, OrdinaryQuarterEndPreservesTimeouts) {
+    for (int quarter : {1, 3}) {
+        SCOPED_TRACE(quarter);
+
+        gridiron::GameState state;
+        state.quarter = quarter;
+        state.time_remaining_seconds = 6;
+        state.home_timeouts = 0;
+        state.away_timeouts = 1;
+
+        const gridiron::PlayOutcome outcome{
+            .play_type = gridiron::PlayType::Run,
+            .outcome_type = gridiron::OutcomeType::Normal,
+            .yards_gained = 1,
+            .elapsed_seconds = 6,
+            .runoff_seconds = 20,
+        };
+
+        const auto result = gridiron::applyOutcome(state, outcome);
+
+        EXPECT_EQ(result.period, gridiron::PeriodEvent::EndQuarter);
+        EXPECT_EQ(result.state.quarter, quarter + 1);
+        EXPECT_EQ(result.state.home_timeouts, 0);
+        EXPECT_EQ(result.state.away_timeouts, 1);
+    }
+}
+
+TEST(ApplyOutcomeClockTest, OvertimeRunoffStopsAtTwoMinuteWarning) {
+    gridiron::GameState state;
+    state.quarter = 5;
+    state.time_remaining_seconds = 130;
+
+    const gridiron::PlayOutcome outcome{
+        .play_type = gridiron::PlayType::Run,
+        .outcome_type = gridiron::OutcomeType::Normal,
+        .yards_gained = 1,
+        .elapsed_seconds = 6,
+        .runoff_seconds = 20,
+    };
+
+    const auto result = gridiron::applyOutcome(state, outcome);
+
+    EXPECT_EQ(result.state.time_remaining_seconds, 120);
+    EXPECT_EQ(result.state.quarter, 5);
+    EXPECT_FALSE(result.state.game_over);
+}
+
+TEST(ApplyOutcomeClockTest, OvertimePlayCrossingWarningRemovesRunoff) {
+    gridiron::GameState state;
+    state.quarter = 5;
+    state.time_remaining_seconds = 123;
+
+    const gridiron::PlayOutcome outcome{
+        .play_type = gridiron::PlayType::Run,
+        .outcome_type = gridiron::OutcomeType::Normal,
+        .yards_gained = 1,
+        .elapsed_seconds = 6,
+        .runoff_seconds = 20,
+    };
+
+    const auto result = gridiron::applyOutcome(state, outcome);
+
+    EXPECT_EQ(result.state.time_remaining_seconds, 117);
+}
+
+TEST(ApplyOutcomeClockTest, OvertimeOutOfBoundsUsesFiveMinuteBoundary) {
+    for (int secondsAfterPlay : {301, 300, 299}) {
+        SCOPED_TRACE(secondsAfterPlay);
+
+        gridiron::GameState state;
+        state.quarter = 5;
+        state.time_remaining_seconds = secondsAfterPlay + 6;
+
+        const gridiron::PlayOutcome outcome{
+            .play_type = gridiron::PlayType::Run,
+            .outcome_type = gridiron::OutcomeType::Normal,
+            .yards_gained = 1,
+            .elapsed_seconds = 6,
+            .runoff_seconds = 20,
+            .out_of_bounds = true,
+        };
+
+        const auto result = gridiron::applyOutcome(state, outcome);
+        const int expected = secondsAfterPlay <= 300 ? secondsAfterPlay : secondsAfterPlay - 20;
+
+        EXPECT_EQ(result.state.time_remaining_seconds, expected);
+    }
+}
+
+TEST(ApplyOutcomeClockTest, OvertimeExpirationEndsGameAndPreservesQuarterFive) {
+    for (int homeScore : {24, 27}) {
+        SCOPED_TRACE(homeScore);
+
+        gridiron::GameState state;
+        state.quarter = 5;
+        state.time_remaining_seconds = 4;
+        state.home_score = homeScore;
+        state.away_score = 24;
+
+        const gridiron::PlayOutcome outcome{
+            .play_type = gridiron::PlayType::Run,
+            .outcome_type = gridiron::OutcomeType::Normal,
+            .yards_gained = 1,
+            .elapsed_seconds = 6,
+            .runoff_seconds = 20,
+        };
+
+        const auto result = gridiron::applyOutcome(state, outcome);
+
+        EXPECT_TRUE(result.state.game_over);
+        EXPECT_EQ(result.period, gridiron::PeriodEvent::EndofGame);
+        EXPECT_EQ(result.state.quarter, 5);
+        EXPECT_EQ(result.state.time_remaining_seconds, 0);
+        EXPECT_EQ(result.state.home_score, homeScore);
+        EXPECT_EQ(result.state.away_score, 24);
+    }
+}

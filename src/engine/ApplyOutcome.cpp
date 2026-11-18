@@ -43,7 +43,7 @@ void touchback(GameState& state, int spot) {
 bool clockStops(const GameState& before, const PlayOutcome& outcome) {
     const int afterPlay = before.time_remaining_seconds - outcome.elapsed_seconds;
     const bool q2 = before.quarter == 2;
-    const bool q4 = before.quarter == 4;
+    const bool q4OrOvertime = before.quarter == 4 || before.quarter == 5;
 
     // Incompletions, scores, and changes of possession stop the clock until the next snap.
     switch (outcome.outcome_type) {
@@ -63,11 +63,11 @@ bool clockStops(const GameState& before, const PlayOutcome& outcome) {
     }
 
     if (outcome.out_of_bounds &&
-        ((q2 && afterPlay <= kTwoMinuteWarningSeconds) || (q4 && afterPlay <= kLateQ4OutOfBoundsSeconds))) {
+        ((q2 && afterPlay <= kTwoMinuteWarningSeconds) || (q4OrOvertime && afterPlay <= kLateQ4OutOfBoundsSeconds))) {
         return true;
     }
 
-    if ((q2 || q4) && before.time_remaining_seconds > kTwoMinuteWarningSeconds &&
+    if ((q2 || q4OrOvertime) && before.time_remaining_seconds > kTwoMinuteWarningSeconds &&
         afterPlay <= kTwoMinuteWarningSeconds) {
         return true;
     }
@@ -167,7 +167,8 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
 
     state.time_remaining_seconds -= outcome.elapsed_seconds;
     if (!stopped) {
-        if ((state.quarter == 2 || state.quarter == 4) && state.time_remaining_seconds > kTwoMinuteWarningSeconds &&
+        if ((state.quarter == 2 || state.quarter == 4 || state.quarter == 5) &&
+            state.time_remaining_seconds > kTwoMinuteWarningSeconds &&
             state.time_remaining_seconds - outcome.runoff_seconds < kTwoMinuteWarningSeconds) {
             state.time_remaining_seconds = kTwoMinuteWarningSeconds;
         } else {
@@ -176,6 +177,13 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
     }
 
     if (state.time_remaining_seconds <= 0) {
+        if (state.quarter == 5) {
+            state.time_remaining_seconds = 0;
+            state.game_over = true;
+            result.period = PeriodEvent::EndofGame;
+            return result;
+        }
+
         if (state.quarter == 2) {
             result.period = PeriodEvent::Halftime;
         } else {
@@ -184,6 +192,8 @@ PlaySummary applyOutcomeInPlace(GameState& state, const PlayOutcome& outcome) {
         state.quarter++;
         state.time_remaining_seconds = 900;
         if (state.quarter == 3) {
+            state.home_timeouts = 3;
+            state.away_timeouts = 3;
             state.down = 1;
             state.distance = 10;
             state.ball_position = kKickoffSpot;

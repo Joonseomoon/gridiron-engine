@@ -22,6 +22,8 @@ struct GameState {
     int away_score = 0;
 
     bool game_over = false;
+
+    int overtime_possessions_completed = 0;
 };
 
 } // namespace gridiron

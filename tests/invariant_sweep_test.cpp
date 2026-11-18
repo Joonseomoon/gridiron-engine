@@ -41,9 +41,9 @@ void expectLegal(const gridiron::GameState& s) {
     EXPECT_GE(s.ball_position, 1);
     EXPECT_LE(s.ball_position, 99);
     EXPECT_GE(s.quarter, 1);
-    EXPECT_LE(s.quarter, 4);
+    EXPECT_LE(s.quarter, 5);
     EXPECT_GE(s.time_remaining_seconds, 0);
-    EXPECT_LE(s.time_remaining_seconds, 900);
+    EXPECT_LE(s.time_remaining_seconds, s.quarter == 5 ? 600 : 900);
     EXPECT_GE(s.home_score, 0);
     EXPECT_GE(s.away_score, 0);
 }
@@ -97,7 +97,7 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                     EXPECT_LT(after.state.time_remaining_seconds, before.time_remaining_seconds);
                 } else if (!after.state.game_over) {
                     EXPECT_EQ(after.state.quarter, before.quarter + 1);
-                    EXPECT_EQ(after.state.time_remaining_seconds, 900);
+                    EXPECT_EQ(after.state.time_remaining_seconds, after.state.quarter == 5 ? 600 : 900);
                 }
 
                 // After any score the receiving team starts 1st and 10 at its 25.
@@ -119,8 +119,17 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
             const gridiron::GameState final = gridiron::runGame(c.matchup, rng, onPlay);
 
             EXPECT_TRUE(final.game_over);
-            EXPECT_EQ(final.quarter, 4);
-            EXPECT_EQ(final.time_remaining_seconds, 0);
+            EXPECT_TRUE(final.quarter == 4 || final.quarter == 5);
+            EXPECT_GE(final.time_remaining_seconds, 0);
+            if (final.quarter == 4) {
+                EXPECT_EQ(final.time_remaining_seconds, 0);
+                EXPECT_NE(final.home_score, final.away_score);
+            } else {
+                EXPECT_LE(final.time_remaining_seconds, 600);
+                if (final.home_score == final.away_score) {
+                    EXPECT_EQ(final.time_remaining_seconds, 0);
+                }
+            }
             EXPECT_GT(plays, 0);
             // Final score equals the sum of the scoring plays observed.
             EXPECT_EQ(final.home_score, homeFromScoringPlays);
