@@ -7,11 +7,18 @@ work is tracked in ROADMAP.md and its issues, not here. Remove an item once it i
 
 ## Deferred
 
-### Kickoff and turnover touchback spots (4.1 checkpoint)
+### M4 checkpoint tool and data (from PR #50)
 
-Implemented in the unmerged M4 integration work: kickoffs use 35, turnover touchbacks use 20, and punt
-touchbacks remain at 20. Opening/halftime/overtime starts and logs agree with these spots. Updated with the
-`m4-v1` tuning and fingerprints in `decisions/M4.md`. Remove this item after the integration PR merges.
+`scripts/m4_checkpoint.cpp` is built by hand, outside CMake, so CI never compiles it and it can break silently. Either
+add it as a CMake target (and a CI build step) or delete it once 4.3's comparison runner can report the same
+statistics. `docs/validation/m4-checkpoint.json` is 716 lines of raw checkpoint output; the numbers that matter are in
+`decisions/M4.md`, so delete it unless a later milestone needs the raw data.
+
+### Small code cleanups (from PRs #48–#49)
+
+- `samplePlayOutcome(state, matchup, random)` still exists and quietly uses `DefaultPolicy`, so `OutcomeSampler`
+  depends on the policy layer. Remove that overload and have callers pass a `PlayType`.
+- GameLog prints overtime as "Q5" and hard-codes "Each team has 2 timeouts" instead of `kOvertimeTimeouts`.
 
 ### clang-tidy
 

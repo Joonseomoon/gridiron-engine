@@ -1,4 +1,9 @@
-// Standalone checkpoint tool: see docs/decisions/M4.md for build/run commands.
+// M4 checkpoint statistics (docs/decisions/M4.md). Not built by CMake; from the repo root:
+//   cmake --build build-release
+//   c++ -std=c++20 -O3 -Isrc scripts/m4_checkpoint.cpp build-release/libgridiron_cli.a \
+//       build-release/libgridiron_core.a -o build-release/m4_checkpoint
+//   ./build-release/m4_checkpoint BAL SEA 10000 1000 1 metrics   # points, punts, completions, ties (one thread)
+//   ./build-release/m4_checkpoint BAL SEA 10000 1000 10 batch    # same summary as simulate, any worker count
 #include "cli/BatchCsv.h"
 #include "cli/BatchLog.h"
 #include "cli/Teams.h"
