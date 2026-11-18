@@ -1,13 +1,16 @@
 #include "GameRunner.h"
 
+#include <optional>
 #include <stdexcept>
 
 #include "ApplyOutcome.h"
 #include "DefaultPolicy.h"
 #include "ModelConstants.h"
 #include "OutcomeSampler.h"
+#include "Overtime.h"
 #include "PlayResult.h"
 #include "RandomSource.h"
+#include "Timeout.h"
 
 namespace gridiron {
 
@@ -32,7 +35,7 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& pol
     RandomSource random{rng};
 
     // Each sampled play consumes at least kSnapSeconds seconds of a 900-second quarter.
-    constexpr int maximumPlays = (900 / kSnapSeconds) * 4;
+    constexpr int maximumPlays = (900 / kSnapSeconds) * 4 + kOvertimeSeconds / kSnapSeconds;
     int plays = 0;
     while (!state.game_over) {
         if (plays >= maximumPlays) {
@@ -40,17 +43,27 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& pol
         }
         const Policy& policy = state.possession == Possession::Home ? policies.home : policies.away;
         const PlayType playType = policy.choosePlay(state, matchup, random);
-        const PlayOutcome outcome = samplePlayOutcome(state, matchup, playType, random);
+        PlayOutcome outcome = samplePlayOutcome(state, matchup, playType, random);
+        std::optional<GameState> before;
+        if (onPlay || state.quarter == 5) {
+            before = state;
+        }
+
+        const auto timeout = applyTimeout(state, outcome, policies);
+        PlaySummary summary = applyOutcomeInPlace(state, outcome);
+
+        if (before.has_value() && before->quarter == 5) {
+            finishOvertimePlay(*before, state, summary);
+        }
+
+        if (state.game_over && state.quarter == 4 && state.home_score == state.away_score) {
+            startOvertime(state, random);
+            summary.period = PeriodEvent::OvertimeStart;
+        }
+
         if (onPlay) {
-            const GameState before = state;
-
-            const PlaySummary summary = applyOutcomeInPlace(state, outcome);
-
-            const PlayResult result = {state, summary.event, summary.turnover, summary.period};
-
-            onPlay(before, outcome, result);
-        } else {
-            applyOutcomeInPlace(state, outcome);
+            const PlayResult result{state, summary.event, summary.turnover, summary.period, timeout};
+            onPlay(*before, outcome, result);
         }
         ++plays;
     }

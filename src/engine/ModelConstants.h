@@ -12,4 +12,6 @@ constexpr int kTwoMinuteWarningSeconds = 120;
 constexpr int kLateQ4OutOfBoundsSeconds = 300;
 constexpr double kOutOfBoundsRate = 0.2;
 constexpr double kIncompleteRate = 0.35;
+constexpr int kOvertimeSeconds = 600;
+constexpr int kOvertimeTimeouts = 2;
 } // namespace gridiron

@@ -35,6 +35,8 @@ add_library(gridiron_core
         src/engine/BatchRunner.cpp
         src/engine/ParallelFor.cpp
         src/engine/DefaultPolicy.cpp
+        src/engine/Timeout.cpp
+        src/engine/Overtime.cpp
 )
 target_link_libraries(gridiron_core PRIVATE gridiron_warnings Threads::Threads)
 add_library(gridiron_cli
