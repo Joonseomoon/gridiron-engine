@@ -4,7 +4,8 @@ A C++ NFL simulation engine: play seeded games, repeat matchups to estimate outc
 football decisions. See [docs/PROJECT_OVERVIEW.md](docs/PROJECT_OVERVIEW.md) for the goals and architecture.
 
 **Status:** M1 (one seeded game with a play-by-play log), M2 (`--games N` batches with uncertainty estimates and CSV
-export), and M3 (profiling and multi-threaded performance) are complete.
+export), and M3 (profiling and multi-threaded performance) are complete. M4 adds replaceable team policies, timeouts,
+punts, clock stops, and regular-season overtime; the current model is `m4-v1`.
 
 ## Building and testing
 
@@ -56,13 +57,14 @@ game can be replayed.
 ```
 $ ./build/simulate BAL SEA --seed 1000
 Q1 15:00 - Game Start. BAL receives the football.
-Q1 14:45 - BAL run for 1 yards. 2nd & 9 on BAL 26.
-Q1 14:24 - BAL run for 2 yards. 3rd & 7 on BAL 28.
+Q1 14:32 - BAL run for 3 yards. 2nd & 7 on BAL 38.
+Q1 14:01 - BAL run for 6 yards. 3rd & 1 on BAL 44.
+Q1 13:26 - BAL run for 0 yards. 4th & 1 on BAL 44.
 ...
 Q4 0:00 - Game End.
 Final Score
-BAL - 10
-SEA - 24
+BAL - 12
+SEA - 17
 
 Winner: SEA
 Seed: 1000
@@ -76,17 +78,17 @@ uses seed `batchSeed + i`, so game 2 below replays alone as `./build/simulate BA
 ```
 $ ./build/simulate BAL SEA --games 1000 --seed 1000
 BAL vs SEA, 1000 games, batch seed 1000
-BAL wins: 218   SEA wins: 755   Ties: 27
-Mean score: BAL 11.34   SEA 23.39
-Mean margin (BAL - SEA): -12.05 Mean total: 34.73
-Score sd: BAL 7.76      SEA 10.70       Margin sd: 16.39        Total sd: 9.00
-95% CI: BAL win rate 0.218 ± 0.026      Mean margin -12.05 ± 1.02
+BAL wins: 314	SEA wins: 674	Ties: 12
+Mean score: BAL 20.02	SEA 25.95
+Mean margin (BAL - SEA): -5.93	Mean total: 45.97
+Score sd: BAL 8.38	SEA 8.97	Margin sd: 13.06	Total sd: 11.44
+95% CI: BAL win rate 0.314 ± 0.029	Mean margin -5.93 ± 0.81
 
 Convergence:
-Games   BAL win rate
-10      0.100 ± 0.186
-100     0.230 ± 0.082
-1000    0.218 ± 0.026
+Games	BAL win rate
+10	0.300 ± 0.284
+100	0.320 ± 0.091
+1000	0.314 ± 0.029
 ```
 
 `sd` is how much individual games vary; it doesn't shrink with more games. `95% CI` is the uncertainty of the average
@@ -104,8 +106,9 @@ and precision as the terminal), and a `# command:` line. Then comes the table:
 
 ```csv
 game,seed,home_score,away_score,winner
-0,1000,10,24,away
-1,1001,0,51,away
+0,1000,12,17,away
+1,1001,20,24,away
+2,1002,31,34,away
 ```
 
 Rerunning the recorded command from the same directory gives a byte-identical file with the same build and platform; the
@@ -118,15 +121,20 @@ no partial CSV.
 A deliberately simplified game. The rules are decided in [docs/decisions/M0.md](docs/decisions/M0.md); this is what the
 simulation does **not** model.
 
-- **Rules:** no punts, penalties, timeouts, two-minute warning, two-point tries, or overtime; games can tie. No kickoffs:
-  after every score, at the start of the second half, and on touchbacks, the ball goes to the receiving team's 25.
-  4th down: kick a field goal within 40 yards of the goal line, otherwise go for it; a miss turns the ball over at the
-  line of scrimmage. Turnovers have no returns. Every touchdown is worth 7.
-- **Clock:** running clock only. Every play takes a sampled 10+ seconds, so incomplete passes and out-of-bounds plays
-  don't stop it.
-- **Model:** play calling is 50/50 run/pass in every situation. Yardage is normal around
-  `base + k × (offense rating − defense rating)` with hand-tuned constants (fitted in M5). Turnovers are a flat per-play
-  rate. Field goal success falls linearly with distance. Team ratings are hand-set.
+- **Rules:** no penalties, two-point tries, playoff overtime, or explicit kickoffs/returns. Touchdowns are worth 7.
+  Modeled kickoffs start at the receiving team's 35; punt and turnover touchbacks use the 20. Missed field goals
+  turn possession over at the line of scrimmage.
+- **Policy:** fourth down attempts a field goal within 40 yards of the goal line; outside range, go for it with
+  1–2 yards needed and punt otherwise. Other choices use a 50/50 run/pass draw. A trailing team requests a timeout
+  in the last two minutes of Q2, Q4, or overtime when eligible. Each team starts each half with 3 timeouts;
+  overtime starts with 2. These are simple, replaceable strategies, not optimized decisions.
+- **Clock:** plays take 6 seconds plus sampled runoff. Incompletions, scores, possession changes, timeouts, the
+  two-minute warning, and late out-of-bounds plays remove or interrupt runoff. Overtime uses Q4 timing rules.
+- **Overtime:** one 10-minute period. Both teams get a possession opportunity subject to the clock; opening
+  defensive scores end the game. After the required possessions, the leader wins, or the next score wins if tied.
+  Games still tied at expiration remain ties.
+- **Model:** normal yardage distributions with hand-set ratings and constants, flat turnover/incompletion rates,
+  and a linear field-goal formula. M4 tuning is a rough sanity check, not a fit to NFL data or a validated predictor.
 - **Reproducibility:** the same seed and teams give an identical game **on the same platform and standard library**.
   `std::normal_distribution` is implementation-defined, so another compiler or OS can give a different game. Only macOS
   has been tested.

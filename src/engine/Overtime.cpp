@@ -30,6 +30,7 @@ void finishOvertimePlay(const GameState& before, GameState& state, PlaySummary& 
     const bool awayScored = state.away_score > before.away_score;
     const bool scoreChanged = homeScored || awayScored;
 
+    // A defensive score can leave possession unchanged after the modeled kickoff.
     const bool possessionEnded = state.possession != before.possession || scoreChanged;
     if (possessionEnded) {
         ++state.overtime_possessions_completed;

@@ -44,6 +44,11 @@ void expectLegal(const gridiron::GameState& s) {
     EXPECT_LE(s.quarter, 5);
     EXPECT_GE(s.time_remaining_seconds, 0);
     EXPECT_LE(s.time_remaining_seconds, s.quarter == 5 ? 600 : 900);
+    EXPECT_GE(s.home_timeouts, 0);
+    EXPECT_GE(s.away_timeouts, 0);
+    EXPECT_LE(s.home_timeouts, s.quarter == 5 ? 2 : 3);
+    EXPECT_LE(s.away_timeouts, s.quarter == 5 ? 2 : 3);
+    EXPECT_GE(s.overtime_possessions_completed, 0);
     EXPECT_GE(s.home_score, 0);
     EXPECT_GE(s.away_score, 0);
 }
@@ -79,6 +84,9 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                 // within 40 yards of the goal line.
                 const bool inFieldGoalSpot = before.down == 4 && 100 - before.ball_position <= 40;
                 EXPECT_EQ(outcome.play_type == gridiron::PlayType::FieldGoalAttempt, inFieldGoalSpot);
+                const bool shouldPunt =
+                    before.down == 4 && !inFieldGoalSpot && before.distance > gridiron::kFourthDownGoForItMaxDistance;
+                EXPECT_EQ(outcome.play_type == gridiron::PlayType::Punt, shouldPunt);
 
                 // At most one team scores per play, and only by 2, 3, or 7.
                 const int homeDelta = after.state.home_score - before.home_score;
@@ -92,7 +100,7 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                 const bool scored = homeDelta != 0 || awayDelta != 0;
 
                 // Clock only moves forward: same quarter with less time, or
-                // the next quarter with a fresh 900 seconds.
+                // the next quarter with 900 seconds (600 in overtime).
                 if (after.state.quarter == before.quarter && !after.state.game_over) {
                     EXPECT_LT(after.state.time_remaining_seconds, before.time_remaining_seconds);
                 } else if (!after.state.game_over) {
@@ -100,17 +108,17 @@ TEST(InvariantSweepTest, EveryIntermediateStateIsLegal) {
                     EXPECT_EQ(after.state.time_remaining_seconds, after.state.quarter == 5 ? 600 : 900);
                 }
 
-                // After any score the receiving team starts 1st and 10 at its 25.
+                // After any score the receiving team starts 1st and 10 at its 35.
                 if (scored) {
                     EXPECT_EQ(after.state.down, 1);
                     EXPECT_EQ(after.state.distance, 10);
-                    EXPECT_EQ(after.state.ball_position, 25);
+                    EXPECT_EQ(after.state.ball_position, 35);
                 }
 
                 // Halftime hands the ball to the team that did not open
                 if (before.quarter == 2 && after.state.quarter == 3) {
                     EXPECT_EQ(after.state.possession, opponentOf(after.state.opening_possession));
-                    EXPECT_EQ(after.state.ball_position, 25);
+                    EXPECT_EQ(after.state.ball_position, 35);
                 }
 
                 EXPECT_EQ(after.state.opening_possession, before.opening_possession);

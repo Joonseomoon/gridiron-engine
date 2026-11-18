@@ -100,8 +100,8 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         out << offense << " " << play_name << " for " << yards_gained << " yards. Touchdown! " << offense << " +7.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
-                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense
-                << " 25, 1st & 10 (kickoff).\n";
+                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense << " "
+                << result.state.ball_position << ", 1st & 10 (kickoff).\n";
         }
     } else if (result.event == PlayEvent::DefensiveTouchdown) {
         if (result.turnover == TurnoverKind::Interception) {
@@ -112,8 +112,8 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         out << "Defensive touchdown! " << defense << " +7.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
-                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense
-                << " 25, 1st & 10 (kickoff).\n";
+                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense << " "
+                << result.state.ball_position << ", 1st & 10 (kickoff).\n";
         }
     } else if (result.turnover == TurnoverKind::Interception) {
         out << offense << " pass intercepted by " << defense << ". ";
@@ -121,8 +121,8 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
             out << "Touchback.\n";
             if (result.period == PeriodEvent::None) {
                 out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2)
-                    << seconds << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense
-                    << " 25, 1st & 10 (touchback).\n";
+                    << seconds << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense << " "
+                    << result.state.ball_position << ", 1st & 10 (touchback).\n";
             }
         } else {
             out << "Turnover.\n";
@@ -138,8 +138,8 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
             out << "Touchback.\n";
             if (result.period == PeriodEvent::None) {
                 out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2)
-                    << seconds << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense
-                    << " 25, 1st & 10 (touchback).\n";
+                    << seconds << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense << " "
+                    << result.state.ball_position << ", 1st & 10 (touchback).\n";
             }
         } else {
             out << "Turnover.\n";
@@ -167,15 +167,15 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
         out << offense << " " << play_name << " for " << yards_gained << " yards. Safety! " << defense << " +2.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
-                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense
-                << " 25, 1st & 10 (kickoff).\n";
+                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense << " "
+                << result.state.ball_position << ", 1st & 10 (kickoff).\n";
         }
     } else if (result.event == PlayEvent::FieldGoalGood) {
         out << offense << " field goal attempt from " << fieldGoalDistance << " yards: GOOD. " << offense << " +3.\n";
         if (result.period == PeriodEvent::None) {
             out << "Q" << result.state.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
-                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense
-                << " 25, 1st & 10 (kickoff).\n";
+                << std::setfill(' ') << " - " << afterOffense << " ball on " << afterOffense << " "
+                << result.state.ball_position << ", 1st & 10 (kickoff).\n";
         }
     } else if (result.event == PlayEvent::FirstDown) {
         if (result.period == PeriodEvent::None) {
@@ -206,7 +206,8 @@ void printPlay(std::ostream& out, const GameState& before, const Matchup& matchu
     } else if (result.period == PeriodEvent::Halftime) {
         out << "Q" << before.quarter << " " << minutes << ":" << std::setfill('0') << std::setw(2) << seconds
             << std::setfill(' ') << " - Halftime.\n";
-        out << "Q3 15:00 - " << afterOffense << " ball on " << afterOffense << " 25, 1st & 10 (second-half kickoff).\n";
+        out << "Q3 15:00 - " << afterOffense << " ball on " << afterOffense << " " << result.state.ball_position
+            << ", 1st & 10 (second-half kickoff).\n";
     } else if (result.period == PeriodEvent::OvertimeStart) {
         out << "Q4 0:00 - Regulation ends tied.\n";
         out << "Q5 10:00 - Overtime begins. " << afterOffense << " receives the football. "

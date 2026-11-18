@@ -94,7 +94,7 @@ TEST(IntegrationTest, FieldGoalAttemptRunsEndToEnd) {
 
     if (outcome.outcome_type == gridiron::OutcomeType::FieldGoalMade) {
         EXPECT_EQ(newState.home_score, 3);
-        EXPECT_EQ(newState.ball_position, 25);
+        EXPECT_EQ(newState.ball_position, 35);
     } else {
         ASSERT_EQ(outcome.outcome_type, gridiron::OutcomeType::Turnover);
         EXPECT_EQ(newState.home_score, 0);

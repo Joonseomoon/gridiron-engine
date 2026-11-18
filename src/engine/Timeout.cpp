@@ -13,6 +13,7 @@ std::optional<Possession> applyTimeout(GameState& state, PlayOutcome& outcome, c
     const Possession offense = state.possession;
     const Possession defense = offense == Possession::Home ? Possession::Away : Possession::Home;
 
+    // Deterministic priority if both policies request a timeout: charge only the offense.
     for (Possession team : {offense, defense}) {
         int& remaining = team == Possession::Home ? state.home_timeouts : state.away_timeouts;
         const Policy& policy = team == Possession::Home ? policies.home : policies.away;

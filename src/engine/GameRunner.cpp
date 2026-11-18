@@ -26,6 +26,7 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver&
 
 GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& policies, const PlayObserver& onPlay) {
     GameState state;
+    state.ball_position = kKickoffSpot;
 
     std::bernoulli_distribution coinToss(0.5);
     state.opening_possession = coinToss(rng) ? Possession::Home : Possession::Away;
@@ -34,7 +35,7 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& pol
     // One random source per game, so no stored normal value carries over from another game.
     RandomSource random{rng};
 
-    // Each sampled play consumes at least kSnapSeconds seconds of a 900-second quarter.
+    // Bound four regulation quarters plus one overtime period by the minimum snap time.
     constexpr int maximumPlays = (900 / kSnapSeconds) * 4 + kOvertimeSeconds / kSnapSeconds;
     int plays = 0;
     while (!state.game_over) {

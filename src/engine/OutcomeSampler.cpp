@@ -15,9 +15,11 @@ namespace {
 // Bigger gains take longer to run and to reset from.
 int samplePlayTime(const int yardsGained, RandomSource& random) {
     if (yardsGained > 20) {
-        return std::max(15, static_cast<int>(std::round(random.normal(random.rng, NormalParams{30, 5}))));
+        return std::max(
+            15, static_cast<int>(std::round(random.normal(random.rng, NormalParams{kLongPlayTimeMean, kPlayTimeSd}))));
     }
-    return std::max(10, static_cast<int>(std::round(random.normal(random.rng, NormalParams{20, 5}))));
+    return std::max(10,
+                    static_cast<int>(std::round(random.normal(random.rng, NormalParams{kPlayTimeMean, kPlayTimeSd}))));
 }
 
 bool sampleOutOfBounds(RandomSource& random) {
@@ -27,9 +29,10 @@ bool sampleOutOfBounds(RandomSource& random) {
 } // namespace
 
 PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random) {
-    const int baseYards{2};
-    const double expectedYards{baseYards + 10 * (offense.offensive_run_rating - defense.defensive_run_rating)};
-    const int playYards = static_cast<int>(std::round(random.normal(random.rng, NormalParams{expectedYards, 3.0})));
+    const double expectedYards{kRunBaseYards +
+                               kRunRatingScale * (offense.offensive_run_rating - defense.defensive_run_rating)};
+    const int playYards =
+        static_cast<int>(std::round(random.normal(random.rng, NormalParams{expectedYards, kRunYardsSd})));
     const int playTime = samplePlayTime(playYards, random);
 
     std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
@@ -51,8 +54,8 @@ PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defe
 }
 
 PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random) {
-    const int baseYards{4};
-    const double expectedYards{baseYards + 15 * (offense.offensive_pass_rating - defense.defensive_pass_rating)};
+    const double expectedYards{kPassBaseYards +
+                               kPassRatingScale * (offense.offensive_pass_rating - defense.defensive_pass_rating)};
 
     std::uniform_real_distribution<double> turnoverDistribution(0.0, 1.0);
     const bool turnover = turnoverDistribution(random.rng) < offense.turnover_rate;
@@ -68,7 +71,8 @@ PlayOutcome samplePassOutcome(const TeamProfile& offense, const TeamProfile& def
         }
     }
 
-    const int playYards = static_cast<int>(std::round(random.normal(random.rng, NormalParams{expectedYards, 5.0})));
+    const int playYards =
+        static_cast<int>(std::round(random.normal(random.rng, NormalParams{expectedYards, kPassYardsSd})));
     const int playTime = samplePlayTime(playYards, random);
 
     if (turnover) {
