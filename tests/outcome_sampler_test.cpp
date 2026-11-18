@@ -108,14 +108,33 @@ TEST_F(OutcomeSamplerTest, DefaultPolicyAttemptsFieldGoalAtExactly40) {
     EXPECT_EQ(playType, gridiron::PlayType::FieldGoalAttempt);
 }
 
-TEST_F(OutcomeSamplerTest, DefaultPolicyReturnsRunOrPassOn4thDownOutOfFieldGoalRange) {
+TEST_F(OutcomeSamplerTest, DefaultPolicyPuntsOnLongFourthDownWithoutDrawingRandomness) {
     std::mt19937 rng(42);
+    const auto original = rng;
     gridiron::RandomSource random{rng};
     const gridiron::DefaultPolicy policy;
     const gridiron::Matchup matchup{offense, defense};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 59};
     gridiron::PlayType playType = policy.choosePlay(gameState, matchup, random);
-    EXPECT_TRUE(playType == gridiron::PlayType::Run || playType == gridiron::PlayType::Pass);
+    EXPECT_EQ(playType, gridiron::PlayType::Punt);
+    EXPECT_EQ(rng, original);
+}
+
+TEST_F(OutcomeSamplerTest, DefaultPolicyFourthDownShortYardageBoundary) {
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Matchup matchup{offense, defense};
+    for (int distance : {1, 2, 3}) {
+        SCOPED_TRACE(distance);
+        std::mt19937 rng(42);
+        gridiron::RandomSource random{rng};
+        const gridiron::GameState state{.down = 4, .distance = distance, .ball_position = 59};
+        const auto play = policy.choosePlay(state, matchup, random);
+        if (distance <= 2) {
+            EXPECT_TRUE(play == gridiron::PlayType::Run || play == gridiron::PlayType::Pass);
+        } else {
+            EXPECT_EQ(play, gridiron::PlayType::Punt);
+        }
+    }
 }
 
 TEST_F(OutcomeSamplerTest, DefaultPolicyReturnsRunOrPassInFieldGoalRangeBeforeFourthDown) {
@@ -143,7 +162,7 @@ TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesFieldGoalAttempt) {
 // rating difference, the spread, and the rounding.
 
 TEST_F(OutcomeSamplerTest, RunYardageMatchesExpectedMeanAndSpread) {
-    // expected = 2 + 10 * (0.7 run offense - 0.5 run defense) = 4.0, sd 3.0
+    // expected = 4.3 + 6 * (0.7 run offense - 0.5 run defense) = 5.5, sd 3.0
     std::mt19937 rng(kSeed);
     gridiron::RandomSource random{rng};
     std::vector<int> yards;
@@ -151,12 +170,12 @@ TEST_F(OutcomeSamplerTest, RunYardageMatchesExpectedMeanAndSpread) {
     for (int i = 0; i < kSamples; ++i) {
         yards.push_back(gridiron::sampleRunOutcome(offense, defense, random).yards_gained);
     }
-    EXPECT_NEAR(mean(yards), 4.0, 0.2);
+    EXPECT_NEAR(mean(yards), 5.5, 0.2);
     EXPECT_NEAR(stddev(yards), 3.0, 0.2);
 }
 
 TEST_F(OutcomeSamplerTest, PassYardageMatchesExpectedMeanAndSpread) {
-    // expected = 4 + 15 * (0.8 pass offense - 0.9 pass defense) = 2.5, sd 5.0, for completions only
+    // expected = 10.5 + 10 * (0.8 pass offense - 0.9 pass defense) = 9.5, sd 8.0, for completions only
     std::mt19937 rng(kSeed);
     gridiron::RandomSource random{rng};
     std::vector<int> yards;
@@ -167,8 +186,8 @@ TEST_F(OutcomeSamplerTest, PassYardageMatchesExpectedMeanAndSpread) {
             yards.push_back(outcome.yards_gained);
         }
     }
-    EXPECT_NEAR(mean(yards), 2.5, 0.3);
-    EXPECT_NEAR(stddev(yards), 5.0, 0.3);
+    EXPECT_NEAR(mean(yards), 9.5, 0.3);
+    EXPECT_NEAR(stddev(yards), 8.0, 0.3);
 }
 
 // Catches a flipped rating difference, and catches the run formula reading pass
@@ -269,7 +288,7 @@ TEST_F(OutcomeSamplerTest, PassTurnoverStillReportsPassPlayType) {
 // that the floor alone would hide.
 
 TEST_F(OutcomeSamplerTest, NormalPlayTimeRespectsFloorAndMean) {
-    // Fixture run yardage averages 4, so the over-20-yard branch never fires.
+    // Fixture run yardage averages 5.5, so the over-20-yard branch never fires.
     std::mt19937 rng(kSeed);
     gridiron::RandomSource random{rng};
     std::vector<int> times;
@@ -281,13 +300,13 @@ TEST_F(OutcomeSamplerTest, NormalPlayTimeRespectsFloorAndMean) {
     for (const int time : times) {
         ASSERT_GE(time, 10);
     }
-    EXPECT_NEAR(mean(times), 20.0, 0.5);
+    EXPECT_NEAR(mean(times), 33.0, 0.5);
 }
 
 TEST_F(OutcomeSamplerTest, BigPlayTimeUsesLongerDistribution) {
-    // expected = 2 + 10 * (4.0 - 0.0) = 42 yards, so essentially every play
+    // expected = 4.3 + 6 * (10.0 - 0.0) = 64.3 yards, so essentially every play
     // takes the over-20-yard branch, which the fixture profiles never reach.
-    gridiron::TeamProfile explosive{.name = "Explosive", .offensive_run_rating = 4.0};
+    gridiron::TeamProfile explosive{.name = "Explosive", .offensive_run_rating = 10.0};
     gridiron::TeamProfile porous{.name = "Porous"};
 
     std::mt19937 rng(kSeed);
@@ -303,7 +322,7 @@ TEST_F(OutcomeSamplerTest, BigPlayTimeUsesLongerDistribution) {
     for (const int time : times) {
         ASSERT_GE(time, 15);
     }
-    EXPECT_NEAR(mean(times), 30.0, 0.5);
+    EXPECT_NEAR(mean(times), 43.0, 0.5);
 }
 
 // --- Play type selection and dispatch ---------------------------------------
@@ -455,7 +474,7 @@ TEST_F(OutcomeSamplerTest, FieldGoalClockRespectsFloorAndMean) {
     for (const int time : times) {
         ASSERT_GE(time, 10);
     }
-    EXPECT_NEAR(mean(times), 20.0, 0.5);
+    EXPECT_NEAR(mean(times), 33.0, 0.5);
 }
 
 TEST_F(OutcomeSamplerTest, PuntAlwaysReportsPuntWithFixedPlayTime) {
@@ -531,4 +550,29 @@ TEST_F(OutcomeSamplerTest, DefaultPolicyFieldGoalIsNotRandom) {
 
     EXPECT_EQ(policy.choosePlay(state, matchup, random), gridiron::PlayType::FieldGoalAttempt);
     EXPECT_EQ(rng, original);
+}
+
+TEST_F(OutcomeSamplerTest, DefaultTimeoutStrategyUsesTeamScorePeriodAndPostPlayClock) {
+    const gridiron::DefaultPolicy policy;
+    gridiron::GameState state;
+    state.home_score = 3;
+    state.away_score = 7;
+    const gridiron::PlayOutcome outcome{
+        .play_type = gridiron::PlayType::Run, .outcome_type = gridiron::OutcomeType::Normal, .elapsed_seconds = 6};
+    for (int quarter : {1, 2, 3, 4, 5}) {
+        state.quarter = quarter;
+        state.time_remaining_seconds = 126;
+        EXPECT_EQ(policy.callTimeout(state, outcome, gridiron::Possession::Home),
+                  quarter == 2 || quarter == 4 || quarter == 5);
+        EXPECT_FALSE(policy.callTimeout(state, outcome, gridiron::Possession::Away));
+        state.time_remaining_seconds = 127;
+        EXPECT_FALSE(policy.callTimeout(state, outcome, gridiron::Possession::Home));
+        state.time_remaining_seconds = 6;
+        EXPECT_FALSE(policy.callTimeout(state, outcome, gridiron::Possession::Home));
+    }
+    state.quarter = 4;
+    state.time_remaining_seconds = 100;
+    state.home_score = 7;
+    EXPECT_FALSE(policy.callTimeout(state, outcome, gridiron::Possession::Home));
+    EXPECT_FALSE(policy.callTimeout(state, outcome, gridiron::Possession::Away));
 }

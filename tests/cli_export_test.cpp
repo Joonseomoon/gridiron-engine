@@ -62,7 +62,7 @@ TEST_F(CliExportTest, CreatesCsvFile) {
 
     std::string firstLine;
     ASSERT_TRUE(static_cast<bool>(std::getline(file, firstLine)));
-    EXPECT_EQ(firstLine, "# model_version: m4-dev");
+    EXPECT_EQ(firstLine, "# model_version: m4-v1");
 }
 
 TEST_F(CliExportTest, CsvIsReadableByOthers) {

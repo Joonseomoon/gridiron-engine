@@ -8,6 +8,23 @@
 #include "../src/engine/Overtime.h"
 #include "../src/engine/Timeout.h"
 
+namespace {
+void expectFinished(const gridiron::GameState& state) {
+    EXPECT_TRUE(state.game_over);
+    EXPECT_TRUE(state.quarter == 4 || state.quarter == 5);
+    EXPECT_GE(state.time_remaining_seconds, 0);
+    if (state.quarter == 4) {
+        EXPECT_EQ(state.time_remaining_seconds, 0);
+        EXPECT_NE(state.home_score, state.away_score);
+    } else {
+        EXPECT_LE(state.time_remaining_seconds, 600);
+        if (state.home_score == state.away_score) {
+            EXPECT_EQ(state.time_remaining_seconds, 0);
+        }
+    }
+}
+} // namespace
+
 TEST(GameRunTest, GameOverTrue) {
     gridiron::TeamProfile home{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
     gridiron::TeamProfile away{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
@@ -16,9 +33,7 @@ TEST(GameRunTest, GameOverTrue) {
 
     gridiron::GameState playGame = gridiron::runGame(matchup, rng);
 
-    EXPECT_TRUE(playGame.game_over);
-    EXPECT_EQ(playGame.quarter, 4);
-    EXPECT_EQ(playGame.time_remaining_seconds, 0);
+    expectFinished(playGame);
 }
 
 TEST(GameRunTest, SameSeedFinalState) {
@@ -60,8 +75,8 @@ TEST(GameRunTest, DifferentSeedFinalState) {
         return std::tuple{s.home_score, s.away_score, s.possession, s.down, s.distance, s.ball_position};
     };
     EXPECT_NE(summary(playGame1), summary(playGame2));
-    EXPECT_EQ(playGame1.quarter, playGame2.quarter);
-    EXPECT_EQ(playGame1.time_remaining_seconds, playGame2.time_remaining_seconds);
+    expectFinished(playGame1);
+    expectFinished(playGame2);
     EXPECT_NE(rng1, rng2);
 }
 
@@ -98,9 +113,7 @@ TEST(GameRunTest, MultiSeedTermination) {
         SCOPED_TRACE(seed);
         std::mt19937 rng(seed);
         const auto state = gridiron::runGame(matchup, rng);
-        EXPECT_TRUE(state.game_over);
-        EXPECT_EQ(state.quarter, 4);
-        EXPECT_EQ(state.time_remaining_seconds, 0);
+        expectFinished(state);
         EXPECT_GE(state.down, 1);
         EXPECT_LE(state.down, 4);
         EXPECT_GE(state.ball_position, 1);
@@ -154,9 +167,7 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
 
     gridiron::GameState playGameBestWorst = gridiron::runGame(matchup1, rng1);
 
-    EXPECT_TRUE(playGameBestWorst.game_over);
-    EXPECT_EQ(playGameBestWorst.quarter, 4);
-    EXPECT_EQ(playGameBestWorst.time_remaining_seconds, 0);
+    expectFinished(playGameBestWorst);
 
     // Best away possible team vs worst home possible team
     gridiron::TeamProfile homeWorst{"SEA", 0.0, 0.0, 0.0, 0.0, 1.0, 0.0};
@@ -166,9 +177,7 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
 
     gridiron::GameState playGameWorstBest = gridiron::runGame(matchup2, rng2);
 
-    EXPECT_TRUE(playGameWorstBest.game_over);
-    EXPECT_EQ(playGameWorstBest.quarter, 4);
-    EXPECT_EQ(playGameWorstBest.time_remaining_seconds, 0);
+    expectFinished(playGameWorstBest);
 
     // Turnover rates at highest
     gridiron::TeamProfile homeTurnover{"BAL", 0.8, 0.7, 0.8, 0.7, 1.0, 0.8};
@@ -178,9 +187,7 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
 
     gridiron::GameState playGameTurnover = gridiron::runGame(matchup3, rng3);
 
-    EXPECT_TRUE(playGameTurnover.game_over);
-    EXPECT_TRUE(playGameTurnover.quarter == 4 || playGameTurnover.quarter == 5);
-    EXPECT_EQ(playGameTurnover.time_remaining_seconds, 0);
+    expectFinished(playGameTurnover);
 
     // Turnover rates at lowest
     gridiron::TeamProfile homeNoTurnover{"BAL", 0.8, 0.7, 0.8, 0.7, 0.0, 0.8};
@@ -190,9 +197,7 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
 
     gridiron::GameState playGameNoTurnover = gridiron::runGame(matchup4, rng4);
 
-    EXPECT_TRUE(playGameNoTurnover.game_over);
-    EXPECT_EQ(playGameNoTurnover.quarter, 4);
-    EXPECT_EQ(playGameNoTurnover.time_remaining_seconds, 0);
+    expectFinished(playGameNoTurnover);
 }
 
 TEST(GameRunTest, UsesPolicyOfTeamWithPossession) {
@@ -418,7 +423,7 @@ TEST(OvertimeTest, StartPreservesScoresAndResetsSituation) {
 
     EXPECT_EQ(state.down, 1);
     EXPECT_EQ(state.distance, 10);
-    EXPECT_EQ(state.ball_position, 25);
+    EXPECT_EQ(state.ball_position, 35);
 }
 
 TEST(OvertimeTest, FirstFieldGoalAllowsReplyAndTyingReplyContinues) {
@@ -585,4 +590,148 @@ TEST(OvertimeTest, OpeningTouchdownAllowsReply) {
     EXPECT_EQ(state.overtime_possessions_completed, 1);
     EXPECT_FALSE(state.game_over);
     EXPECT_EQ(summary.period, gridiron::PeriodEvent::None);
+}
+
+TEST(OvertimeTest, DefensiveReturnsEndOpeningPossessionEvenWhenKickoffRestoresPossession) {
+    for (auto type : {gridiron::PlayType::Run, gridiron::PlayType::Pass, gridiron::PlayType::Punt}) {
+        gridiron::GameState state;
+        state.quarter = 5;
+        state.time_remaining_seconds = 600;
+        state.possession = gridiron::Possession::Away;
+        state.ball_position = 1;
+        const gridiron::PlayOutcome outcome{
+            .play_type = type,
+            .outcome_type =
+                type == gridiron::PlayType::Punt ? gridiron::OutcomeType::Punted : gridiron::OutcomeType::Turnover,
+            .yards_gained = -2,
+            .elapsed_seconds = 6,
+        };
+        const auto before = state;
+        auto summary = gridiron::applyOutcomeInPlace(state, outcome);
+        gridiron::finishOvertimePlay(before, state, summary);
+        EXPECT_EQ(state.home_score, 7);
+        EXPECT_EQ(state.possession, before.possession);
+        EXPECT_TRUE(state.game_over);
+        EXPECT_EQ(summary.period, gridiron::PeriodEvent::EndofGame);
+    }
+}
+
+TEST(OvertimeTest, ReplyTouchdownBeatsOpeningFieldGoal) {
+    gridiron::GameState state;
+    state.quarter = 5;
+    state.time_remaining_seconds = 200;
+    state.home_score = 3;
+    state.possession = gridiron::Possession::Away;
+    state.overtime_possessions_completed = 1;
+    state.ball_position = 95;
+    const gridiron::PlayOutcome outcome{.play_type = gridiron::PlayType::Run,
+                                        .outcome_type = gridiron::OutcomeType::Normal,
+                                        .yards_gained = 5,
+                                        .elapsed_seconds = 6};
+    const auto before = state;
+    auto summary = gridiron::applyOutcomeInPlace(state, outcome);
+    gridiron::finishOvertimePlay(before, state, summary);
+    EXPECT_EQ(state.away_score, 7);
+    EXPECT_TRUE(state.game_over);
+    EXPECT_EQ(state.overtime_possessions_completed, 2);
+    EXPECT_EQ(summary.period, gridiron::PeriodEvent::EndofGame);
+}
+
+TEST(OvertimeTest, ScorelessOpeningPossessionAllowsSecondTeamToWinWithFieldGoal) {
+    gridiron::GameState state;
+    state.quarter = 5;
+    state.time_remaining_seconds = 600;
+    const gridiron::PlayOutcome punt{.play_type = gridiron::PlayType::Punt,
+                                     .outcome_type = gridiron::OutcomeType::Punted,
+                                     .yards_gained = 40,
+                                     .elapsed_seconds = 6};
+    auto before = state;
+    auto summary = gridiron::applyOutcomeInPlace(state, punt);
+    gridiron::finishOvertimePlay(before, state, summary);
+    ASSERT_FALSE(state.game_over);
+    ASSERT_EQ(state.overtime_possessions_completed, 1);
+    state.ball_position = 80;
+    const gridiron::PlayOutcome fieldGoal{.play_type = gridiron::PlayType::FieldGoalAttempt,
+                                          .outcome_type = gridiron::OutcomeType::FieldGoalMade,
+                                          .elapsed_seconds = 6};
+    before = state;
+    summary = gridiron::applyOutcomeInPlace(state, fieldGoal);
+    gridiron::finishOvertimePlay(before, state, summary);
+    EXPECT_TRUE(state.game_over);
+    EXPECT_EQ(state.away_score, 3);
+    EXPECT_EQ(summary.period, gridiron::PeriodEvent::EndofGame);
+}
+
+TEST(TimeoutTest, BothRequestsChargeOnlyOffenseAndExpiredPlayCannotUseTimeout) {
+    class AlwaysTimeout : public gridiron::DefaultPolicy {
+        bool callTimeout(const gridiron::GameState&, const gridiron::PlayOutcome&,
+                         gridiron::Possession) const override {
+            return true;
+        }
+    };
+    const AlwaysTimeout policy;
+    const gridiron::Policies policies{policy, policy};
+    gridiron::GameState state;
+    state.possession = gridiron::Possession::Away;
+    gridiron::PlayOutcome outcome{.play_type = gridiron::PlayType::Run,
+                                  .outcome_type = gridiron::OutcomeType::Normal,
+                                  .yards_gained = 1,
+                                  .elapsed_seconds = 6,
+                                  .runoff_seconds = 20};
+    EXPECT_EQ(gridiron::applyTimeout(state, outcome, policies), gridiron::Possession::Away);
+    EXPECT_EQ(state.home_timeouts, 3);
+    EXPECT_EQ(state.away_timeouts, 2);
+    outcome.runoff_seconds = 20;
+    state.time_remaining_seconds = 6;
+    EXPECT_FALSE(gridiron::applyTimeout(state, outcome, policies).has_value());
+    EXPECT_EQ(state.away_timeouts, 2);
+    EXPECT_EQ(outcome.runoff_seconds, 20);
+}
+
+TEST(GameRunTest, ObserverAndBatchPathsAgreeIncludingOvertimeAndTimeouts) {
+    const gridiron::TeamProfile team{"Equal", .8, .8, .8, .8, .03, .95};
+    const gridiron::Matchup matchup{team, team};
+    bool sawOvertime = false;
+    bool sawTimeout = false;
+    for (unsigned seed = 0; seed < 300; ++seed) {
+        std::mt19937 plainRng(seed), observedRng(seed);
+        const auto plain = gridiron::runGame(matchup, plainRng);
+        const auto observed =
+            gridiron::runGame(matchup, observedRng, [&](const auto& before, const auto&, const auto& result) {
+                sawTimeout |= result.timeout_called.has_value();
+                if (before.quarter == 1 && before.time_remaining_seconds == 900) {
+                    EXPECT_EQ(before.ball_position, 35);
+                }
+                if (result.period == gridiron::PeriodEvent::OvertimeStart) {
+                    sawOvertime = true;
+                    EXPECT_EQ(before.quarter, 4);
+                    EXPECT_EQ(result.state.quarter, 5);
+                    EXPECT_EQ(result.state.home_score, result.state.away_score);
+                    EXPECT_EQ(result.state.time_remaining_seconds, 600);
+                    EXPECT_EQ(result.state.home_timeouts, 2);
+                    EXPECT_EQ(result.state.away_timeouts, 2);
+                    EXPECT_EQ(result.state.ball_position, 35);
+                    EXPECT_EQ(result.state.overtime_possessions_completed, 0);
+                    EXPECT_FALSE(result.state.game_over);
+                }
+            });
+        const auto fields = [](const auto& s) {
+            return std::tuple{s.home_score,
+                              s.away_score,
+                              s.quarter,
+                              s.time_remaining_seconds,
+                              s.possession,
+                              s.down,
+                              s.distance,
+                              s.ball_position,
+                              s.home_timeouts,
+                              s.away_timeouts,
+                              s.overtime_possessions_completed,
+                              s.game_over};
+        };
+        EXPECT_EQ(fields(plain), fields(observed));
+        EXPECT_EQ(plainRng, observedRng);
+    }
+    EXPECT_TRUE(sawOvertime);
+    EXPECT_TRUE(sawTimeout);
 }

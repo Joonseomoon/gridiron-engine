@@ -119,7 +119,7 @@ TEST(GameLogTest, FieldGoalGood) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL field goal attempt from 47 yards: GOOD. BAL +3.\n"
-                            "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (kickoff).\n");
+                            "Q3 12:07 - SEA ball on SEA 35, 1st & 10 (kickoff).\n");
 }
 
 TEST(GameLogTest, FieldGoalMissed) {
@@ -182,7 +182,7 @@ TEST(GameLogTest, Safety) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for -2 yards. Safety! SEA +2.\n"
-                            "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (kickoff).\n");
+                            "Q3 12:07 - SEA ball on SEA 35, 1st & 10 (kickoff).\n");
 }
 
 TEST(GameLogTest, FumbleNormal) {
@@ -224,7 +224,7 @@ TEST(GameLogTest, FumbleTouchBack) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL fumble recovered by SEA. Touchback.\n"
-                            "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (touchback).\n");
+                            "Q3 12:07 - SEA ball on SEA 20, 1st & 10 (touchback).\n");
 }
 
 TEST(GameLogTest, FumbleDefensiveTouchdown) {
@@ -245,7 +245,7 @@ TEST(GameLogTest, FumbleDefensiveTouchdown) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL fumble recovered by SEA. Defensive touchdown! SEA +7.\n"
-                            "Q3 12:07 - BAL ball on BAL 25, 1st & 10 (kickoff).\n");
+                            "Q3 12:07 - BAL ball on BAL 35, 1st & 10 (kickoff).\n");
 }
 
 TEST(GameLogTest, InterceptionNormal) {
@@ -287,7 +287,7 @@ TEST(GameLogTest, InterceptionTouchBack) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass intercepted by SEA. Touchback.\n"
-                            "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (touchback).\n");
+                            "Q3 12:07 - SEA ball on SEA 20, 1st & 10 (touchback).\n");
 }
 
 TEST(GameLogTest, InterceptionDefensiveTouchdown) {
@@ -308,7 +308,7 @@ TEST(GameLogTest, InterceptionDefensiveTouchdown) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass intercepted by SEA. Defensive touchdown! SEA +7.\n"
-                            "Q3 12:07 - BAL ball on BAL 25, 1st & 10 (kickoff).\n");
+                            "Q3 12:07 - BAL ball on BAL 35, 1st & 10 (kickoff).\n");
 }
 
 TEST(GameLogTest, OffenseTouchdown) {
@@ -329,7 +329,7 @@ TEST(GameLogTest, OffenseTouchdown) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q3 12:07 - BAL pass for 5 yards. Touchdown! BAL +7.\n"
-                            "Q3 12:07 - SEA ball on SEA 25, 1st & 10 (kickoff).\n");
+                            "Q3 12:07 - SEA ball on SEA 35, 1st & 10 (kickoff).\n");
 }
 
 TEST(GameLogTest, DownAndGoal) {
@@ -394,7 +394,7 @@ TEST(GameLogTest, HalftimeRegular) {
 
     EXPECT_EQ(output.str(), "Q2 0:00 - BAL pass for 5 yards.\n"
                             "Q2 0:00 - Halftime.\n"
-                            "Q3 15:00 - SEA ball on SEA 25, 1st & 10 (second-half kickoff).\n");
+                            "Q3 15:00 - SEA ball on SEA 35, 1st & 10 (second-half kickoff).\n");
 }
 
 TEST(GameLogTest, HalftimeTouchdown) {
@@ -417,7 +417,7 @@ TEST(GameLogTest, HalftimeTouchdown) {
 
     EXPECT_EQ(output.str(), "Q2 0:00 - BAL pass for 5 yards. Touchdown! BAL +7.\n"
                             "Q2 0:00 - Halftime.\n"
-                            "Q3 15:00 - BAL ball on BAL 25, 1st & 10 (second-half kickoff).\n");
+                            "Q3 15:00 - BAL ball on BAL 35, 1st & 10 (second-half kickoff).\n");
 }
 
 TEST(GameLogTest, EndofGame) {
@@ -562,7 +562,7 @@ TEST(GameLogTest, PuntReturnTouchdown) {
     gridiron::printPlay(output, before, matchup, outcome, result);
 
     EXPECT_EQ(output.str(), "Q2 6:34 - BAL punt returned for a touchdown by SEA! SEA +7.\n"
-                            "Q2 6:34 - BAL ball on BAL 25, 1st & 10 (kickoff).\n");
+                            "Q2 6:34 - BAL ball on BAL 35, 1st & 10 (kickoff).\n");
 }
 
 TEST(GameLogTest, IncompletePass) {

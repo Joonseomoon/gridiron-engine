@@ -9,10 +9,9 @@ work is tracked in ROADMAP.md and its issues, not here. Remove an item once it i
 
 ### Kickoff and turnover touchback spots (4.1 checkpoint)
 
-Scores place the receiving team at the 25 (`kKickoffSpot`) and turnover touchbacks also use the 25
-(`kTurnoverTouchbackSpot`). The NFL kickoff touchback is the 35 (since 2025) and a turnover touchback is the 20. Punts
-already use the 20. Changing either changes output, so it waits for the 4.1 checkpoint's retune and `m4-v1` bump; the
-kickoff change raises scoring slightly, so make it before tuning totals.
+Implemented in the unmerged M4 integration work: kickoffs use 35, turnover touchbacks use 20, and punt
+touchbacks remain at 20. Opening/halftime/overtime starts and logs agree with these spots. Updated with the
+`m4-v1` tuning and fingerprints in `decisions/M4.md`. Remove this item after the integration PR merges.
 
 ### clang-tidy
 

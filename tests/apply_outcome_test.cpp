@@ -136,7 +136,7 @@ TEST(ApplyOutcomeTest, AwayRunCrossesGoalLineScoresTouchdown) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
@@ -178,7 +178,7 @@ TEST(ApplyOutcomeTest, FieldGoalMadeByHomeTeam) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 3);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -220,7 +220,7 @@ TEST(ApplyOutcomeTest, FieldGoalMadeByAwayTeam) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 3);
     EXPECT_FALSE(newState.game_over);
@@ -240,7 +240,7 @@ TEST(ApplyOutcomeTest, AwayTackledBehindOwnGoalLineGivesHomeSafety) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 2);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -280,7 +280,7 @@ TEST(ApplyOutcomeTest, RunWithNegativeYardsGainedBelowZero) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
@@ -300,7 +300,7 @@ TEST(ApplyOutcomeTest, 4thDownAndPassWithNegativeYardsGainedBelowZero) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
@@ -380,7 +380,7 @@ TEST(ApplyOutcomeTest, PassWithHalftimeAndHomeOpening) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -401,7 +401,7 @@ TEST(ApplyOutcomeTest, RunWithHalftimeAndAwayAwayOpening) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -435,7 +435,7 @@ TEST(ApplyOutcomeTest, FieldGoalMadeToEndHalf) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 3);
     EXPECT_FALSE(newState.game_over);
@@ -455,7 +455,7 @@ TEST(ApplyOutcomeTest, SafetyToEndHalf) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
@@ -492,7 +492,7 @@ TEST(ApplyOutcomeTest, RunReachesExactlyGoalLineScoresTouchdown) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -512,7 +512,7 @@ TEST(ApplyOutcomeTest, RunCrossesBeyondGoalLineScoresTouchdown) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -535,7 +535,7 @@ TEST(ApplyOutcomeTest, PassCrossesGoalLineOnFinalPlayOfHalfStillScores) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -632,7 +632,7 @@ TEST(ApplyOutcomeTest, TurnoverNearOpponentGoalLineResultsInTouchback) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 20);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -653,7 +653,7 @@ TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineResultsInDefensiveTouchdown) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
@@ -673,7 +673,7 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly0ResultsInTouchdown) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
@@ -695,7 +695,7 @@ TEST(ApplyOutcomeTest, TurnoverAtExactly100ResultsInTouchback) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 20);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_FALSE(newState.game_over);
@@ -717,7 +717,7 @@ TEST(ApplyOutcomeTest, TackledAtExactlyOwnGoalLineIsSafety) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);
@@ -737,7 +737,7 @@ TEST(ApplyOutcomeTest, TurnoverBehindOwnGoalLineAtEndOfHalf) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 7);
     EXPECT_FALSE(newState.game_over);
@@ -778,7 +778,7 @@ TEST(ApplyOutcomeTest, TouchdownResetsDownAndDistanceFromMidSeries) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 7);
     EXPECT_EQ(result.event, gridiron::PlayEvent::TouchDown);
     EXPECT_EQ(result.turnover, gridiron::TurnoverKind::None);
@@ -794,7 +794,7 @@ TEST(ApplyOutcomeTest, TouchbackResetsDownAndDistanceFromMidSeries) {
     EXPECT_EQ(newState.possession, gridiron::Possession::Away);
     EXPECT_EQ(newState.down, 1);
     EXPECT_EQ(newState.distance, 10);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 20);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 0);
     EXPECT_EQ(result.event, gridiron::PlayEvent::Touchback);
@@ -851,7 +851,7 @@ TEST(ApplyOutcomeTest, SafetyToEndHalfDoesNotKeepItsOwnKickoffWhenAwayOpened) {
     EXPECT_EQ(newState.quarter, 3);
     EXPECT_EQ(newState.time_remaining_seconds, 900);
     EXPECT_EQ(newState.possession, gridiron::Possession::Home);
-    EXPECT_EQ(newState.ball_position, 25);
+    EXPECT_EQ(newState.ball_position, 35);
     EXPECT_EQ(newState.home_score, 0);
     EXPECT_EQ(newState.away_score, 2);
     EXPECT_FALSE(newState.game_over);

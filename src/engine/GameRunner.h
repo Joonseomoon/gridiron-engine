@@ -12,10 +12,11 @@
 namespace gridiron {
 
 // Called once per play with the state before the snap, the sampled outcome,
-// and the state after applying it.
+// and the state after applying it. Outcome runoff reflects any called timeout.
 using PlayObserver = std::function<void(const GameState& before, const PlayOutcome& outcome, const PlayResult& after)>;
 
-// Simulate four quarters using the caller's random engine; ties are allowed.
+// Simulate regulation and, if tied, one regular-season overtime period.
+// Uses the caller's random engine; overtime can still end tied.
 GameState runGame(const Matchup& matchup, std::mt19937& rng);
 
 // Same as above, but reports every play to onPlay. Draws the same random
