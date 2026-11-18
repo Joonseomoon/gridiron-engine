@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include "ApplyOutcome.h"
+#include "DefaultPolicy.h"
 #include "ModelConstants.h"
 #include "OutcomeSampler.h"
 #include "PlayResult.h"
@@ -15,6 +16,12 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng) {
 }
 
 GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver& onPlay) {
+    const DefaultPolicy policy;
+    const Policies policies{policy, policy};
+    return runGame(matchup, rng, policies, onPlay);
+}
+
+GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& policies, const PlayObserver& onPlay) {
     GameState state;
 
     std::bernoulli_distribution coinToss(0.5);
@@ -31,7 +38,9 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver&
         if (plays >= maximumPlays) {
             throw std::runtime_error("Game exceeded maximum play count");
         }
-        const PlayOutcome outcome = samplePlayOutcome(state, matchup, random);
+        const Policy& policy = state.possession == Possession::Home ? policies.home : policies.away;
+        const PlayType playType = policy.choosePlay(state, matchup, random);
+        const PlayOutcome outcome = samplePlayOutcome(state, matchup, playType, random);
         if (onPlay) {
             const GameState before = state;
 

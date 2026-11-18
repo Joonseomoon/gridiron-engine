@@ -10,7 +10,8 @@ namespace gridiron {
 
 PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random);
 
-PlayType choosePlayType(const GameState& gameState, RandomSource& random);
+PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, PlayType playType,
+                              RandomSource& random);
 
 PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random);
 

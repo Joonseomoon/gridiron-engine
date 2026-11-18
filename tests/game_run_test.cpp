@@ -2,6 +2,7 @@
 #include <random>
 #include <tuple>
 
+#include "../src/engine/DefaultPolicy.h"
 #include "../src/engine/GameRunner.h"
 
 TEST(GameRunTest, GameOverTrue) {
@@ -189,4 +190,49 @@ TEST(GameRunTest, ExtremeProfilesStillTerminate) {
     EXPECT_TRUE(playGameNoTurnover.game_over);
     EXPECT_EQ(playGameNoTurnover.quarter, 4);
     EXPECT_EQ(playGameNoTurnover.time_remaining_seconds, 0);
+}
+
+TEST(GameRunTest, UsesPolicyOfTeamWithPossession) {
+    class AlwaysRunPolicy : public gridiron::DefaultPolicy {
+    public:
+        gridiron::PlayType choosePlay(const gridiron::GameState&, const gridiron::Matchup&,
+                                      gridiron::RandomSource&) const override {
+            return gridiron::PlayType::Run;
+        }
+    };
+
+    class AlwaysPassPolicy : public gridiron::DefaultPolicy {
+    public:
+        gridiron::PlayType choosePlay(const gridiron::GameState&, const gridiron::Matchup&,
+                                      gridiron::RandomSource&) const override {
+            return gridiron::PlayType::Pass;
+        }
+    };
+
+    const AlwaysRunPolicy homePolicy;
+    const AlwaysPassPolicy awayPolicy;
+    const gridiron::Policies policies{homePolicy, awayPolicy};
+
+    const gridiron::TeamProfile home{"BAL", .8, .7, .8, .7, .05, .8};
+    const gridiron::TeamProfile away{"SEA", .7, .9, .9, .5, .05, .8};
+    const gridiron::Matchup matchup{home, away};
+    std::mt19937 rng(42);
+
+    bool sawHomePlay = false;
+    bool sawAwayPlay = false;
+
+    gridiron::runGame(
+        matchup, rng, policies,
+        [&](const gridiron::GameState& before, const gridiron::PlayOutcome& outcome, const gridiron::PlayResult&) {
+            if (before.possession == gridiron::Possession::Home) {
+                sawHomePlay = true;
+                EXPECT_EQ(outcome.play_type, gridiron::PlayType::Run);
+            } else {
+                sawAwayPlay = true;
+                EXPECT_EQ(outcome.play_type, gridiron::PlayType::Pass);
+            }
+        });
+
+    EXPECT_TRUE(sawHomePlay);
+    EXPECT_TRUE(sawAwayPlay);
 }

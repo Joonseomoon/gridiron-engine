@@ -1,4 +1,5 @@
 #include "OutcomeSampler.h"
+#include "DefaultPolicy.h"
 #include "ModelConstants.h"
 
 #include <algorithm>
@@ -24,18 +25,6 @@ bool sampleOutOfBounds(RandomSource& random) {
     return distribution(random.rng) < kOutOfBoundsRate;
 }
 } // namespace
-
-PlayType choosePlayType(const GameState& gameState, RandomSource& random) {
-    const int distanceToGoal = 100 - gameState.ball_position;
-    if (gameState.down == 4 && distanceToGoal <= 40) {
-        return PlayType::FieldGoalAttempt;
-    }
-    std::uniform_real_distribution<double> passOrRunDistribution(0.0, 1.0);
-    if (passOrRunDistribution(random.rng) > 0.5) {
-        return PlayType::Run;
-    }
-    return PlayType::Pass;
-}
 
 PlayOutcome sampleRunOutcome(const TeamProfile& offense, const TeamProfile& defense, RandomSource& random) {
     const int baseYards{2};
@@ -121,7 +110,13 @@ PlayOutcome samplePuntOutcome(RandomSource& random) {
 }
 
 PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random) {
-    PlayType playType = choosePlayType(gameState, random);
+    const DefaultPolicy policy;
+    const PlayType playType = policy.choosePlay(gameState, matchup, random);
+    return samplePlayOutcome(gameState, matchup, playType, random);
+}
+
+PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, PlayType playType,
+                              RandomSource& random) {
     const TeamProfile& offense = (gameState.possession == Possession::Home) ? matchup.home : matchup.away;
     const TeamProfile& defense = (gameState.possession == Possession::Home) ? matchup.away : matchup.home;
 

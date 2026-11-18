@@ -3,6 +3,7 @@
 #include <cmath>
 #include <vector>
 
+#include "../src/engine/DefaultPolicy.h"
 #include "../src/engine/ModelConstants.h"
 #include "../src/engine/OutcomeSampler.h"
 #include "../src/engine/RandomSource.h"
@@ -87,35 +88,43 @@ TEST_F(OutcomeSamplerTest, PassTurnoverRateZeroNeverTurnover) {
     EXPECT_NE(outcome.outcome_type, gridiron::OutcomeType::Turnover);
 }
 
-TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsFieldGoalAttempt) {
+TEST_F(OutcomeSamplerTest, DefaultPolicyReturnsFieldGoalAttempt) {
     std::mt19937 rng(42);
     gridiron::RandomSource random{rng};
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Matchup matchup{offense, defense};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 75};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
+    gridiron::PlayType playType = policy.choosePlay(gameState, matchup, random);
     EXPECT_EQ(playType, gridiron::PlayType::FieldGoalAttempt);
 }
 
-TEST_F(OutcomeSamplerTest, ChoosePlayTypeAttemptsFieldGoalAtExactly40) {
+TEST_F(OutcomeSamplerTest, DefaultPolicyAttemptsFieldGoalAtExactly40) {
     std::mt19937 rng(42);
     gridiron::RandomSource random{rng};
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Matchup matchup{offense, defense};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 60};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
+    gridiron::PlayType playType = policy.choosePlay(gameState, matchup, random);
     EXPECT_EQ(playType, gridiron::PlayType::FieldGoalAttempt);
 }
 
-TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsRunOrPassOn4thDownOutOfFieldGoalRange) {
+TEST_F(OutcomeSamplerTest, DefaultPolicyReturnsRunOrPassOn4thDownOutOfFieldGoalRange) {
     std::mt19937 rng(42);
     gridiron::RandomSource random{rng};
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Matchup matchup{offense, defense};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 59};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
+    gridiron::PlayType playType = policy.choosePlay(gameState, matchup, random);
     EXPECT_TRUE(playType == gridiron::PlayType::Run || playType == gridiron::PlayType::Pass);
 }
 
-TEST_F(OutcomeSamplerTest, ChoosePlayTypeReturnsRunOrPassInFieldGoalRangeBeforeFourthDown) {
+TEST_F(OutcomeSamplerTest, DefaultPolicyReturnsRunOrPassInFieldGoalRangeBeforeFourthDown) {
     std::mt19937 rng(42);
     gridiron::RandomSource random{rng};
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Matchup matchup{offense, defense};
     auto gameState = gridiron::GameState{.down = 3, .ball_position = 75};
-    gridiron::PlayType playType = gridiron::choosePlayType(gameState, random);
+    gridiron::PlayType playType = policy.choosePlay(gameState, matchup, random);
     EXPECT_TRUE(playType == gridiron::PlayType::Run || playType == gridiron::PlayType::Pass);
 }
 
@@ -299,13 +308,15 @@ TEST_F(OutcomeSamplerTest, BigPlayTimeUsesLongerDistribution) {
 
 // --- Play type selection and dispatch ---------------------------------------
 
-TEST_F(OutcomeSamplerTest, ChoosePlayTypeSplitsRunAndPassRoughlyEvenly) {
+TEST_F(OutcomeSamplerTest, DefaultPolicySplitsRunAndPassRoughlyEvenly) {
     std::mt19937 rng(kSeed);
     gridiron::RandomSource random{rng};
     gridiron::GameState gameState;
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Matchup matchup{offense, defense};
     int runs = 0;
     for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::choosePlayType(gameState, random) == gridiron::PlayType::Run) {
+        if (policy.choosePlay(gameState, matchup, random) == gridiron::PlayType::Run) {
             ++runs;
         }
     }
@@ -332,13 +343,14 @@ TEST_F(OutcomeSamplerTest, SamplePlayOutcomeProducesBothRunAndPass) {
 // ran, so swapping is invisible in aggregate.
 TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesToTheChosenPlayType) {
     gridiron::Matchup matchup{.home = offense, .away = defense};
+    const gridiron::DefaultPolicy policy;
     gridiron::GameState gameState;
     for (unsigned seed = 1; seed <= 50; ++seed) {
         std::mt19937 decisionRng(seed);
         std::mt19937 outcomeRng(seed);
         gridiron::RandomSource decisionRandom{decisionRng};
         gridiron::RandomSource outcomeRandom{outcomeRng};
-        const gridiron::PlayType chosen = gridiron::choosePlayType(gameState, decisionRandom);
+        const gridiron::PlayType chosen = policy.choosePlay(gameState, matchup, decisionRandom);
         const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, matchup, outcomeRandom);
         EXPECT_EQ(outcome.play_type, chosen) << "seed " << seed;
     }
@@ -506,4 +518,17 @@ TEST_F(OutcomeSamplerTest, PassOutOfBoundsFrequencyMatchesRate) {
         }
     }
     EXPECT_NEAR(static_cast<double>(outOfBounds) / plays, gridiron::kOutOfBoundsRate, 0.02);
+}
+
+TEST_F(OutcomeSamplerTest, DefaultPolicyFieldGoalIsNotRandom) {
+    std::mt19937 rng(42);
+    const std::mt19937 original = rng;
+    gridiron::RandomSource random{rng};
+
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Matchup matchup{offense, defense};
+    const gridiron::GameState state{.down = 4, .ball_position = 60};
+
+    EXPECT_EQ(policy.choosePlay(state, matchup, random), gridiron::PlayType::FieldGoalAttempt);
+    EXPECT_EQ(rng, original);
 }
