@@ -1,5 +1,4 @@
 #include "OutcomeSampler.h"
-#include "DefaultPolicy.h"
 #include "ModelConstants.h"
 
 #include <algorithm>
@@ -111,12 +110,6 @@ PlayOutcome samplePuntOutcome(RandomSource& random) {
                        .outcome_type = OutcomeType::Punted,
                        .yards_gained = puntYards,
                        .elapsed_seconds = kPuntSeconds};
-}
-
-PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random) {
-    const DefaultPolicy policy;
-    const PlayType playType = policy.choosePlay(gameState, matchup, random);
-    return samplePlayOutcome(gameState, matchup, playType, random);
 }
 
 PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, PlayType playType,

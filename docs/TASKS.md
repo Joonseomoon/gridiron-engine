@@ -16,8 +16,6 @@ statistics. `docs/validation/m4-checkpoint.json` is 716 lines of raw checkpoint 
 
 ### Small code cleanups (from PRs #48–#49)
 
-- `samplePlayOutcome(state, matchup, random)` still exists and quietly uses `DefaultPolicy`, so `OutcomeSampler`
-  depends on the policy layer. Remove that overload and have callers pass a `PlayType`.
 - GameLog prints overtime as "Q5" and hard-codes "Each team has 2 timeouts" instead of `kOvertimeTimeouts`.
 
 ### clang-tidy
