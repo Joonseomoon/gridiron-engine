@@ -152,7 +152,9 @@ TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesFieldGoalAttempt) {
     std::mt19937 rng(42);
     gridiron::RandomSource random{rng};
     auto gameState = gridiron::GameState{.down = 4, .ball_position = 75};
-    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, matchup, random);
+    const gridiron::DefaultPolicy policy;
+    const gridiron::PlayType playType = policy.choosePlay(gameState, matchup, random);
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, matchup, playType, random);
     EXPECT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
 }
 
@@ -342,36 +344,16 @@ TEST_F(OutcomeSamplerTest, DefaultPolicySplitsRunAndPassRoughlyEvenly) {
     EXPECT_NEAR(runs / static_cast<double>(kSamples), 0.5, 0.03);
 }
 
-TEST_F(OutcomeSamplerTest, SamplePlayOutcomeProducesBothRunAndPass) {
-    gridiron::Matchup matchup{.home = offense, .away = defense};
-    std::mt19937 rng(kSeed);
-    gridiron::RandomSource random{rng};
-    gridiron::GameState gameState;
-    int runs = 0;
-    for (int i = 0; i < kSamples; ++i) {
-        if (gridiron::samplePlayOutcome(gameState, matchup, random).play_type == gridiron::PlayType::Run) {
-            ++runs;
-        }
-    }
-    EXPECT_NEAR(runs / static_cast<double>(kSamples), 0.5, 0.03);
-}
-
-// Two identically seeded generators consume the same first draw, so the decision
-// is the same in both calls. A frequency check cannot catch a swapped dispatch:
-// the split is symmetric and the reported play type follows whichever sampler
-// ran, so swapping is invisible in aggregate.
 TEST_F(OutcomeSamplerTest, SamplePlayOutcomeDispatchesToTheChosenPlayType) {
     gridiron::Matchup matchup{.home = offense, .away = defense};
     const gridiron::DefaultPolicy policy;
-    gridiron::GameState gameState;
-    for (unsigned seed = 1; seed <= 50; ++seed) {
-        std::mt19937 decisionRng(seed);
-        std::mt19937 outcomeRng(seed);
-        gridiron::RandomSource decisionRandom{decisionRng};
-        gridiron::RandomSource outcomeRandom{outcomeRng};
-        const gridiron::PlayType chosen = policy.choosePlay(gameState, matchup, decisionRandom);
-        const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, matchup, outcomeRandom);
-        EXPECT_EQ(outcome.play_type, chosen) << "seed " << seed;
+    gridiron::GameState gameState{.down = 4, .ball_position = 75};
+    for (gridiron::PlayType type : {gridiron::PlayType::Run, gridiron::PlayType::Pass,
+                                    gridiron::PlayType::FieldGoalAttempt, gridiron::PlayType::Punt}) {
+        std::mt19937 rng(kSeed);
+        gridiron::RandomSource random{rng};
+        gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(gameState, matchup, type, random);
+        EXPECT_EQ(outcome.play_type, type);
     }
 }
 

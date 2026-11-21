@@ -7,9 +7,6 @@
 #include "TeamProfile.h"
 
 namespace gridiron {
-
-PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, RandomSource& random);
-
 PlayOutcome samplePlayOutcome(const GameState& gameState, const Matchup& matchup, PlayType playType,
                               RandomSource& random);
 

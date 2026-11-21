@@ -16,9 +16,14 @@ statistics. `docs/validation/m4-checkpoint.json` is 716 lines of raw checkpoint 
 
 ### Small code cleanups (from PRs #48–#49)
 
-- `samplePlayOutcome(state, matchup, random)` still exists and quietly uses `DefaultPolicy`, so `OutcomeSampler`
-  depends on the policy layer. Remove that overload and have callers pass a `PlayType`.
 - GameLog prints overtime as "Q5" and hard-codes "Each team has 2 timeouts" instead of `kOvertimeTimeouts`.
+
+### Source layout (start of M5)
+
+`src/engine` and `tests` are flat (31 and 17 files after 4.2). At the start of M5, when data and model code need new
+folders anyway, sort them into subfolders (for example rules, sampling, policy, run) with tests mirroring them. Do it as
+a move-only PR between rounds, with no other branches open, using `git mv` so history is kept. Add a CMake include
+directory so includes become `"engine/..."` instead of `"../src/engine/..."`. Fingerprints must not change.
 
 ### clang-tidy
 

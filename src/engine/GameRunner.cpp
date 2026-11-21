@@ -14,6 +14,19 @@
 
 namespace gridiron {
 
+namespace {
+PlayType forcedPlayType(CandidateAction action, RandomSource& random) {
+    switch (action) {
+    case CandidateAction::GoForIt: return chooseRunOrPass(random);
+    case CandidateAction::Run: return PlayType::Run;
+    case CandidateAction::Pass: return PlayType::Pass;
+    case CandidateAction::FieldGoal: return PlayType::FieldGoalAttempt;
+    case CandidateAction::Punt: return PlayType::Punt;
+    }
+    throw std::logic_error("unhandled CandidateAction");
+}
+} // namespace
+
 GameState runGame(const Matchup& matchup, std::mt19937& rng) {
     return runGame(matchup, rng, PlayObserver{});
 }
@@ -31,7 +44,11 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& pol
     std::bernoulli_distribution coinToss(0.5);
     state.opening_possession = coinToss(rng) ? Possession::Home : Possession::Away;
     state.possession = state.opening_possession;
+    return resumeGame(state, matchup, policies, std::nullopt, rng, onPlay);
+}
 
+GameState resumeGame(GameState state, const Matchup& matchup, const Policies& policies,
+                     std::optional<CandidateAction> firstAction, std::mt19937& rng, const PlayObserver& onPlay) {
     // One random source per game, so no stored normal value carries over from another game.
     RandomSource random{rng};
 
@@ -43,7 +60,13 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& pol
             throw std::runtime_error("Game exceeded maximum play count");
         }
         const Policy& policy = state.possession == Possession::Home ? policies.home : policies.away;
-        const PlayType playType = policy.choosePlay(state, matchup, random);
+        PlayType playType;
+        if (firstAction.has_value()) {
+            playType = forcedPlayType(*firstAction, random);
+            firstAction.reset();
+        } else {
+            playType = policy.choosePlay(state, matchup, random);
+        }
         PlayOutcome outcome = samplePlayOutcome(state, matchup, playType, random);
         std::optional<GameState> before;
         if (onPlay || state.quarter == 5) {
