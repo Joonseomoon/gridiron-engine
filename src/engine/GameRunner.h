@@ -25,4 +25,7 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver&
 
 GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& policies, const PlayObserver& onPlay);
 
+GameState resumeGame(GameState state, const Matchup& matchup, const Policies& policies, std::mt19937& rng,
+                     const PlayObserver& onPlay = {});
+
 } // namespace gridiron

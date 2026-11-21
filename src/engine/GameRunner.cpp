@@ -31,7 +31,12 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& pol
     std::bernoulli_distribution coinToss(0.5);
     state.opening_possession = coinToss(rng) ? Possession::Home : Possession::Away;
     state.possession = state.opening_possession;
+    return resumeGame(state, matchup, policies, rng, onPlay);
+}
 
+// PLay from a supplied state to the end, including overtime if tied. No coin toss.
+GameState resumeGame(GameState state, const Matchup& matchup, const Policies& policies, std::mt19937& rng,
+                     const PlayObserver& onPlay) {
     // One random source per game, so no stored normal value carries over from another game.
     RandomSource random{rng};
 
