@@ -3,6 +3,7 @@
 #include <random>
 
 #include "../src/engine/ApplyOutcome.h"
+#include "../src/engine/DefaultPolicy.h"
 #include "../src/engine/GameState.h"
 #include "../src/engine/OutcomeSampler.h"
 #include "../src/engine/PlayResult.h"
@@ -44,7 +45,9 @@ TEST(IntegrationTest, SampleOneEventAndApplyIt) {
     std::mt19937 rng(2000);
 
     gridiron::RandomSource random{rng};
-    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, matchup, random);
+    const gridiron::DefaultPolicy policy;
+    const gridiron::PlayType playType = policy.choosePlay(state, matchup, random);
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, matchup, playType, random);
     auto result = gridiron::applyOutcome(state, outcome);
     auto& newState = result.state;
 
@@ -81,7 +84,9 @@ TEST(IntegrationTest, FieldGoalAttemptRunsEndToEnd) {
     std::mt19937 rng(7);
 
     gridiron::RandomSource random{rng};
-    const gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, matchup, random);
+    const gridiron::DefaultPolicy policy;
+    const gridiron::PlayType playType = policy.choosePlay(state, matchup, random);
+    gridiron::PlayOutcome outcome = gridiron::samplePlayOutcome(state, matchup, playType, random);
     ASSERT_EQ(outcome.play_type, gridiron::PlayType::FieldGoalAttempt);
 
     auto result = gridiron::applyOutcome(state, outcome);
