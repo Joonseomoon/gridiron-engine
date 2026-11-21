@@ -3,11 +3,14 @@
 #include <random>
 
 #include "../src/engine/ApplyOutcome.h"
+#include "../src/engine/CandidateAction.h"
 #include "../src/engine/DefaultPolicy.h"
+#include "../src/engine/GameRunner.h"
 #include "../src/engine/GameState.h"
 #include "../src/engine/OutcomeSampler.h"
 #include "../src/engine/PlayResult.h"
 #include "../src/engine/RandomSource.h"
+#include "../src/engine/ScenarioValidation.h"
 #include "../src/engine/TeamProfile.h"
 
 namespace {
@@ -104,5 +107,48 @@ TEST(IntegrationTest, FieldGoalAttemptRunsEndToEnd) {
         ASSERT_EQ(outcome.outcome_type, gridiron::OutcomeType::Turnover);
         EXPECT_EQ(newState.home_score, 0);
         EXPECT_EQ(newState.ball_position, 20);
+    }
+}
+
+// M4.2 shared checkpoint: resume the M4.md example (BAL 24-27, 3:14 left, 4th and 2 at SEA's 43)
+// under two forced actions and finish every game. Policies decide after the first play.
+TEST(IntegrationTest, ResumeExampleScenarioUnderTwoActions) {
+    gridiron::TeamProfile bal{"BAL", 0.8, 0.7, 0.8, 0.7, 0.05, 0.8};
+    gridiron::TeamProfile sea{"SEA", 0.7, 0.9, 0.9, 0.5, 0.05, 0.8};
+    const gridiron::Matchup matchup{.home = bal, .away = sea};
+    const gridiron::GameState start{.quarter = 4,
+                                    .time_remaining_seconds = 194,
+                                    .possession = gridiron::Possession::Home,
+                                    .down = 4,
+                                    .distance = 2,
+                                    .ball_position = 57,
+                                    .home_score = 24,
+                                    .away_score = 27};
+    ASSERT_TRUE(gridiron::validateScenario(start).empty());
+
+    // TODO(4.2 B): switch to the late-game policy once it lands.
+    const gridiron::DefaultPolicy policy;
+    const gridiron::Policies policies{policy, policy};
+
+    constexpr unsigned kBatchSeed = 1000;
+    constexpr int kGames = 1000;
+    for (const auto action : {gridiron::CandidateAction::GoForIt, gridiron::CandidateAction::FieldGoal}) {
+        int finished = 0;
+        double balWinValue = 0.0;
+        for (int i = 0; i < kGames; ++i) {
+            std::mt19937 rng(kBatchSeed + static_cast<unsigned>(i));
+            const gridiron::GameState final = gridiron::resumeGame(start, matchup, policies, action, rng);
+            if (final.game_over) {
+                ++finished;
+            }
+            if (final.home_score > final.away_score) {
+                balWinValue += 1.0;
+            } else if (final.home_score == final.away_score) {
+                balWinValue += 0.5;
+            }
+        }
+        EXPECT_EQ(finished, kGames);
+        std::cout << (action == gridiron::CandidateAction::GoForIt ? "GoForIt" : "FieldGoal") << ": BAL win value "
+                  << balWinValue / kGames << " over " << kGames << " games\n";
     }
 }
