@@ -7,6 +7,7 @@
 #include "../src/engine/DefaultPolicy.h"
 #include "../src/engine/GameRunner.h"
 #include "../src/engine/GameState.h"
+#include "../src/engine/LateGamePolicy.h"
 #include "../src/engine/OutcomeSampler.h"
 #include "../src/engine/PlayResult.h"
 #include "../src/engine/RandomSource.h"
@@ -126,8 +127,7 @@ TEST(IntegrationTest, ResumeExampleScenarioUnderTwoActions) {
                                     .away_score = 27};
     ASSERT_TRUE(gridiron::validateScenario(start).empty());
 
-    // TODO(4.2 B): switch to the late-game policy once it lands.
-    const gridiron::DefaultPolicy policy;
+    const gridiron::LateGamePolicy policy;
     const gridiron::Policies policies{policy, policy};
 
     constexpr unsigned kBatchSeed = 1000;
