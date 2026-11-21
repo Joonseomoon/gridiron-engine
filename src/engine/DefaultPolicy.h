@@ -10,4 +10,7 @@ public:
 
     bool callTimeout(const GameState& before, const PlayOutcome& outcome, Possession team) const override;
 };
+
+// The default 50/50 run/pass draw, shared with a forced GoForIt
+PlayType chooseRunOrPass(RandomSource& random);
 } // namespace gridiron

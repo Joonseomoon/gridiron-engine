@@ -1,8 +1,10 @@
 #pragma once
 
 #include <functional>
+#include <optional>
 #include <random>
 
+#include "CandidateAction.h"
 #include "GameState.h"
 #include "Matchup.h"
 #include "PlayOutcome.h"
@@ -25,7 +27,9 @@ GameState runGame(const Matchup& matchup, std::mt19937& rng, const PlayObserver&
 
 GameState runGame(const Matchup& matchup, std::mt19937& rng, const Policies& policies, const PlayObserver& onPlay);
 
-GameState resumeGame(GameState state, const Matchup& matchup, const Policies& policies, std::mt19937& rng,
-                     const PlayObserver& onPlay = {});
+// Play from a supplied state to the end, including overtime if tied. No coin toss. firstAction, if set, replaces the
+// policy's choice on the first play only
+GameState resumeGame(GameState state, const Matchup& matchup, const Policies& policies,
+                     std::optional<CandidateAction> firstAction, std::mt19937& rng, const PlayObserver& onPlay = {});
 
 } // namespace gridiron

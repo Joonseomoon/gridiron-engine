@@ -16,11 +16,7 @@ PlayType DefaultPolicy::choosePlay(const GameState& state, const Matchup&, Rando
         }
     }
 
-    std::uniform_real_distribution<double> passOrRunDistribution(0.0, 1.0);
-    if (passOrRunDistribution(random.rng) > 0.5) {
-        return PlayType::Run;
-    }
-    return PlayType::Pass;
+    return chooseRunOrPass(random);
 }
 
 bool DefaultPolicy::callTimeout(const GameState& before, const PlayOutcome& outcome, Possession team) const {
@@ -33,4 +29,11 @@ bool DefaultPolicy::callTimeout(const GameState& before, const PlayOutcome& outc
     return latePeriod && afterPlay > 0 && afterPlay <= kTimeoutWindowSeconds && ownScore < opponentScore;
 }
 
+PlayType chooseRunOrPass(RandomSource& random) {
+    std::uniform_real_distribution<double> passOrRunDistribution(0.0, 1.0);
+    if (passOrRunDistribution(random.rng) > 0.5) {
+        return PlayType::Run;
+    }
+    return PlayType::Pass;
+}
 } // namespace gridiron
