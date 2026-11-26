@@ -8,7 +8,7 @@ namespace gridiron {
 PlayType DefaultPolicy::choosePlay(const GameState& state, const Matchup&, RandomSource& random) const {
     const int distanceToGoal = 100 - state.ball_position;
     if (state.down == 4) {
-        if (distanceToGoal <= 40) {
+        if (distanceToGoal <= kFieldGoalRangeYards) {
             return PlayType::FieldGoalAttempt;
         }
         if (state.distance > kFourthDownGoForItMaxDistance) {

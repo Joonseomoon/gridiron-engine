@@ -14,17 +14,6 @@ add it as a CMake target (and a CI build step) or delete it once 4.3's compariso
 statistics. `docs/validation/m4-checkpoint.json` is 716 lines of raw checkpoint output; the numbers that matter are in
 `decisions/M4.md`, so delete it unless a later milestone needs the raw data.
 
-### Late-game policy follow-ups (from PR #55)
-
-- **Behavior:** a trailing team in the last 2:00 of Q4 still punts when outside field-goal range (for example down 7,
-  0:40 left, 4th and 8 at its own 30), because only the within-40-yards case is handled. Go for it there instead, with a
-  test and a line in `decisions/M4.md`. This changes the checkpoint win values, so rerun and update them.
-- Move the literal 60, 120, and 40 in `LateGamePolicy.cpp` into `ModelConstants.h` (`kTimeoutWindowSeconds` already
-  covers 120).
-- Tests: the M4.md example state, a defense that is not trailing, and the defense's 0-second timeout edge. Fix the
-  "Offesnse" typo in two test names.
-- Add B's M4.2 entry to `LEARNING.md`.
-
 ### Small code cleanups (from PRs #48–#49)
 
 - GameLog prints overtime as "Q5" and hard-codes "Each team has 2 timeouts" instead of `kOvertimeTimeouts`.
