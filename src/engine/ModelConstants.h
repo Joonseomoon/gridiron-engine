@@ -26,4 +26,6 @@ constexpr double kIncompleteRate = 0.35;
 constexpr int kOvertimeSeconds = 600;
 constexpr int kOvertimeTimeouts = 2;
 constexpr int kTimeoutWindowSeconds = 120;
+constexpr int kFieldGoalRangeYards = 40;
+constexpr int kOffenseTimeoutWindowSeconds = 60;
 } // namespace gridiron
