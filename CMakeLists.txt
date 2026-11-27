@@ -73,6 +73,7 @@ add_executable(gridiron_tests
         tests/resume_game_test.cpp
         tests/late_game_policy_test.cpp
         tests/policy_variants_test.cpp
+        tests/policy_sensitivity_test.cpp
 )
 add_dependencies(gridiron_tests simulate)
 target_compile_definitions(gridiron_tests PRIVATE
