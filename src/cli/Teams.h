@@ -5,7 +5,7 @@
 #include <string_view>
 #include <vector>
 
-#include "../engine/TeamProfile.h"
+#include "engine/core/TeamProfile.h"
 
 namespace gridiron {
 

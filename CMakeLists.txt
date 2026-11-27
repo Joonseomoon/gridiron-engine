@@ -27,53 +27,56 @@ if (GRIDIRON_WERROR)
 endif ()
 
 add_library(gridiron_core
-        src/engine/ApplyOutcome.cpp
-        src/engine/OutcomeSampler.cpp
-        src/engine/GameRunner.cpp
-        src/engine/BatchSummary.cpp
-        src/engine/SimulationResult.cpp
-        src/engine/BatchRunner.cpp
-        src/engine/ParallelFor.cpp
-        src/engine/DefaultPolicy.cpp
-        src/engine/Timeout.cpp
-        src/engine/Overtime.cpp
-        src/engine/ScenarioValidation.cpp
-        src/engine/LateGamePolicy.cpp
-        src/engine/ConservativePolicy.cpp
-        src/engine/AggressivePolicy.cpp
+        src/engine/batch/BatchRunner.cpp
+        src/engine/batch/BatchSummary.cpp
+        src/engine/batch/ParallelFor.cpp
+        src/engine/batch/SimulationResult.cpp
+        src/engine/game/GameRunner.cpp
+        src/engine/game/ScenarioValidation.cpp
+        src/engine/policy/AggressivePolicy.cpp
+        src/engine/policy/ConservativePolicy.cpp
+        src/engine/policy/DefaultPolicy.cpp
+        src/engine/policy/LateGamePolicy.cpp
+        src/engine/rules/ApplyOutcome.cpp
+        src/engine/rules/Overtime.cpp
+        src/engine/rules/Timeout.cpp
+        src/engine/sampling/OutcomeSampler.cpp
 )
+# Includes are written from src/, e.g. "engine/core/GameState.h".
+target_include_directories(gridiron_core PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(gridiron_core PRIVATE gridiron_warnings Threads::Threads)
 add_library(gridiron_cli
-        src/cli/Teams.cpp
+        src/cli/BatchCsv.cpp
+        src/cli/BatchLog.cpp
         src/cli/CommandLine.cpp
         src/cli/GameLog.cpp
-        src/cli/BatchLog.cpp
-        src/cli/BatchCsv.cpp
+        src/cli/Teams.cpp
 )
+target_include_directories(gridiron_cli PUBLIC ${CMAKE_SOURCE_DIR}/src)
 target_link_libraries(gridiron_cli PRIVATE gridiron_warnings Threads::Threads)
 
 add_executable(simulate src/main.cpp)
 add_executable(gridiron_tests
-        tests/apply_outcome_test.cpp
-        tests/outcome_sampler_test.cpp
-        tests/integration_test.cpp
-        tests/game_run_test.cpp
-        tests/invariant_sweep_test.cpp
-        tests/teams_test.cpp
-        tests/command_line_test.cpp
-        tests/game_log_test.cpp
-        tests/batch_summary_test.cpp
-        tests/batch_log_test.cpp
-        tests/simulation_result_test.cpp
-        tests/batch_runner_test.cpp
-        tests/batch_csv_test.cpp
-        tests/cli_export_test.cpp
-        tests/parallel_for_test.cpp
-        tests/scenario_validation_test.cpp
-        tests/resume_game_test.cpp
-        tests/late_game_policy_test.cpp
-        tests/policy_variants_test.cpp
-        tests/policy_sensitivity_test.cpp
+        tests/cli/batch_csv_test.cpp
+        tests/cli/batch_log_test.cpp
+        tests/cli/cli_export_test.cpp
+        tests/cli/command_line_test.cpp
+        tests/cli/game_log_test.cpp
+        tests/cli/teams_test.cpp
+        tests/engine/batch/batch_runner_test.cpp
+        tests/engine/batch/batch_summary_test.cpp
+        tests/engine/batch/parallel_for_test.cpp
+        tests/engine/batch/simulation_result_test.cpp
+        tests/engine/game/game_run_test.cpp
+        tests/engine/game/resume_game_test.cpp
+        tests/engine/game/scenario_validation_test.cpp
+        tests/engine/policy/late_game_policy_test.cpp
+        tests/engine/policy/policy_variants_test.cpp
+        tests/engine/rules/apply_outcome_test.cpp
+        tests/engine/sampling/outcome_sampler_test.cpp
+        tests/integration/integration_test.cpp
+        tests/integration/invariant_sweep_test.cpp
+        tests/integration/policy_sensitivity_test.cpp
 )
 add_dependencies(gridiron_tests simulate)
 target_compile_definitions(gridiron_tests PRIVATE

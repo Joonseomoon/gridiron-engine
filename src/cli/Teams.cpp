@@ -1,4 +1,4 @@
-#include "Teams.h"
+#include "cli/Teams.h"
 #include <cctype>
 
 namespace gridiron {

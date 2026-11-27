@@ -1,5 +1,5 @@
-#include "CommandLine.h"
-#include "Teams.h"
+#include "cli/CommandLine.h"
+#include "cli/Teams.h"
 
 #include <algorithm>
 #include <charconv>

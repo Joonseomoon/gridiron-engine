@@ -17,11 +17,11 @@
 #include "cli/BatchCsv.h"
 #include "cli/CommandLine.h"
 #include "cli/GameLog.h"
-#include "engine/BatchMetadata.h"
-#include "engine/BatchRunner.h"
-#include "engine/BatchSummary.h"
-#include "engine/GameRunner.h"
-#include "engine/SimulationResult.h"
+#include "engine/batch/BatchMetadata.h"
+#include "engine/batch/BatchRunner.h"
+#include "engine/batch/BatchSummary.h"
+#include "engine/batch/SimulationResult.h"
+#include "engine/game/GameRunner.h"
 
 namespace {
 constexpr const char* kUsage = "usage: simulate HOME AWAY [--seed N] [--games N] [--threads T] [--out FILE]\n";

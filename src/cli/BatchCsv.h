@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../engine/BatchMetadata.h"
-#include "../engine/BatchSummary.h"
-#include "../engine/SimulationResult.h"
+#include "engine/batch/BatchMetadata.h"
+#include "engine/batch/BatchSummary.h"
+#include "engine/batch/SimulationResult.h"
 
 #include <ostream>
 #include <vector>
