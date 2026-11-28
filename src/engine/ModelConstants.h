@@ -28,4 +28,6 @@ constexpr int kOvertimeTimeouts = 2;
 constexpr int kTimeoutWindowSeconds = 120;
 constexpr int kFieldGoalRangeYards = 40;
 constexpr int kOffenseTimeoutWindowSeconds = 60;
+constexpr int kAggressiveWindowSeconds = 300;
+constexpr int kAggressiveMaxDistance = 4;
 } // namespace gridiron

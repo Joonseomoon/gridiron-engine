@@ -39,6 +39,8 @@ add_library(gridiron_core
         src/engine/Overtime.cpp
         src/engine/ScenarioValidation.cpp
         src/engine/LateGamePolicy.cpp
+        src/engine/ConservativePolicy.cpp
+        src/engine/AggressivePolicy.cpp
 )
 target_link_libraries(gridiron_core PRIVATE gridiron_warnings Threads::Threads)
 add_library(gridiron_cli
@@ -70,6 +72,8 @@ add_executable(gridiron_tests
         tests/scenario_validation_test.cpp
         tests/resume_game_test.cpp
         tests/late_game_policy_test.cpp
+        tests/policy_variants_test.cpp
+        tests/policy_sensitivity_test.cpp
 )
 add_dependencies(gridiron_tests simulate)
 target_compile_definitions(gridiron_tests PRIVATE
