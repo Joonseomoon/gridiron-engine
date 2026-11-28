@@ -1,4 +1,4 @@
-#include "BatchLog.h"
+#include "cli/BatchLog.h"
 
 #include <iomanip>
 #include <ostream>

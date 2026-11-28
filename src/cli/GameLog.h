@@ -1,10 +1,10 @@
 #pragma once
 
-#include "../engine/GameState.h"
-#include "../engine/Matchup.h"
-#include "../engine/PlayOutcome.h"
-#include "../engine/PlayResult.h"
-#include "../engine/SimulationResult.h"
+#include "engine/batch/SimulationResult.h"
+#include "engine/core/GameState.h"
+#include "engine/core/Matchup.h"
+#include "engine/core/PlayOutcome.h"
+#include "engine/core/PlayResult.h"
 #include <ostream>
 #include <string>
 

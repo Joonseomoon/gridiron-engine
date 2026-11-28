@@ -42,6 +42,21 @@ before pushing:
 After cloning, run `git config blame.ignoreRevsFile .git-blame-ignore-revs` so `git blame` skips the one-time
 reformatting commit.
 
+## Source layout
+
+Includes are written from `src/`, for example `#include "engine/core/GameState.h"`. Tests mirror the source folders.
+
+| Folder | Contents |
+| --- | --- |
+| `src/engine/core` | Shared types and constants: `GameState`, `Matchup`, `TeamProfile`, play outcomes, `RandomSource`, model constants and version |
+| `src/engine/rules` | Applying a play to the game state, timeouts, overtime |
+| `src/engine/sampling` | Sampling play outcomes from team ratings |
+| `src/engine/policy` | `Policy` and the default, late-game, conservative, and aggressive policies |
+| `src/engine/game` | Running or resuming one game, candidate actions, scenario validation |
+| `src/engine/batch` | Batches, summaries, per-game results, `parallelFor` |
+| `src/cli` | Command-line parsing, built-in teams, game and batch output, CSV export |
+| `tests/integration` | Whole-game tests, invariant sweeps, and the M4 sensitivity tables |
+
 ## Running
 
 ```

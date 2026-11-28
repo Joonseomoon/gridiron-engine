@@ -1,8 +1,8 @@
-#include "BatchCsv.h"
-#include "../engine/BatchMetadata.h"
-#include "../engine/BatchSummary.h"
-#include "../engine/ModelVersion.h"
-#include "../engine/SimulationResult.h"
+#include "cli/BatchCsv.h"
+#include "engine/batch/BatchMetadata.h"
+#include "engine/batch/BatchSummary.h"
+#include "engine/batch/SimulationResult.h"
+#include "engine/core/ModelVersion.h"
 
 #include <cstddef>
 #include <iomanip>

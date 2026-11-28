@@ -7,10 +7,10 @@
 #include "cli/BatchCsv.h"
 #include "cli/BatchLog.h"
 #include "cli/Teams.h"
-#include "engine/BatchMetadata.h"
-#include "engine/BatchRunner.h"
-#include "engine/BatchSummary.h"
-#include "engine/GameRunner.h"
+#include "engine/batch/BatchMetadata.h"
+#include "engine/batch/BatchRunner.h"
+#include "engine/batch/BatchSummary.h"
+#include "engine/game/GameRunner.h"
 #include <cstdint>
 #include <iostream>
 #include <random>

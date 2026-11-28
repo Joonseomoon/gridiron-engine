@@ -1,8 +1,8 @@
-#include "GameLog.h"
-#include "../engine/GameState.h"
-#include "../engine/PlayOutcome.h"
-#include "../engine/PlayResult.h"
-#include "../engine/SimulationResult.h"
+#include "cli/GameLog.h"
+#include "engine/batch/SimulationResult.h"
+#include "engine/core/GameState.h"
+#include "engine/core/PlayOutcome.h"
+#include "engine/core/PlayResult.h"
 #include <iomanip>
 #include <ostream>
 #include <string>
